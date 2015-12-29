@@ -1,5 +1,5 @@
 PARAMS =
-LISTINGS =
+LISTINGS = geomlab_syntax.md sugar.md expr.md de_bruijn.md standard_defs.md
 DIAGRAMS =
 
 all: out/report.pdf
@@ -32,6 +32,6 @@ count: out/report.tex
 
 out/%.pdf: out/%.tex references.bib
 	latex -output-directory=out out/$*
-	# bibtex out/$*
-	# latex -output-directory=out out/$*
+	bibtex out/$*
+	latex -output-directory=out out/$*
 	pdflatex -output-directory=out out/$*
