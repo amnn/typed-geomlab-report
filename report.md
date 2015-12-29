@@ -59,9 +59,9 @@ $\mathbf{Expr}$ also alters the way local variables are introduced and denoted, 
 This notation has several advantages:
 
 \begin{itemize}
-  \item It allows the desugarer to introduce local variables without having to generate unique symbols (to avoid shadowing).
+  \item It tackles the issue of name shadowing (from variables inserted by the desugarer) without resorting to generating unique symbols, which requires side effectful operations.
 
-  \item As a corollary to the first point, this makes \textit{desugar} a pure, deterministic function, which makes testing easier.
+  \item As a corollary to the first point, this makes \textit{desugar} a pure, deterministic function, which is better for testing.
 
   \item As the typechecker traverses the AST, it must create fresh \textit{type} variables for each local variable it encounters. These type variables can be stored in a stack, from which they can be efficiently retrieved using the local variable's de Bruijn index.
 

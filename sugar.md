@@ -1,4 +1,7 @@
 ```{.haskell}
+-- Top Level
+data Para a = Def Id a | Eval a
+
 -- Common Definitions
 type Id = String
 
