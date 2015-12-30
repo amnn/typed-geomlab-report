@@ -11,11 +11,14 @@ define filter(p, x:xs) = x : filter(p, xs) when p(x)
      | filter(_, [])   = [];
 
 { iv }
-[1..3];
+function (x) x;
 
 { v }
-[ 10*x + y | x <- [1..3], y <- [1..3] when (x+y) mod 2 = 0];
+[1..3];
 
 { vi }
+[ 10*x + y | x <- [1..3], y <- [1..3] when (x+y) mod 2 = 0];
+
+{ vii }
 (+10);
 ```

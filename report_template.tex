@@ -12,8 +12,11 @@
 \usepackage{mdwlist}
 \usepackage{enumerate}
 
+\usepackage{amsmath}
+\usepackage{harpoon}
 \usepackage{amsthm}
 \usepackage{amssymb}
+\usepackage{bussproofs}
 \usepackage{dsfont}
 \usepackage{mathtools}
 \usepackage{stmaryrd}
@@ -27,6 +30,7 @@
 % Custom Commands
 \algnewcommand{\LineComment}[1]{\State \(\triangleright\) #1}
 \newcommand{\eqdef}{\overset{\mathrm{def}}{=\joinrel=}}
+\newcommand*{\orh}[1]{\text{\overrightharp{\ensuremath{#1}}}}
 
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
@@ -52,6 +56,7 @@
 \DeclarePairedDelimiter\abs{\lvert}{\rvert}
 
 \DeclareGraphicsExtensions{.png,.pdf}
+\EnableBpAbbreviations
 
 % TeXCount directives
 
