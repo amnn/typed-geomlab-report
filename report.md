@@ -227,7 +227,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
         \arraycolsep=1.5pt
         \begin{array}{llll}
           \text{let} & \mathbb{U} & \gets & \mathcal{U}(\tau_0,[\alpha])\text{ ($\alpha$ fresh)}
-          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Gamma),h:\alpha,t:[\alpha]\vdash e_i)
+          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Gamma,h:\alpha,t:[\alpha])\vdash e_i)
         \end{array}
       \end{math}
       \\[.2em] $\mathbb{S}_i\equiv\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\tau^\prime$
