@@ -117,7 +117,17 @@ This type theory is a good starting point for many reasons: It has a reasonably 
 
 A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, wherein it is described operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$, and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typeable).
 
-We extend it further, to deal with literals, recursion, sequencing, conditionals, and case expressions to create an inference algorithm for our desugared subset of \textit{Geomlab} (For convenience, we adopt a textual syntax for ASTs of type $\mathbf{Expr}$):
+As in\ \cite{damas1982principal}, we rely on Robinson's unification algorithm and the ability to produce the closure of a type with respect to a context.
+
+\begin{definition}[Robinson's Unification Algorithm, $\mathcal{U}$]
+  Given two types, $\tau$ and $\sigma$, $\mathcal{U}(\tau, \sigma) = \mathbb{U}$ where $\mathbb{U}(\tau)\equiv\mathbb{U}(\sigma)$ and $\forall\mathbb{S}\ldotp\mathbb{S}(\tau)\equiv\mathbb{S}(\sigma)\implies\exists\mathbb{S}^\prime\ldotp\mathbb{S}\equiv\mathbb{S}^\prime\mathbb{U}$ if and only if such a $\mathbb{U}$ exists.
+\end{definition}
+
+\begin{definition}[Closure]
+  $\overline{\Gamma}(\tau) = \forall\alpha_1,\ldots,\alpha_n\ldotp\tau$ where $\alpha_1,\ldots,\alpha_n$ are all the variables that appear free in $\tau$ but do not appear in the domain of $\Gamma$.
+\end{definition}
+
+We extend the algorithm further, to deal with literals, recursion, sequencing, conditionals, and case expressions to create an inference algorithm for our desugared subset of \textit{Geomlab} (For convenience, we adopt a textual syntax for ASTs of type $\mathbf{Expr}$):
 
 $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
 \begin{enumerate}[(i)]
