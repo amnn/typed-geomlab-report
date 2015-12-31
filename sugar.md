@@ -1,7 +1,4 @@
 ```{.haskell}
--- Top Level
-data Para a = Def Id a | Eval a
-
 -- Common Definitions
 type Id = String
 
@@ -10,6 +7,9 @@ data LitB a   = NumB Double
               | NilB
               | AtomB Id
               | ConsB a a
+
+-- Top Level
+data Para a = Def Id a | Eval a
 
 -- Patterns
 data Patt     = ValP (LitB Patt) | VarP Id

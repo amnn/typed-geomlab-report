@@ -23,7 +23,31 @@ In this project we will be developing a type system for \textit{Geomlab}, a dyna
   \input{aux/geomlab_syntax.tex}
 \end{figure}
 
-This subset omits unification patterns (where multiple variables must be bound to the same value), $n+k$ patterns (matching numbers $m\geq k$, and binding $n\triangleq m-k$) and hash tables, as support for these can easily be added to a type system without changing the underlying theory. We also omit mutable reference cells as their interaction with polymorphism is a thorny issue which requires careful handling. (A story for another time.)
+This subset omits unification patterns (where different variables in the pattern must be bound to the same value) and $n+k$ patterns (matching numbers $m\geq k$, and binding $n\triangleq m-k$) as these features could be added as syntactic sugar on top of the existing ones without affecting the type theory.
+
+\subsection{Expressible Values}
+
+\begin{description}
+  \item[numbers] Using a double-precision floating point representation. We sidestep the issue of operator overloading by not distinguishing between integer and floating point numbers.
+
+  \item[strings] Finite sequences of UTF-8 encoded characters, surrounded by double quotes.
+
+  \item[atoms] Short strings, with fast equality checks, distinguished from identiifiers by prefixing a \#.
+
+  \item[cons cells] Pairs of values $a$ and $b$, denoted by $a:b$. These form the building blocks for compound data structures. In statically typed functional programming languages, they tend to only be used to construct singly linked-lists, but in dynamically typed languages (including \textit{Geomlab}) they are used in the construction of all product types. As we will see later, this difference will affect the direction in which we take the development of our type system.
+
+  \item[nil] A distinguished value used to represent ``nothing'', denoted by $[]$, commonly used as the terminator for singly linked lists.
+
+  \item[booleans] True/false values. In \textit{Geomlab} booleans are expressible but not as literals. \texttt{true} and \texttt{false} are defined in terms of the predicate \texttt{numeric}:
+    \\ \texttt{define true = numeric(0);}
+    \\ \texttt{define false = numeric(true);}
+
+  \item[functions] \textit{Geomlab} has first-class multi-arity functions.
+\end{description}
+
+All categories of expressible values, barring the last two (booleans and functions) have analogous patterns that can be used to match against values in those categories.
+
+The original language also supports hash tables and mutable reference cells which we have chosen to omit as their interaction with variance and polymorphism is a thorny issue which requires careful handling. (A story for another time.)
 
 \subsection{Parsing}
 
@@ -109,7 +133,24 @@ Exactly what constitutes a type and what constitutes a deduction of a type judge
 
 We begin our search with the Hindley-Milner (henceforth HM) type system\ \cite{10.2307/1995158}\ \cite{MILNER1978348}. This theory forms the basis of many production quality type systems, including those found in \textit{Haskell} and the \textit{ML} family of languages.
 
-HM builds on the types in the simply-typed $\lambda$ calculus by introducing \textit{universally quantified} variables in prenex form ($\forall\alpha_1\ldots\alpha_n\ldotp\tau$, where $\tau$ is quantifier free). This allows us to describe the types of polymorphic functions. For example, the identity function \texttt{define id(x) = x;} has principal type $\forall\alpha\ldotp\alpha\to\alpha$.
+HM builds on the types in the simply-typed $\lambda$ calculus by introducing \textit{universally quantified} variables in prenex form (Definition\ \ref{def:hm-types}). This allows us to describe the types of polymorphic functions. For example, the identity function \texttt{define id(x) = x;} has principal type $\forall\alpha\ldotp\alpha\to\alpha$.
+
+\begin{definition}[Types in HM]\label{def:hm-types}
+  Types in our adaptation of HM are defined by:
+  \begin{align*}
+    \sigma & \Coloneqq~\forall\alpha\ldotp\sigma~|~\tau
+    \tag*{\scriptsize(types)}
+    \\\tau & \Coloneqq~\iota~|~[~\tau~]~|~(~\pi~)\to\tau
+    \tag*{\scriptsize(quantifier-free types)}
+    \\\iota & \Coloneqq~\mathbf{number}~|~\mathbf{string}~|~\mathbf{atom}~|~\mathbf{bool}
+    \tag*{\scriptsize(base types)}
+    \\\pi & \Coloneqq~\tau~|~\tau,\pi
+    \tag*{\scriptsize(formal parameters)}
+    \\\alpha & \Coloneqq~\alpha_1~|~\alpha_2~|~\cdots
+    \tag*{\scriptsize(variables)}
+  \end{align*}
+
+\end{definition}
 
 This type theory is a good starting point for many reasons: It has a reasonably efficient inference algorithm which has been proven sound and complete w.r.t the type system, the ability to specify polymorphic types affords a greater degree of flexibility, and given only a term, it is possible to infer its most general (principal) type. The last point is of particular import to us because our underlying language was originally dynamically typed, so there is no facility in the syntax to provide type annotations.
 
@@ -188,7 +229,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
       \\ & (\mathbb{S}_2, \tau_2) & \gets & \mathcal{W}(\mathbb{S}_1(\Gamma)\vdash e_2)
     \end{array}
     \end{math}
-    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_2$ and $\tau\equiv\tau_2$.
+    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_2\mathbb{S}_1$ and $\tau\equiv\tau_2$.
 
   \item $t\equiv \texttt{if $b$ then $t$ else $e$}$\hfill{\scriptsize(conditionals)}
     \\[.5em] \begin{math}
