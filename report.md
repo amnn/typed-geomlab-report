@@ -287,7 +287,29 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
 
 \subsection{Implementation}
 
-Lorem Ipsum.
+\text{Na\"ive} implementations of this algorithm --- in which types are represented as strings and all operations are performed eagerly --- tend to exhibit poor performance. Whilst inference for HM is known to be DEXPTIME-COMPLETE\ \cite{kfoury90mlexptime}, such a worst-case running time can be avoided in all but the pathalogical cases using techniques from Oleg Kiselyov's tutorial on the implementation of \textit{OCaml}'s type inference algorithm\ \cite{oleg13ocamltc}.
+
+\subsubsection{Unification}
+
+We represent types with acyclic graphs, and make unification a side-effectful operation, modifying types in place instead of returning a unifier. This allows for structural sharing, and makes unification cheaper: If we are unifying a variable in one type with another type, we replace the node representing the variable in the former with a forward pointer to the latter, a much cheaper operation than string substitution. Long chains of forward pointers that may arise are also compressed as they are traversed.
+
+\subsubsection{Generalisation}
+
+Another target for improvement is \textit{generalisation}: When type checking a \texttt{let} expression or top-level definition, $e$, after inferring a type for the expression being defined, we take its \textit{closure} by universally quantifying any remaining free variables (see the algorithm above) --- The variables quantified by this process are said to be \textit{owned} by $e$.
+
+A \text{na\"ive} algorithm traverses the entire type being closed over, searching for unbound variables. To prune the traversal, we annotate each type with a \textit{level}, associating it with a \texttt{let} expression or definition node: A \texttt{let} expression's level increases with nesting (cf. de-Bruijn indices, but limited to other \texttt{let} expressions). Variables are annotated with the level of the expression that owns them, and compound types are annotated with the max level of any variable they mention. Then when closing over a type for a definition at level $l$, we only traverse compound types with level $l^\prime$ if $l^\prime\geq l$.
+
+\subsubsection{Instantiation}
+
+We can extend this pruning approach to also deal with \textit{instantiation}: The process of replacing quantified (type) variables with fresh (type) variables, done when type checking a bound (term) variable; In some senses an inverse of \textit{generalisation}.
+
+By annotating types with a flag that is true when the type contains a quantified variable, when traversing for instantiation, we need only look at types where this flag is set. In our implementation, instead of a flag we use a special level, call it $\top$, such that for all levels $l\in\mathbb{N}$, $l<\top$, as we generalise a type, every variable we touch has its level set to $\top$, the rules for propogating levels to compound types takes care of the rest.
+
+\subsubsection{Level Adjustments}
+
+Unification can reduce the level of a type, which means we must work to keep levels consistent after unifications. For compound types, this would involve updating all mentioned variables with the lower level (if doing so lowers the variable's level), and propagating the change back up. Instead of doing this as we unify, we may instead perform this book-keeping lazily: If we unify a compound type we annotate it with the new level that should be propagated to its leaves, and push it onto a queue of types waiting to be adjusted. Just before we perform a generalisation, we force these waiting adjustments (as they could affect the generalisation). Type variables, having no children can still have their levels updated eagerly.
+
+When we force waiting adjustments, we are doing so because a type whose level was once greater than the current level could receive a lower level and escape being quantified. So, going a step further, we could force adjustments only when the type's current level is greater than the current level, and replace those at lower levels to be forced at a later stage.
 
 \subsection{Applications}
 
