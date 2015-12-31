@@ -142,7 +142,7 @@ HM builds on the types in the simply-typed $\lambda$ calculus by introducing \te
     \tag*{\scriptsize(types)}
     \\\tau & \Coloneqq~\iota~|~[~\tau~]~|~(~\pi~)\to\tau
     \tag*{\scriptsize(quantifier-free types)}
-    \\\iota & \Coloneqq~\mathbf{number}~|~\mathbf{string}~|~\mathbf{atom}~|~\mathbf{bool}
+    \\\iota & \Coloneqq~\mathbf{num}~|~\mathbf{str}~|~\mathbf{atom}~|~\mathbf{bool}
     \tag*{\scriptsize(base types)}
     \\\pi & \Coloneqq~\tau~|~\tau,\pi
     \tag*{\scriptsize(formal parameters)}
@@ -175,7 +175,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
   \item
     \begin{enumerate}[(a)]
       \item $t$ a number, string or atom literal\hfill{\scriptsize(literal)}
-        \\[.5em] $\mathbb{S}\equiv\varnothing$ and $\tau\equiv\mathbf{number}$, $\mathbf{string}$, $\mathbf{atom}$ respectively.
+        \\[.5em] $\mathbb{S}\equiv\varnothing$ and $\tau\equiv\mathbf{num}$, $\mathbf{str}$, $\mathbf{atom}$ respectively.
 
       \item $t\equiv[]$: $\mathbb{S}\equiv\varnothing$ and $\tau\equiv[\alpha]$ ($\alpha$ fresh).\hfill{\scriptsize(nil)}
 
@@ -257,7 +257,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \mathbb{U} & \gets & \mathcal{U}(\tau_0,\mathbf{number})\text{ ($\mathbf{string}$, $\mathbf{atom}$ respectively)}
+          \text{let} & \mathbb{U} & \gets & \mathcal{U}(\tau_0,\mathbf{num})\text{ ($\mathbf{str}$, $\mathbf{atom}$ respectively)}
           \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Gamma)\vdash e_i)
         \end{array}
       \end{math}
@@ -311,9 +311,29 @@ Unification can reduce the level of a type, which means we must work to keep lev
 
 When we force waiting adjustments, we are doing so because a type whose level was once greater than the current level could receive a lower level and escape being quantified. So, going a step further, we could force adjustments only when the type's current level is greater than the current level, and replace those at lower levels to be forced at a later stage.
 
-\subsection{Applications}
+\subsection{Examples}
 
-Lorem Ipsum.
+\subsubsection{Monomorphic Inference}
+(+10);
+
+\subsubsection{Polymorphism}
+define id(x) = x
+
+\subsubsection{Higher-Order Functions}
+define . = function(f, g) function (x) f(g(x))
+
+\subsubsection{Recursion}
+
+define foldr(f, e, [])   = e
+     | foldr(f, e, x:xs) = f(x, foldr(f, e, xs));
+
+\subsubsection{Let Polymorphism}
+
+define f(i) = i(i)(1); f(function (x) x);
+
+vs
+
+let id(x) = x in id(id)(1);
 
 \subsection{Limitations}
 
