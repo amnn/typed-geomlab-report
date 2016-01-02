@@ -1,36 +1,48 @@
 \documentclass[$if(fontsize)$$fontsize$,$endif$$if(lang)$$lang$,$endif$$if(papersize)$$papersize$,$endif$$for(classoption)$$classoption$$sep$,$endfor$]{$documentclass$}
 
 % Custom Packages
-\usepackage[noend]{algpseudocode}
-\usepackage{algorithm}
+
 \usepackage{algorithmicx}
-
-\usepackage{datetime}
-\usepackage{etoolbox}
-\usepackage{titlesec}
-
-\usepackage{mdwlist}
-\usepackage{enumerate}
-
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 \usepackage{amsmath}
-\usepackage{harpoon}
-\usepackage{amsthm}
 \usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{array}
+\usepackage{booktabs}
 \usepackage{bussproofs}
+\usepackage{datetime}
 \usepackage{dsfont}
-\usepackage{mathtools}
-\usepackage{stmaryrd}
-\usepackage{textcomp}
-\usepackage{color}
-\usepackage{graphicx}
-
+\usepackage{enumerate}
+\usepackage{etoolbox}
 \usepackage{float}
+\usepackage{graphicx}
+\usepackage{harpoon}
+\usepackage{mathtools}
+\usepackage{mdwlist}
+\usepackage{pifont}
+\usepackage{stmaryrd}
 \usepackage{subcaption}
+\usepackage{textcomp}
+\usepackage{titlesec}
+\usepackage[dvipsnames]{xcolor}
 
 % Custom Commands
 \algnewcommand{\LineComment}[1]{\State \(\triangleright\) #1}
 \newcommand{\eqdef}{\overset{\mathrm{def}}{=\joinrel=}}
 \newcommand*{\orh}[1]{\text{\overrightharp{\ensuremath{#1}}}}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\newcommand{\HMExample}[3]{%
+{\renewcommand{\arraystretch}{2}
+\begin{tabular}{l m{9.5cm}}
+  \toprule\textbf{Source}    & #1
+  \\ \midrule\textbf{Desugared} & #2
+  \\ \midrule\textbf{Type}      & #3
+  \\ \bottomrule
+\end{tabular}\\%
+}}
 
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}

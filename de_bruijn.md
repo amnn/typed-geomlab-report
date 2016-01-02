@@ -2,7 +2,7 @@
 define f(x) =
   let g(y) = x in g;
 ```
-Compiles and desugars to:
+Parses and desugars to:
 ```{.haskell}
 Def "f"
     (FnE 1

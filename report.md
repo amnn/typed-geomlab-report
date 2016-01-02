@@ -133,7 +133,7 @@ Exactly what constitutes a type and what constitutes a deduction of a type judge
 
 We begin our search with the Hindley-Milner (henceforth HM) type system\ \cite{10.2307/1995158}\ \cite{MILNER1978348}. This theory forms the basis of many production quality type systems, including those found in \textit{Haskell} and the \textit{ML} family of languages.
 
-HM builds on the types in the simply-typed $\lambda$ calculus by introducing \textit{universally quantified} variables in prenex form (Definition\ \ref{def:hm-types}). This allows us to describe the types of polymorphic functions. For example, the identity function \texttt{define id(x) = x;} has principal type $\forall\alpha\ldotp\alpha\to\alpha$.
+HM builds on the types in the simply-typed $\lambda$ calculus by introducing \textit{universally quantified} variables in prenex form (Definition\ \ref{def:hm-types}). This allows us to describe the types of polymorphic functions. For example, the identity function \texttt{define id(x) = x;} has principal type $\forall\alpha\ldotp(\alpha)\to\alpha$.
 
 \begin{definition}[Types in HM]\label{def:hm-types}
   Types in our adaptation of HM are defined by:
@@ -231,13 +231,13 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
     \end{math}
     \\[.5em] $\mathbb{S}\equiv\mathbb{S}_2\mathbb{S}_1$ and $\tau\equiv\tau_2$.
 
-  \item $t\equiv \texttt{if $b$ then $t$ else $e$}$\hfill{\scriptsize(conditionals)}
+  \item $t\equiv \texttt{if $e_1$ then $e_2$ else $e_3$}$\hfill{\scriptsize(conditionals)}
     \\[.5em] \begin{math}
     \arraycolsep=1.5pt
     \begin{array}{llll}
-      \text{let} & (\mathbb{S}_1,\tau_1) & \gets & \mathcal{W}(\Gamma\vdash b)
-      \\ & (\mathbb{S}_2, \tau_2) & \gets & \mathcal{W}(\mathbb{S}_1(\Gamma)\vdash t)
-      \\ & (\mathbb{S}_3, \tau_3) & \gets & \mathcal{W}(\mathbb{S}_2\mathbb{S}_1(\Gamma)\vdash e)
+      \text{let} & (\mathbb{S}_1,\tau_1) & \gets & \mathcal{W}(\Gamma\vdash e_1)
+      \\ & (\mathbb{S}_2, \tau_2) & \gets & \mathcal{W}(\mathbb{S}_1(\Gamma)\vdash e_2)
+      \\ & (\mathbb{S}_3, \tau_3) & \gets & \mathcal{W}(\mathbb{S}_2\mathbb{S}_1(\Gamma)\vdash e_3)
       \\ & \phantom{(} \mathbb{U}_1 & \gets & \mathcal{U}(\mathbb{S}_3\mathbb{S}_2(\tau_1),\mathbf{bool})
       \\ & \phantom{(} \mathbb{U}_2 & \gets & \mathcal{U}(\mathbb{U}_1\mathbb{S}_3\mathbb{S}_2(\tau_2), \mathbb{U}_1\mathbb{S}_3\mathbb{S}_2(\tau_3))
     \end{array}
@@ -287,11 +287,13 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
 
 \subsection{Implementation}
 
-\text{Na\"ive} implementations of this algorithm --- in which types are represented as strings and all operations are performed eagerly --- tend to exhibit poor performance. Whilst inference for HM is known to be DEXPTIME-COMPLETE\ \cite{kfoury90mlexptime}, such a worst-case running time can be avoided in all but the pathalogical cases using techniques from Oleg Kiselyov's tutorial on the implementation of \textit{OCaml}'s type inference algorithm\ \cite{oleg13ocamltc}.
+\text{Na\"ive} implementations of this algorithm --- in which types are represented as strings and all operations are performed eagerly --- tend to exhibit poor performance. Whilst inference for HM is known to be DEXPTIME-COMPLETE\ \cite{kfoury90mlexptime}, such a worst-case running time can be avoided in all but the pathalogical cases. We use techniques from Oleg Kiselyov's tutorial on the implementation of \textit{OCaml}'s type inference algorithm\ \cite{oleg13ocamltc} to improve the performance of our algorithm in typical cases.
 
 \subsubsection{Unification}
 
 We represent types with acyclic graphs, and make unification a side-effectful operation, modifying types in place instead of returning a unifier. This allows for structural sharing, and makes unification cheaper: If we are unifying a variable in one type with another type, we replace the node representing the variable in the former with a forward pointer to the latter, a much cheaper operation than string substitution. Long chains of forward pointers that may arise are also compressed as they are traversed.
+
+In this representation, cyclic types present as cycles of pointers. As a result, the algorithm is at risk of looping infinitely, unless we detect such features. We do so by leaving breadcrumbs at every node we enter and removing them once we make our way back. If we find a crumb at a node we have just entered, we know we have doubled back on ourselves. In such a situation, it is appropriate to throw an error as cyclic types are not valid in the HM theory.
 
 \subsubsection{Generalisation}
 
@@ -303,37 +305,71 @@ A \text{na\"ive} algorithm traverses the entire type being closed over, searchin
 
 We can extend this pruning approach to also deal with \textit{instantiation}: The process of replacing quantified (type) variables with fresh (type) variables, done when type checking a bound (term) variable; In some senses an inverse of \textit{generalisation}.
 
-By annotating types with a flag that is true when the type contains a quantified variable, when traversing for instantiation, we need only look at types where this flag is set. In our implementation, instead of a flag we use a special level, call it $\top$, such that for all levels $l\in\mathbb{N}$, $l<\top$, as we generalise a type, every variable we touch has its level set to $\top$, the rules for propogating levels to compound types takes care of the rest.
+By annotating types with a flag that is true when the type contains a quantified variable, when traversing for instantiation, we need only look at types where this flag is set. In our implementation, instead of a flag we use a special level, call it $\top$, such that for all levels $l\in\mathbb{N}$, $l<\top$. As we generalise a type, every variable we touch has its level set to $\top$, the rules for propogating levels to compound types takes care of the rest.
 
 \subsubsection{Level Adjustments}
 
-Unification can reduce the level of a type, which means we must work to keep levels consistent after unifications. For compound types, this would involve updating all mentioned variables with the lower level (if doing so lowers the variable's level), and propagating the change back up. Instead of doing this as we unify, we may instead perform this book-keeping lazily: If we unify a compound type we annotate it with the new level that should be propagated to its leaves, and push it onto a queue of types waiting to be adjusted. Just before we perform a generalisation, we force these waiting adjustments (as they could affect the generalisation). Type variables, having no children can still have their levels updated eagerly.
+Unification can reduce the level of a type, which means we must work to keep levels consistent after unifications. For compound types, this would involve updating all mentioned variables with the lower level (if doing so lowers the variable's level), and propagating the change back up. Instead of doing this as we unify, we may instead perform this book-keeping lazily: If we unify a compound type we annotate it with the new level that should be propagated to its leaves, and push it onto a queue of types waiting to be adjusted. Just before we perform a generalisation, we force these waiting adjustments (as they could affect the generalisation outcome). Type variables, having no children, can still have their levels updated eagerly.
 
-When we force waiting adjustments, we are doing so because a type whose level was once greater than the current level could receive a lower level and escape being quantified. So, going a step further, we could force adjustments only when the type's current level is greater than the current level, and replace those at lower levels to be forced at a later stage.
+When we force waiting adjustments, we are doing so because a type whose level was once greater than the level we are generalising at could receive a lower level and escape being quantified. So, going a step further, we could force adjustments only when the type's current level is greater than the definition expression's level, and replace those at lower levels to be forced at a later stage.
+
+\subsubsection{Type Syntax}
+
+Our final consideration is not one of performance, but of formatting. Types as returned by our typechecker will use identifiers prefixed by an apostrophe to denote type variables, all of which are implicitly universally quantified. Additionally, when there is only one parameter to a function, the parenthesese are omitted for brevity, so $\forall\alpha\ldotp(\alpha)\to\alpha$ becomes ${\texttt{'a -> 'a}}$.
 
 \subsection{Examples}
 
-\subsubsection{Monomorphic Inference}
-(+10);
+We now look at the action of our desugarer and typechecker on some small \textit{Geomlab} programs.
 
-\subsubsection{Polymorphism}
-define id(x) = x
+\subsubsection{\cmark~Basic Type Inference}
 
-\subsubsection{Higher-Order Functions}
-define . = function(f, g) function (x) f(g(x))
+\HMExample{\texttt{(+10);}}{\input{aux/section_ast.tex}}{\texttt{num -> num}}
 
-\subsubsection{Recursion}
+\subsubsection{\xmark~Basic Type Error}
 
-define foldr(f, e, [])   = e
-     | foldr(f, e, x:xs) = f(x, foldr(f, e, xs));
+\HMExample{\texttt{"foo"+"bar";}}{\input{aux/string_add.tex}}{\input{aux/string_add_err.tex}}
 
-\subsubsection{Let Polymorphism}
+\subsubsection{\xmark~Branch Unification}
 
-define f(i) = i(i)(1); f(function (x) x);
+\HMExample{\texttt{if true then 1 else "foo";}}{\input{aux/branch_unify.tex}}{\input{aux/branch_unify_err.tex}}
 
-vs
+\subsubsection{\xmark~Arity Mismatch}
 
-let id(x) = x in id(id)(1);
+\HMExample{\texttt{let k(x, y) = x in k(1);}}{\input{aux/arity_mismatch.tex}}{\input{aux/arity_mismatch_err.tex}}
+
+\subsubsection{\cmark~Polymorphism}
+
+\HMExample{\texttt{define id(x) = x;}}{\input{aux/id.tex}}{\texttt{id :: 'b -> 'b}}
+
+\subsubsection{\cmark~Higher-Order Functions}
+
+\HMExample{\texttt{define . (f, g) = function (x) f(g(x));}}{\input{aux/compose.tex}}{\texttt{. :: ('e -> 'f, 'd -> 'e) -> 'd -> 'f}}
+
+\subsubsection{\cmark~Recursion}
+
+\HMExample{\input{aux/folds.tex}}{\input{aux/folds_ast.tex}}{%
+\texttt{foldr :: (('f, 'k) -> 'k, 'k, ['f]) -> 'k}\newline
+\texttt{filter :: ('l -> bool, ['l]) -> ['l]}%
+}
+
+\subsubsection{\xmark~Lambda-Bound Polymorphism}
+
+\HMExample{%
+  \texttt{define f(j) = p(j(true), j(1));}\newline
+  \texttt{f(function (x) x);}%
+}{\input{aux/lambda_poly.tex}}{\input{aux/lambda_poly_err.tex}}
+
+\subsubsection{\cmark~Let-Bound Polymorphism}
+
+\HMExample{\texttt{let j(x) = x in p(j(true), j(1));}}{\input{aux/let_poly.tex}}{\texttt{((bool, num) -> 'e) -> 'e}}
+
+\subsubsection{\xmark~Infinite Types}
+
+\HMExample{%
+\texttt{define f(x) = f;}\newline
+\texttt{define g(y) = g(g);}\newline
+\texttt{define h(x) = p(h, h);}%
+}{\input{aux/infinite.tex}}{\input{aux/infinite_err.tex}}
 
 \subsection{Limitations}
 
