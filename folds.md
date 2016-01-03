@@ -1,9 +1,4 @@
 ```
-define foldr(f, e, [])   = e
-     | foldr(f, e, x:xs) = f(x, foldr(f, e, xs));
-
-define filter(p, xs) =
-  let check(x, xs) = x : xs when p(x)
-    | check(_, xs) = xs
-  in foldr(check, [], xs);
+define length([])   = 0
+     | length(x:xs) = 1 + length(xs);
 ```

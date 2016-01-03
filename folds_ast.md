@@ -1,20 +1,14 @@
 ```{.haskell}
-Def "foldr"
-    (FnE 3 (CaseE (VarE 1)
-                [ ( ValPB NilB, VarE 2)
-                , ( ValPB (ConsB () ())
-                  , AppE ( VarE 5)
-                         [ VarE 2
-                         , AppE (FreeE "foldr")
-                                [VarE 5, VarE 4, VarE 1]
-                         ]
-                  )
-                , ( VarPB "_", FailE)]))
-
-Def "filter"
-    (FnE 2 (LetE (FnE 2 (IfE (AppE (VarE 5) [VarE 2])
-                             (AppE (FreeE ":") [VarE 2, VarE 1])
-                             (VarE 1)))
-           (AppE (FreeE "foldr")
-                 [VarE 1, LitE NilB, VarE 2])))
+Def "length"
+    (FnE 1 (CaseE ( VarE 1)
+                  [ ( ValPB NilB
+                    , LitE (NumB 0.0)
+                    )
+                  , ( ValPB (ConsB () ())
+                    , AppE ( FreeE "+")
+                           [ LitE (NumB 1.0)
+                           , AppE (FreeE "length") [VarE 1]
+                           ]
+                    )
+                  , ( VarPB "_", FailE)]))
 ```
