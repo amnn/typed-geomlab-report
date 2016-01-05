@@ -417,11 +417,67 @@ The fact that the latter program is typeable and the former is not is of particu
 \texttt{define h(x) = p(h, h);}%
 }{\input{aux/infinite.tex}}{\input{aux/infinite_err.tex}}
 
-All these programs yield infinite types, which in our implementation are represented by cyclic data structures. Despite this fact, the type checker terminates, detecting the cycle. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is represented by the special variable \texttt{'*}.
+All these programs yield infinite types, which in our implementation are represented by cyclic data structures.
+The implementation detects these cycles, and terminates, printing the types. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is printed as the special variable \texttt{'*}.
 
 \subsection{Limitations}
 
-Lorem Ipsum.
+HM does well at specifying types and type errors in the above examples, now we turn our attention to some of its shortcomings. These come in the form of \textit{Geomlab} programs whose specifications and/or errors do not fall in line with common conventions. Our goal will then be to modify the type system so it conforms to these patterns.
+
+\subsubsection{Product Types}
+
+Often it is useful to "couple" data together. For instance, to fully describe a rectangle requires two numbers. A common technique for achieving this in \textit{Geomlab} is through the use of \textit{lists}:
+
+```
+define area([width, height]) = width * height;
+```
+
+But our existing typechecker infers the type ${\texttt{area :: [num] -> num}}$. The information that rectangles are \textit{pairs} of numbers has been lost. According to this type, \texttt{area} will accept a list of any size, but we know that it is only defined for lists of two elements.
+
+And what if the values differ in type? Consider this (contrived) example of a counter that can be incremented and whose value can be saved. Its state would be comprised of the current count, and the list of saved counts:
+
+```
+define push([c, cs]) = [c, c:cs];
+define inc([c, cs])  = [c + 1, cs];
+```
+
+This is not typeable in HM! It will produce a unification error between \texttt{num} and \texttt{[num]}.
+
+Both of these issues stem from our treatment of nil and cons. Implicit in the definition of the algorithm is the assumption that they are used only to construct homogeneous, singly-linked lists (A list where every value has the same type). This precludes our idea of using lists to represent arbitrary product types.
+
+\subsubsection{Union Types}
+
+Returning to our shapes example, we may want to define \texttt{area}, not just for rectangles, but for other shapes too. Here we define it for squares represented by the length of their side (\texttt{s}).
+
+```
+define area([w, h]) = w * h
+     | area(s)      = s * s;
+```
+
+In HM, we unify all parameter patterns together. This means to infer a type for \texttt{area}, we must unify \texttt{num} and cons patterns, which is not possible. If we had the ability to describe unions between types in an ad-hoc manner, we would be able to lift this restriction.
+
+\subsubsection{Atoms as Tags}
+
+When we introduced squares, we were lucky that they had a different structure to our representation of rectangles (one number instead of a pair of numbers), but suppose we wish to introduce circles, represented by their radius; How would we distinguish between circles and squares? We can tag each kind of shape with a unique identifier, and check for these when matching patterns. \textit{Geomlab}'s atoms are ideal: Their string representation is easy to understand for programmers, and they are designed for fast equality checks.
+
+```
+define area([#rect, w, h]) = w * h
+     | area([#square, s])  = s * s
+     | area([#circle, r])  = PI * r * r;
+```
+
+This is already untypeable in HM because it requires ad-hoc product \textit{and} union types. But we also have another issue: \texttt{[\#square, s]} and \texttt{[\#circle, r]} both have a (hypothetical) "type" of ${\texttt{[atom, num]}}$. This means that whilst squares and circles are distinguishable at the value level, by their tags, they are not at the type level, so the function defined above would have the same type as this one:
+
+```
+define area([#rect, w, h]) = w * h
+     | area([#square, s])  = s * s;
+```
+
+This is clearly not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type \texttt{[\#square, num]}, and circles \texttt{[\#circle, num]}. This is something that we can already do in HM, but without product and union types, it has limited utility.
+
+\subsubsection{Recursive Types}
+
+Binary Tree data type
 
 \section{Regular Tree Grammars}
 
