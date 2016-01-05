@@ -443,7 +443,7 @@ define inc([c, cs])  = [c + 1, cs];
 
 This is not typeable in HM! It will produce a unification error between \texttt{num} and \texttt{[num]}.
 
-Both of these issues stem from our treatment of nil and cons. Implicit in the definition of the algorithm is the assumption that they are used only to construct homogeneous, singly-linked lists (A list where every value has the same type). This precludes our idea of using lists to represent arbitrary product types.
+Both of these issues stem from our special treatment of nil and cons. Implicit in the definition of the algorithm is the assumption that they are used only to construct homogeneous, singly-linked lists (A list where every value has the same type). This precludes our idea of using lists to represent arbitrary product types.
 
 \subsubsection{Union Types}
 
@@ -454,7 +454,14 @@ define area([w, h]) = w * h
      | area(s)      = s * s;
 ```
 
-In HM, we unify all parameter patterns together. This means to infer a type for \texttt{area}, we must unify \texttt{num} and cons patterns, which is not possible. If we had the ability to describe unions between types in an ad-hoc manner, we would be able to lift this restriction.
+\begin{wrapfigure}{r}{0.3\textwidth}
+  \caption{A union type for shapes.}\label{fig:shape-union}
+  \begin{center}
+    \texttt{[num, num] + num}
+  \end{center}
+\end{wrapfigure}
+
+In HM, we unify all parameter patterns together. This means to infer a type for \texttt{area}, we must unify \texttt{num} and cons patterns, which is not possible. If we had the ability to describe unions between types in an ad-hoc manner, we would be able to lift this restriction (Figure\ \ref{fig:shape-union}).
 
 \subsubsection{Atoms as Tags}
 
@@ -473,11 +480,41 @@ define area([#rect, w, h]) = w * h
      | area([#square, s])  = s * s;
 ```
 
-This is clearly not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type \texttt{[\#square, num]}, and circles \texttt{[\#circle, num]}. This is something that we can already do in HM, but without product and union types, it has limited utility.
+\begin{wrapfigure}[9]{l}{0.32\textwidth}
+  \caption{Tagged union type for shapes.}\label{fig:shape-tagged}
+  \begin{Verbatim}
+  [#rect, num, num]
++ [#square, num]
++ [#circle, num]
+  \end{Verbatim}
+\end{wrapfigure}
+
+This is clearly not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type \texttt{[\#square, num]}, and circles \texttt{[\#circle, num]} (Figure\ \ref{fig:shape-tagged}). This is something that we can already do in HM, but without product and union types, it has limited utility.
 
 \subsubsection{Recursive Types}
 
-Binary Tree data type
+The list is a recursive type that we have built support for into the typechecker, however, if we build our own recursive types, we will encounter resistance from the typechecker. Suppose for instance, we wish to represent binary trees. Building on the techniques introduced so far (products, unions and tags), we may try the following encoding:
+
+```
+#leaf              { Leaves }
+
+[#branch, l, x, r] { Branch with datum `x`
+                   , left sub-tree `l`
+                   , and right sub-tree `r`
+                   }
+```
+
+But \texttt{l} and \texttt{r} have the same type as the branch they are contained in, yielding an infinite (cyclic) type, which our typechecker balks at. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
+
+\begin{figure}[htbp]
+  \caption{Using ad-hoc recursive types (introduced by the \texttt{fix} type operator) to define the type for binary trees holding data of type \texttt{'a}.}\label{fig:rec-type}
+  \begin{Verbatim}
+fix 't
+  ( [#branch, 't, 'a, 't]
+  + #leaf
+  )
+  \end{Verbatim}
+\end{figure}
 
 \section{Regular Tree Grammars}
 
