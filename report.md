@@ -244,44 +244,52 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
     \end{math}
     \\[.5em] $\mathbb{S}\equiv\mathbb{U}_2\mathbb{U}_1\mathbb{S}_3\mathbb{S}_2\mathbb{S}_1$ and $\tau\equiv\mathbb{U}_2\mathbb{U}_1\mathbb{S}_3\mathbb{S}_2(\tau_2)$.
 
-  \item $t\equiv \texttt{case $c$ of } pat_1\to e_1;\cdots pat_k\to e_k;$\hfill{\scriptsize(case expressions)}
+  \item $t\equiv \texttt{case $c$ of } pat_1\to e_1;\cdots ;pat_k\to e_k$\hfill{\scriptsize(case expressions)}
     \\[.5em] \begin{math}
     \arraycolsep=1.5pt
     \begin{array}{llll}
       \text{let} & (\mathbb{S}_0,\tau_0) & \gets & \mathcal{W}(\Gamma\vdash c)
-      \\ & (\mathbb{S}_i, \tau_i) & \gets & \mathcal{P}(pat_i, e_i)\text{ where }
+      \\ & (\mathbb{S}_i, \tau_i) & \gets & \mathcal{P}(pat_i, e_i)
+      \\ & \phantom{(}\rho_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\tau_0)
+      \\ & \phantom{(}\Delta_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\Gamma)
     \end{array}
     \end{math}
+
+    $\mathbb{S}\equiv\mathbb{S}_k\ldots\mathbb{S}_1$ and $\tau\equiv\tau_k$.\\
+    Where $\mathcal{P}(pat_i, e_i)$ is defined as:
     \begin{enumerate}[(a)]
     \item $pat_i$ a numeric, string or atom literal pattern\hfill{\scriptsize(literal pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \mathbb{U} & \gets & \mathcal{U}(\tau_0,\mathbf{num})\text{ ($\mathbf{str}$, $\mathbf{atom}$ respectively)}
-          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Gamma)\vdash e_i)
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,\mathbf{num})\text{ ($\mathbf{str}$, $\mathbf{atom}$ respectively)}
+          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i)\vdash e_i)
+          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}), \tau^\prime)
         \end{array}
       \end{math}
-      \\[.2em] $\mathbb{S}_i\equiv\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\tau^\prime$
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
 
     \item $pat_i\equiv[]$\hfill{\scriptsize(nil pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \mathbb{U} & \gets & \mathcal{U}(\tau_0,[\alpha])\text{ ($\alpha$ fresh) }
-          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Gamma)\vdash e_i)
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,[\alpha])\text{ ($\alpha$ fresh) }
+          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i)\vdash e_i)
+          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}), \tau^\prime)
         \end{array}
       \end{math}
-      \\[.2em] $\mathbb{S}_i\equiv\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\tau^\prime$
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
 
     \item $pat_i\equiv(h:t)$\hfill{\scriptsize(cons pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \mathbb{U} & \gets & \mathcal{U}(\tau_0,[\alpha])\text{ ($\alpha$ fresh)}
-          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Gamma,h:\alpha,t:[\alpha])\vdash e_i)
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,[\alpha])\text{ ($\alpha$ fresh)}
+          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i,h:\alpha,t:[\alpha])\vdash e_i)
+          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}), \tau^\prime)
         \end{array}
       \end{math}
-      \\[.2em] $\mathbb{S}_i\equiv\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\tau^\prime$
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
     \end{enumerate}
 \end{enumerate}
 
