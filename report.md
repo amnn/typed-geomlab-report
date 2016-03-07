@@ -355,7 +355,7 @@ Without further context finding the source of the error is quite difficult. To h
 
 \HMExample{\texttt{let k(x, y) = x in k(1);}}{\input{aux/arity_mismatch.tex}}{\input{aux/arity_mismatch_err.tex}}
 
-Unlike \textit{Haskell}, Multi-arity functions in \textit{Geomlab} are not curried by default, and as a result, they cannot be partially applied. The type system captures this constraint naturally as a unification error. Later (Section\ \ref{sec:errors}), we will see ways to improve the quality of this error message to make the cause (and fix) more obvious.
+Unlike \textit{Haskell}, Multi-arity functions in \textit{Geomlab} are not curried by default, and as a result, they cannot be partially applied. The type system captures this constraint as a unification error.
 
 \subsubsection{\xmark~Branch Unification}
 
@@ -521,14 +521,39 @@ But \texttt{l} and \texttt{r} have the same type as the branch they are containe
   \end{Verbatim}
 \end{figure}
 
-\section{Regular Tree Grammars}
-
+\section{Ad-hoc Algebraic Data-types}
 Lorem Ipsum.
 
-\section{Type Errors}\label{sec:errors}
+\subsection{R\'emy Encoding}
+Lorem Ipsum.
 
+\subsection{Case Types}
+Lorem Ipsum.
+
+\subsection{Rationalisation}
+Lorem Ipsum.
+
+\section{Tagged Variants}
+Lorem Ipsum.
+
+\section{Recursive Types}
+Lorem Ipsum.
+
+\subsection{Type Annotations}
+Lorem Ipsum.
+
+\subsection{Circular Unification}
+Lorem Ipsum.
+
+\section{Related and Future Work}
 Lorem Ipsum.
 
 \section{References}
 
 \bibliography{references}
+
+\appendix
+
+\section{Listings}
+
+\section{Tests}
