@@ -469,19 +469,19 @@ define area([w, h]) = w * h
 
 In HM, we unify all parameter patterns together. This means to infer a type for \texttt{area}, we must unify \texttt{num} and cons patterns, which is not possible.
 
-In this section, we will investigate extensions to HM that allow us to specify product and union types in an ad-hoc, thus lifting this restriction (Figure\ \ref{fig:shape-union}).
+In this section, we will investigate extensions to HM that allow us to specify product and union types in an ad-hoc manner, thus lifting this restriction (Figure\ \ref{fig:shape-union}).
 
 \subsection{R\'emy Encoding}
 
-Introducing the type encoding used by Didier R\'emy, where each type is a finite union over the constructors in the language.
+Introducing the type encoding used by Didier \text{R\'emy}, where each type is a finite union over the constructors in the language.
 
 \subsection{Case Types}
 
-Generalising flags in the R\'emy encoding to trees where internal nodes represent a choice of what the outer-most constructor is in another type, and leaf nodes represent possible values the flag could take.
+Generalising flags in the \text{R\'emy} encoding to trees where internal nodes represent a choice of what the outer-most constructor is in another type, and leaf nodes represent possible values the flag could take.
 
 \subsection{Rationalisation}
 
-A discussion on decoding the R\'emy encoding back into a legible type, described in terms of rational trees.
+A discussion on decoding the \text{R\'emy} encoding back into a legible type, described in terms of rational trees.
 
 \section{Tagged Variants}
 
