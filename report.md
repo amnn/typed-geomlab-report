@@ -434,7 +434,7 @@ The implementation detects these cycles, and terminates, printing the types. Whe
 
 \section{Ad-hoc Algebraic Data-types}
 
-Often it is useful to "couple" data together. For instance, to fully describe a rectangle requires two numbers. A common technique for achieving this in \textit{Geomlab} is through the use of \textit{lists}:
+Often it is useful to "couple" data together. In many existing statically typed functional programming languages this is achieved by defining a new named data type, but a common technique in \textit{Geomlab} is to use \textit{lists}. For instance, to fully describe a rectangle requires two numbers:
 
 ```
 define area([width, height]) = width * height;
