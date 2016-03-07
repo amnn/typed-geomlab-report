@@ -97,6 +97,10 @@ This notation has several advantages:
   \item When debugging output from the desugarer, free variables and bound variables are easily distinguishable in the AST.
 \end{itemize}
 
+\subsection{Source Mapping}
+
+Explaining the system used to annotate AST nodes with source locations, for errors.
+
 \subsection{Definitions}
 
 Below are some basic definitions used when discussing type systems and their associated theory.
