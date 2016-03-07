@@ -546,6 +546,14 @@ Recursive types can occur even without recursive definitions, this section will 
 
 \section{Related Work}
 
+Aiken and Wimmers work on conditional types (A type $\tau?\sigma$ that is $\tau$ when $\sigma\neq\varnothing$ and is $\varnothing$ itself otherwise).
+
+Mishra and Reddy's work on Declaration-free Typing (using discriminative unions).
+
+Marlow and Wadler's work on a similar type system for Erlang (no higher-order functions).
+
+W Swierstra's Data-types a la carte which builds a similar type system, using Haskell's type class machinery.
+
 \section{Future Work}
 Everything I didn't have time to fully flesh out:
 \begin{itemize}
