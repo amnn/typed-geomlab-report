@@ -440,7 +440,7 @@ Often it is useful to "couple" data together. In many existing statically typed 
 define area([width, height]) = width * height;
 ```
 
-But our existing typechecker infers the type ${\texttt{area :: [num] -> num}}$. The information that rectangles are \textit{pairs} of numbers has been lost. According to this type, \texttt{area} will accept a list of any size, but we know that it is only defined for lists of two elements.
+Our existing typechecker infers the type ${\texttt{area :: [num] -> num}}$. The information that rectangles are \textit{pairs} of numbers has been lost. According to this type, \texttt{area} will accept a list of any size, but we know that it is only defined for lists of two elements.
 
 And what if the values differ in type? Consider this (contrived) example of a counter that can be incremented and whose value can be saved. Its state would be comprised of the current count, and the list of saved counts:
 
