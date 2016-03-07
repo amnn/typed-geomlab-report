@@ -131,7 +131,7 @@ Exactly what constitutes a type and what constitutes a deduction of a type judge
 
 \section{Hindley and Milner's Type System}
 
-We begin our search with the Hindley-Milner (henceforth HM) type system\ \cite{10.2307/1995158}\ \cite{MILNER1978348}. This theory forms the basis of many production quality type systems, including those found in \textit{Haskell} and the \textit{ML} family of languages.
+We begin our search with the Hindley-Milner (henceforth HM) type system\ \cite{10.2307/1995158, MILNER1978348}. This theory forms the basis of many production quality type systems, including those found in \textit{Haskell} and the \textit{ML} family of languages.
 
 HM builds on the types in the simply-typed $\lambda$ calculus by introducing \textit{universally quantified} variables in prenex form (Definition\ \ref{def:hm-types}). This allows us to describe the types of polymorphic functions. For example, the identity function \texttt{define id(x) = x;} has principal type $\forall\alpha\ldotp(\alpha)\to\alpha$.
 
@@ -140,7 +140,7 @@ HM builds on the types in the simply-typed $\lambda$ calculus by introducing \te
   \begin{align*}
     \sigma & \Coloneqq~\forall\alpha\ldotp\sigma~|~\tau
     \tag*{\scriptsize(types)}
-    \\\tau & \Coloneqq~\iota~|~[~\tau~]~|~(~\pi~)\to\tau
+    \\\tau & \Coloneqq~\alpha~|~\iota~|~[~\tau~]~|~(~\pi~)\to\tau~|~(~)\to\tau
     \tag*{\scriptsize(quantifier-free types)}
     \\\iota & \Coloneqq~\mathbf{num}~|~\mathbf{str}~|~\mathbf{atom}~|~\mathbf{bool}
     \tag*{\scriptsize(base types)}
@@ -473,7 +473,7 @@ In HM, we unify all parameter patterns together. This means to infer a type for 
 
 \subsubsection{Atoms as Tags}
 
-When we introduced squares, we were lucky that they had a different structure to our representation of rectangles (one number instead of a pair of numbers), but suppose we wish to introduce circles, represented by their radius; How would we distinguish between circles and squares? We can tag each kind of shape with a unique identifier, and check for these when matching patterns. \textit{Geomlab}'s atoms are ideal: Their string representation is easy to understand for programmers, and they are designed for fast equality checks.
+When we introduced squares, we were lucky that they had a different structure to our representation of rectangles (one number instead of a pair of numbers), but suppose we wish to introduce circles, represented by their radius; How would we distinguish between circles and squares? We can tag each kind of shape with a unique identifier, and check for these when matching patterns. For this we use \textit{Geomlab}'s atoms: Their representation is legible to programmers, and their implementation yields fast equality checks.
 
 ```
 define area([#rect, w, h]) = w * h
@@ -481,7 +481,7 @@ define area([#rect, w, h]) = w * h
      | area([#circle, r])  = PI * r * r;
 ```
 
-This is already untypeable in HM because it requires ad-hoc product \textit{and} union types. But we also have another issue: \texttt{[\#square, s]} and \texttt{[\#circle, r]} both have a (hypothetical) "type" of ${\texttt{[atom, num]}}$. This means that whilst squares and circles are distinguishable at the value level, by their tags, they are not at the type level, so the function defined above would have the same type as this one:
+This is already untypeable in HM because it requires ad-hoc product \textit{and} union types. But even in a type system with products and unions \texttt{[\#square, s]} and \texttt{[\#circle, r]} both have a type of ${\texttt{[atom, num]}}$: Whilst squares and circles are distinguishable by their tags at the value level, they are not at the type level, so the function defined above would have the same type as this one:
 
 ```
 define area([#rect, w, h]) = w * h
@@ -515,20 +515,13 @@ The list is a recursive type that we have built support for into the typechecker
 But \texttt{l} and \texttt{r} have the same type as the branch they are contained in, yielding an infinite (cyclic) type, which our typechecker balks at. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
 
 \begin{figure}[htbp]
-  \caption{Using ad-hoc recursive types (introduced by the \texttt{fix} type operator) to define the type for binary trees holding data of type \texttt{'a}.}\label{fig:rec-type}
+  \caption{Using ad-hoc recursive types to define the type for binary trees holding data of type \texttt{'a}. Fixed points are introduced by the \texttt{(...)*} operator, and we use de-Bruijn indices to represent recursion sites.}\label{fig:rec-type}
   \begin{Verbatim}
-fix 't
-  ( [#branch, 't, 'a, 't]
-  + #leaf
-  )
+([#branch, '0, 'a, '0] + #leaf)*
   \end{Verbatim}
 \end{figure}
 
 \section{Regular Tree Grammars}
-
-Lorem Ipsum.
-
-\section{Variance}
 
 Lorem Ipsum.
 
