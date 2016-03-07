@@ -160,93 +160,48 @@ This type theory is a good starting point for many reasons: It has a reasonably 
 
 \subsection{Algorithm}
 
-A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, wherein it is described operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$, and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typeable).
+A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, wherein it is described as operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$, and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typeable).
 
 As in\ \cite{damas1982principal}, we rely on Robinson's unification algorithm and the ability to produce the closure of a type with respect to a context.
 
 \begin{definition}[Robinson's Unification Algorithm, $\mathcal{U}$]
-  Given two types, $\tau$ and $\sigma$, $\mathcal{U}(\tau, \sigma) = \mathbb{U}$ where $\mathbb{U}(\tau)\equiv\mathbb{U}(\sigma)$ and $\forall\mathbb{S}\ldotp\mathbb{S}(\tau)\equiv\mathbb{S}(\sigma)\implies\exists\mathbb{S}^\prime\ldotp\mathbb{S}\equiv\mathbb{S}^\prime\mathbb{U}$ if and only if such a $\mathbb{U}$ exists.
+  Given two types, $\tau$ and $\sigma$, $\mathcal{U}(\tau, \sigma) = \mathbb{U}$ where $\mathbb{U}(\tau)\equiv\mathbb{U}(\sigma)$ and $\forall\mathbb{S}\ldotp\mathbb{S}(\tau)\equiv\mathbb{S}(\sigma)\implies\exists~\mathbb{S}^\prime\ldotp\mathbb{S}\equiv\mathbb{S}^\prime\mathbb{U}$ if and only if such a most general unifier $\mathbb{U}$ exists.
 \end{definition}
 
 \begin{definition}[Closure]
   $\overline{\Gamma}(\tau) = \forall\alpha_1,\ldots,\alpha_n\ldotp\tau$ where $\alpha_1,\ldots,\alpha_n$ are all the variables that appear free in $\tau$ but do not appear in the domain of $\Gamma$.
 \end{definition}
 
-We extend the algorithm further, to deal with literals, recursion, sequencing, conditionals, and case expressions to create an inference algorithm for our desugared subset of \textit{Geomlab} (For convenience, we adopt a textual syntax for ASTs of type $\mathbf{Expr}$):
+We extend the algorithm, to deal with literals, recursion, sequencing, conditionals, and case expressions for our needs. For the most part these extensions are the common ones used by most practical implementations of HM, so we touch on only a few below.
 
 $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
 \begin{enumerate}[(i)]
-  \item
-    \begin{enumerate}[(a)]
-      \item $t$ a number, string or atom literal\hfill{\scriptsize(literal)}
-        \\[.5em] $\mathbb{S}\equiv\varnothing$ and $\tau\equiv\mathbf{num}$, $\mathbf{str}$, $\mathbf{atom}$ respectively.
-
-      \item $t\equiv[]$: $\mathbb{S}\equiv\varnothing$ and $\tau\equiv[\alpha]$ ($\alpha$ fresh).\hfill{\scriptsize(nil)}
-
-      \item $t\equiv (h:t)$\hfill{\scriptsize(cons)}
-        \\[.5em] \begin{math}
-          \arraycolsep=1.5pt
-          \begin{array}{llll}
-            \text{let} & (\mathbb{S}_1,\tau^\prime_1) & \gets & \mathcal{W}(\Gamma\vdash h)
-            \\ & (\mathbb{S}_2,\tau^\prime_2) & \gets & \mathcal{W}(\mathbb{S}_1(\Gamma)\vdash t)
-            \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\tau^\prime_2,[\mathbb{S}_2(\tau^\prime_1)])
-          \end{array}
-        \end{math}
-      \\[.5em] $\mathbb{S}\equiv\mathbb{US}_2\mathbb{S}_1$ and $\tau\equiv\mathbb{U}(\tau^\prime_2)$
-    \end{enumerate}
-
-  \item $t\equiv x\land x:\forall\alpha_1\ldots\alpha_n\ldotp\tau^\prime\in\Gamma$\hfill{\scriptsize(variables)}
-    \\[.5em] $\mathbb{S}\equiv\varnothing$ and $\tau\equiv\tau^\prime[\beta_i/\alpha_i]$ ($\beta_i$ fresh).
-
   \item $t\equiv f(e_1,\ldots,e_k)$\hfill{\scriptsize(function applications)}
     \\[.5em] \begin{math}
       \arraycolsep=1.5pt
       \begin{array}{llll}
         \text{let} & (\mathbb{S}_0,\tau^\prime_0) & \gets & \mathcal{W}(\Gamma\vdash f)
         \\ & (\mathbb{S}_i,\tau^\prime_i) & \gets & \mathcal{W}(\mathbb{S}_{i-1}\ldots\mathbb{S}_{0}(\Gamma)\vdash e_i)
-        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_k\ldots\mathbb{S}_1(\tau^\prime_0), (\tau^\prime_1,\ldots,\tau^\prime_k)\to\beta) \text{ ($\beta$ fresh)}
+        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_k\ldots\mathbb{S}_1(\tau^\prime_0),~(\tau^\prime_1,\ldots,\tau^\prime_k)\to\beta) \text{ ($\beta$ fresh)}
       \end{array}
     \end{math}
     \\[.5em] $\mathbb{S}\equiv\mathbb{U}\mathbb{S}_k\ldots\mathbb{S}_0$ and $\tau\equiv\mathbb{U}(\beta)$.
-
-  \item $t\equiv \texttt{function ($x_1,\ldots,x_k$) $e$}$\hfill{\scriptsize(abstractions)}
-    \\[.5em] let $(\mathbb{S}^\prime,\tau^\prime)\gets\mathcal{W}(\Gamma,x_1:\beta_1,\ldots,x_k:\beta_k\vdash e)$ ($\beta_i$ fresh)
-    \\[.5em] $\mathbb{S}\equiv\mathbb{S}^\prime$ and $\tau\equiv(\mathbb{S}^\prime(x_1),\ldots,\mathbb{S}^\prime(x_k))\to\tau^\prime$
+    \\[1em] Unlike languages such as \textit{Haskell} where the true arity of a function is hidden (and often very difficult to ascertain for compiler and programmer alike), \textit{GeomLab} separates functions of different arities by syntax. As such, it is now a type error to partially apply a function.
+    \\[1em] Complementarily, the inference rule for function abstraction produces function types of a statically fixed arity.
 
   \item $t\equiv \texttt{let $x$ = $e_1$ in $e_2$}$\hfill{\scriptsize(\textit{recursive} let expressions)}
     \\[.5em] \begin{math}
     \arraycolsep=1.5pt
     \begin{array}{llll}
       \text{let} & (\mathbb{S}_1,\tau_1) & \gets & \mathcal{W}(\Gamma,x:\beta\vdash e_1) \text{ ($\beta$ fresh)}
-      \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_1(\beta), \tau_1)
+      \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_1(\beta),~\tau_1)
       \\ & \phantom{(}\Gamma^\prime,~\tau^\prime_1 & \gets & \mathbb{US}_1(\Gamma),~\mathbb{U}(\tau_1)
       \\ & (\mathbb{S}_2, \tau_2) & \gets & \mathcal{W}(\Gamma^\prime,x:\overline{\Gamma^\prime}(\tau^\prime_1)\vdash e_2)
     \end{array}
     \end{math}
     \\[.5em] $\mathbb{S}\equiv\mathbb{S}_2\mathbb{US}_1$ and $\tau\equiv\tau_2$
-
-  \item $t\equiv e_1~\texttt{>>}~e_2$\hfill{\scriptsize(sequencing)}
-    \\[.5em] \begin{math}
-    \arraycolsep=1.5pt
-    \begin{array}{llll}
-      \text{let} & (\mathbb{S}_1,\tau_1) & \gets & \mathcal{W}(\Gamma\vdash e_1)
-      \\ & (\mathbb{S}_2, \tau_2) & \gets & \mathcal{W}(\mathbb{S}_1(\Gamma)\vdash e_2)
-    \end{array}
-    \end{math}
-    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_2\mathbb{S}_1$ and $\tau\equiv\tau_2$.
-
-  \item $t\equiv \texttt{if $e_1$ then $e_2$ else $e_3$}$\hfill{\scriptsize(conditionals)}
-    \\[.5em] \begin{math}
-    \arraycolsep=1.5pt
-    \begin{array}{llll}
-      \text{let} & (\mathbb{S}_1,\tau_1) & \gets & \mathcal{W}(\Gamma\vdash e_1)
-      \\ & (\mathbb{S}_2, \tau_2) & \gets & \mathcal{W}(\mathbb{S}_1(\Gamma)\vdash e_2)
-      \\ & (\mathbb{S}_3, \tau_3) & \gets & \mathcal{W}(\mathbb{S}_2\mathbb{S}_1(\Gamma)\vdash e_3)
-      \\ & \phantom{(} \mathbb{U}_1 & \gets & \mathcal{U}(\mathbb{S}_3\mathbb{S}_2(\tau_1),\mathbf{bool})
-      \\ & \phantom{(} \mathbb{U}_2 & \gets & \mathcal{U}(\mathbb{U}_1\mathbb{S}_3\mathbb{S}_2(\tau_2), \mathbb{U}_1\mathbb{S}_3\mathbb{S}_2(\tau_3))
-    \end{array}
-    \end{math}
-    \\[.5em] $\mathbb{S}\equiv\mathbb{U}_2\mathbb{U}_1\mathbb{S}_3\mathbb{S}_2\mathbb{S}_1$ and $\tau\equiv\mathbb{U}_2\mathbb{U}_1\mathbb{S}_3\mathbb{S}_2(\tau_2)$.
+    \\[1em] Bindings in \textit{let} expressions may be recursive, that is to say $e_1$ may refer to $x$. Accordingly, when inferring a type for $e_1$, we add $x : \beta$ to the type context, for a fresh type variable $\beta$. Following this, we ``tie the knot'' by unifying $\beta$ with $e_1$'s type.
+    \\[1em] Also note that by type checking $e_2$ with $x : \overline{\Gamma^\prime}(\tau^\prime_1)$ in the context, variables in the type we inferred for $x$ have been universally quantified, and each instantiation of $x$ in $e_2$ may substitute them with different variables.
 
   \item $t\equiv \texttt{case $c$ of } pat_1\to e_1;\cdots ;pat_k\to e_k$\hfill{\scriptsize(case expressions)}
     \\[.5em] \begin{math}
@@ -259,14 +214,16 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
     \end{array}
     \end{math}
 
-    $\mathbb{S}\equiv\mathbb{S}_k\ldots\mathbb{S}_1$ and $\tau\equiv\tau_k$.\\
-    Where $\mathcal{P}(pat_i, e_i)$ is defined as:
+    $\mathbb{S}\equiv\mathbb{S}_k\ldots\mathbb{S}_1$ and $\tau\equiv\tau_k$.
+    \\[1em] As our desugaring procedure removes nested patterns in favour of nested case expressions, our rule here only needs to deal with patterns that are one constructor deep. For each such pattern, we create the smallest type that contains any expression that could match it ($\mathcal{P}$ defined below), and we unify all of these with the type of the case argument. To get the type of the expression, we unify the types of all the $e_i$'s.
+    \\[1em] Although this is a common type semantics for case expressions, it poses some problems. For instance, a pattern that expects only \texttt{[]} will also purport to accept cons cells, when doing so would cause an exception at run-time (The very thing a type system aims to avoid).
+    \\[1em] $\mathcal{P}(pat_i, e_i)$ is defined as:
     \begin{enumerate}[(a)]
     \item $pat_i$ a numeric, string or atom literal pattern\hfill{\scriptsize(literal pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,\mathbf{num})\text{ ($\mathbf{str}$, $\mathbf{atom}$ respectively)}
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~\mathbf{num})\text{ ($\mathbf{str}$, $\mathbf{atom}$ respectively)}
           \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i)\vdash e_i)
           \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}), \tau^\prime)
         \end{array}
@@ -277,9 +234,9 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,[\alpha])\text{ ($\alpha$ fresh) }
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~[\alpha])\text{ ($\alpha$ fresh) }
           \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i)\vdash e_i)
-          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}), \tau^\prime)
+          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}),~\tau^\prime)
         \end{array}
       \end{math}
       \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
@@ -288,9 +245,9 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,[\alpha])\text{ ($\alpha$ fresh)}
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~[\alpha])\text{ ($\alpha$ fresh)}
           \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i,h:\alpha,t:[\alpha])\vdash e_i)
-          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}), \tau^\prime)
+          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}),~\tau^\prime)
         \end{array}
       \end{math}
       \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
