@@ -428,11 +428,7 @@ The fact that the latter program is typeable and the former is not is of particu
 All these programs yield infinite types, which in our implementation are represented by cyclic data structures.
 The implementation detects these cycles, and terminates, printing the types. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is printed as the special variable \texttt{'*}.
 
-\subsection{Limitations}
-
-HM does well at specifying types and type errors in the above examples, now we turn our attention to some of its shortcomings. These come in the form of \textit{Geomlab} programs whose specifications and/or errors do not fall in line with common conventions. Our goal will then be to modify the type system so it conforms to these patterns.
-
-\subsubsection{Product Types}
+\section{Ad-hoc Algebraic Data-types}
 
 Often it is useful to "couple" data together. For instance, to fully describe a rectangle requires two numbers. A common technique for achieving this in \textit{Geomlab} is through the use of \textit{lists}:
 
@@ -453,8 +449,6 @@ This is not typeable in HM! It will produce a unification error between \texttt{
 
 Both of these issues stem from our special treatment of nil and cons. Implicit in the definition of the algorithm is the assumption that they are used only to construct homogeneous, singly-linked lists (A list where every value has the same type). This precludes our idea of using lists to represent arbitrary product types.
 
-\subsubsection{Union Types}
-
 Returning to our shapes example, we may want to define \texttt{area}, not just for rectangles, but for other shapes too. Here we define it for squares represented by the length of their side (\texttt{s}).
 
 ```
@@ -469,11 +463,27 @@ define area([w, h]) = w * h
   \end{center}
 \end{wrapfigure}
 
-In HM, we unify all parameter patterns together. This means to infer a type for \texttt{area}, we must unify \texttt{num} and cons patterns, which is not possible. If we had the ability to describe unions between types in an ad-hoc manner, we would be able to lift this restriction (Figure\ \ref{fig:shape-union}).
+In HM, we unify all parameter patterns together. This means to infer a type for \texttt{area}, we must unify \texttt{num} and cons patterns, which is not possible.
 
-\subsubsection{Atoms as Tags}
+In this section, we will investigate extensions to HM that allow us to specify product and union types in an ad-hoc, thus lifting this restriction (Figure\ \ref{fig:shape-union}).
 
-When we introduced squares, we were lucky that they had a different structure to our representation of rectangles (one number instead of a pair of numbers), but suppose we wish to introduce circles, represented by their radius; How would we distinguish between circles and squares? We can tag each kind of shape with a unique identifier, and check for these when matching patterns. For this we use \textit{Geomlab}'s atoms: Their representation is legible to programmers, and their implementation yields fast equality checks.
+\subsection{R\'emy Encoding}
+
+Introducing the type encoding used by Didier R\'emy, where each type is a finite union over the constructors in the language.
+
+\subsection{Case Types}
+
+Generalising flags in the R\'emy encoding to trees where internal nodes represent a choice of what the outer-most constructor is in another type, and leaf nodes represent possible values the flag could take.
+
+\subsection{Rationalisation}
+
+A discussion on decoding the R\'emy encoding back into a legible type, described in terms of rational trees.
+
+\section{Tagged Variants}
+
+In our \texttt{area} example, when we introduced squares, we were lucky that they had a different structure to our representation of rectangles (one number instead of a pair of numbers), but suppose now we wish to introduce circles, represented by their radius; How would we distinguish between circles and squares?
+
+A common technique is to tag each kind of shape with a unique identifier, and check for these when matching patterns. For this we use \textit{Geomlab}'s atoms as their representation is legible to programmers, and their implementation yields fast equality checks:
 
 ```
 define area([#rect, w, h]) = w * h
@@ -481,7 +491,7 @@ define area([#rect, w, h]) = w * h
      | area([#circle, r])  = PI * r * r;
 ```
 
-This is already untypeable in HM because it requires ad-hoc product \textit{and} union types. But even in a type system with products and unions \texttt{[\#square, s]} and \texttt{[\#circle, r]} both have a type of ${\texttt{[atom, num]}}$: Whilst squares and circles are distinguishable by their tags at the value level, they are not at the type level, so the function defined above would have the same type as this one:
+The issue with this is \texttt{[\#square, s]} and \texttt{[\#circle, r]} both have a type of ${\texttt{[atom, num]}}$: Whilst squares and circles are distinguishable by their tags at the value level, they are not at the type level, so the function defined above would have the same type as this one:
 
 ```
 define area([#rect, w, h]) = w * h
@@ -497,11 +507,15 @@ define area([#rect, w, h]) = w * h
   \end{Verbatim}
 \end{wrapfigure}
 
-This is clearly not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type \texttt{[\#square, num]}, and circles \texttt{[\#circle, num]} (Figure\ \ref{fig:shape-tagged}). This is something that we can already do in HM, but without product and union types, it has limited utility.
+This is clearly not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type \texttt{[\#square, num]}, and circles \texttt{[\#circle, num]} (Figure\ \ref{fig:shape-tagged}).
 
-\subsubsection{Recursive Types}
+\subsection{Wildcard Constructors}
 
-The list is a recursive type that we have built support for into the typechecker, however, if we build our own recursive types, we will encounter resistance from the typechecker. Suppose for instance, we wish to represent binary trees. Building on the techniques introduced so far (products, unions and tags), we may try the following encoding:
+A technique to get around the "finite constructor" limitation of the R\'emy encoding whereby if we have an infinite family of constructors (like multi-arity functions or atoms) we have a constructor for each member of the family, as well as a wildcard constructor to capture our knowledge about the rest of the constructors in the family.
+
+\section{Recursive Types}
+
+In HM, the list was a recursive type that we had built in support for. We lost this support when we stopped treating $\texttt{[]}$ and $\texttt{(:)}$ as special, related constructors. Now, if we try to encode the a list of type \texttt{'a}, we get: \texttt{[] + ('a':'l)} where \texttt{'l} refers back to the type we are defining, yielding an infinite (cyclic) type, which our typechecker balks at. Similarly, an attempt to construct a representation of binary trees using our existing machinery may look something like this:
 
 ```
 #leaf              { Leaves }
@@ -512,41 +526,33 @@ The list is a recursive type that we have built support for into the typechecker
                    }
 ```
 
-But \texttt{l} and \texttt{r} have the same type as the branch they are contained in, yielding an infinite (cyclic) type, which our typechecker balks at. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
+But again, \texttt{l} and \texttt{r} have the same type as the branch they are contained in. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
 
 \begin{figure}[htbp]
-  \caption{Using ad-hoc recursive types to define the type for binary trees holding data of type \texttt{'a}. Fixed points are introduced by the \texttt{(...)*} operator, and we use de-Bruijn indices to represent recursion sites.}\label{fig:rec-type}
+  \caption{Using ad-hoc recursive types. Fixed points are introduced by the \texttt{(...)*} operator, and we use de-Bruijn indices to represent recursion sites.}\label{fig:rec-type}
   \begin{Verbatim}
-([#branch, '0, 'a, '0] + #leaf)*
+list 'a ::= ([] + ('a:'0))*
+tree 'a ::= ([#branch, '0, 'a, '0] + #leaf)*
   \end{Verbatim}
 \end{figure}
 
-\section{Ad-hoc Algebraic Data-types}
-Lorem Ipsum.
-
-\subsection{R\'emy Encoding}
-Lorem Ipsum.
-
-\subsection{Case Types}
-Lorem Ipsum.
-
-\subsection{Rationalisation}
-Lorem Ipsum.
-
-\section{Tagged Variants}
-Lorem Ipsum.
-
-\section{Recursive Types}
-Lorem Ipsum.
-
 \subsection{Type Annotations}
-Lorem Ipsum.
+
+We will mandate that recursive definitions must have type annotations to side step the issues of inferring such types. Motivating examples for this decision will include definitions of \texttt{reverse} and \texttt{append}, whose types, whilst sound, are useless.
 
 \subsection{Circular Unification}
-Lorem Ipsum.
 
-\section{Related and Future Work}
-Lorem Ipsum.
+Recursive types can occur even without recursive definitions, this section will show an expression that does this, and the solution, in the form of Huet's circular unification algorithm.
+
+\section{Related Work}
+
+\section{Future Work}
+Everything I didn't have time to fully flesh out:
+\begin{itemize}
+  \item Type inference of recursive types.
+  \item Useful errors.
+  \item Type level booleans.
+\end{itemize}
 
 \section{References}
 
@@ -556,4 +562,8 @@ Lorem Ipsum.
 
 \section{Listings}
 
+Code for the Parser, Lexer, and Type Inference algorithm.
+
 \section{Tests}
+
+Accompanying unit tests.
