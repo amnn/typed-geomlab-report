@@ -1,8 +1,8 @@
 ---
-title: Type Checking Geomlab
+title: Structural Type Inference in Dynamic Functional Programming Languages
 author: Ashok Menon
 abstract: |
-  Lorem Ipsum.
+  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically typed functional programming languages. Namely, we are interested in inferring the shape of structures composed of atomic values, cons cells and nils.
 ...
 
 ```{.haskell}
