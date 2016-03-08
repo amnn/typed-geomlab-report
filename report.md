@@ -105,10 +105,6 @@ This notation has several advantages:
   \item When debugging output from the desugarer, free variables and bound variables are easily distinguishable in the AST.
 \end{itemize}
 
-\subsection{Source Mapping}
-
-Explaining the system used to annotate AST nodes with source locations, for errors.
-
 \subsection{Definitions}
 
 Below are some basic definitions used when discussing type systems and their associated theory.
@@ -512,6 +508,20 @@ We will mandate that recursive definitions must have type annotations to side st
 \subsection{Circular Unification}
 
 Recursive types can occur even without recursive definitions, this section will show an expression that does this, and the solution, in the form of Huet's circular unification algorithm.
+
+\section{Type Errors}\label{sec:errors}
+
+\subsection{Source Mapping}
+
+Explaining the system used to annotate AST nodes with source locations.
+
+\subsection{Unwinding}
+
+The technique used to annotate exceptions with relevant AST locations as they travel back up through the stack.
+
+\subsection{Formatting}
+
+Converting chains of locations into a formatted error message. Talk about how to treat pairs of nested annotations that share the same location. (The outer one refers to the location as a child in its parent, the inner one refers to the element at that location as a parent).
 
 \section{Related Work}
 
