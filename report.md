@@ -1,8 +1,8 @@
 ---
-title: Structural Type Inference in Dynamic Functional Programming Languages
+title: Structural Type Inference in Functional Programming Languages
 author: Ashok Menon
 abstract: |
-  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically typed functional programming languages. Namely, we are interested in inferring the shape of structures composed of atomic values, cons cells and nils.
+  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically typed functional programming languages. In particular, rather than simply inferring the types of parameters to composite data structures (The type of the elements in a list structure, for example), we aim to infer the shape of the structure itself as composed ofatomic values, cons cells and nils --- In the case of the list, that it is either a \texttt{[]} or a \texttt{(:)} with an element on the left and another list on the right.
 ...
 
 ```{.haskell}
