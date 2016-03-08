@@ -510,7 +510,9 @@ Everything I didn't have time to fully flesh out:
   \item Type inference of recursive types.
   \item Useful errors.
   \item Type level booleans.
+  \item Type Aliasing
   \item Generative types (for encapsulation).
+  \item Impredicative types.
 \end{itemize}
 
 \section{References}
