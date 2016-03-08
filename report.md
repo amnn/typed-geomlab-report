@@ -10,52 +10,23 @@ abstract: |
 
 \section{Introduction}
 
-Whilst united in the face of the imperative programmer, there has always been a divide between the proponents of static and dynamic functional languages. The same types that statically persuaded individuals benefitted from in verifying the correctness of their programs, stifled the dynamically minded, for whom the extra type annotations were just more line noise, detracting from --- not adding to --- the meaning of their programs.
+Whilst united in the face of the imperative programmer, there has always been a divide between the proponents of static and dynamic functional languages. The same types that statically-minded individuals benefitted from in verifying the correctness of their programs, stifled the dynamically-persuaded, for whom the extra type annotations were just more line noise, detracting from --- not adding to --- the meaning of their programs.
 
-With the ever-growing popularity of type inference as a tool in programming language design, many of these differences are resolving themselves: Programmers can benefit from a strongly typed program without having to write the types themselves. However, it is still the case that in the majority of statically typed languages, data types must be declared and named before use, whilst in dynamically type languages, data structures may be constructed on the fly from a relatively small set of constructors, with the caveat that the programmer must ensure the correct contracts and invariants are maintained.
+There is truth to both sides of this argument. Whilst types do provide a useful tool for catching common errors that other methods, such as testing, may miss, they are inherently limited by matters of decidability: The set of typable programs is strictly smaller than the set of correct programs, for any type theory. What is more, having to constantly write types "instead" of code may present a jarring context switch. For some, the combination of these two factors weighs up against types.
 
-Whereas traditional type inference relies on these data definitions, in this project, we extend Hindley and Milner's type system, so that we may infer the shape of a data structure as composed of a few base constructors without having to explicitly declare it and give it a name. We do this in a way that aims to mirror the specifications programmers naturally follow when working with such composite types.
+Whilst the first point of contention will always remain, the growing popularity of type inference helps to resolve the latter: Programmers can benefit from a strongly typed program whilst leaving (most of) the types unwritten. However, it is still the case that in the majority of statically typed languages, data types must be declared and named before use, whilst in dynamically typed languages, data structures may be constructed on the fly from a relatively small set of constructors, with the caveat that the programmer must ensure the correct contracts and invariants are maintained in their use.
+
+Whereas traditional type inference relies on such data definitions, in this project, we extend Hindley and Milner's type system, so that we may infer the shape of a data structure as composed of a few base constructors without having to explicitly declare it and give it a name. We do this in a way that aims to mirror the specifications programmers naturally follow when working with these composite types.
 
 In Section\ \ref{sec:bg} we introduce the source language, \textit{GeomLab}, and the transformations it undergoes before being type checked. Section\ \ref{sec:hm} then describes an optimised implementation of the Hindley-Milner type system for \textit{GeomLab}.
 
-Finally, sections\ \ref{sec:adhoc-adts},\ \ref{sec:tagged-variants}, and\ \ref{sec:recursive} successively expand the type system so that it may specify more idiomatic programs, each section moving the system closer to the goal of being able to infer shape as well as type.
+The following Sections\ (\ref{sec:adhoc-adts},\ \ref{sec:tagged-variants}, and\ \ref{sec:recursive}) successively expand the type system so that it may specify more idiomatic programs, each section moving the system closer to the goal of being able to infer shape as well as type.
+
+We finish with Section\ \ref{sec:errors} which discusses techniques for producing reasonable error outputs, with the aid of source location annotations without perturbing the structure of the overall program too much.
 
 \section{Background}\label{sec:bg}
 
-\subsection{Source Language}
-
-In this project we will be developing a type system for \textit{Geomlab}, a dynamically typed, strict functional programming language used primarily for teaching purposes. In order to maintain focus, we will concentrate on a subset of the language (Figure\ \ref{fig:geomlab-syntax}).
-
-\begin{figure}[htbp]
-  \caption{A subset of the \textit{Geomlab} language. (i) \textit{Comments} are surrounded by curly braces and may be nested. (ii) The formal parameters of functions may be \textit{matched} against patterns. (iii) \textit{Guards}: A case of a function is evaluated only if all parameters match their patterns \textit{and} the guard expression (after the \texttt{when}) evaluates to \texttt{true}. (iv) \textit{Anonymous functions} are preceded by the \texttt{function} keyword. (v) Consecutive sequences of numbers may be generated by \textit{ranges}. (vi) \textit{List comprehensions} can be used to combine mapping, filter, and concatenation operations. (vii) Operators may be partially applied by \textit{sectioning}: \texttt{(+10)} corresponds to \texttt{function (x) x + 10}.}\label{fig:geomlab-syntax}
-  \input{aux/geomlab_syntax.tex}
-\end{figure}
-
-This subset omits unification patterns (where different variables in the pattern must be bound to the same value) and $n+k$ patterns (matching numbers $m\geq k$, and binding $n\triangleq m-k$) as these features could be added as syntactic sugar on top of the existing ones without affecting the type theory.
-
-\subsection{Expressible Values}
-
-\begin{description}
-  \item[numbers] Using a double-precision floating point representation. We sidestep the issue of operator overloading by not distinguishing between integer and floating point numbers.
-
-  \item[strings] Finite sequences of UTF-8 encoded characters, surrounded by double quotes.
-
-  \item[atoms] Short strings, with fast equality checks, distinguished from identiifiers by prefixing a \#.
-
-  \item[cons cells] Pairs of values $a$ and $b$, denoted by $a:b$. These form the building blocks for compound data structures. In statically typed functional programming languages, they tend to only be used to construct singly linked-lists, but in dynamically typed languages (including \textit{Geomlab}) they are used in the construction of all product types. As we will see later, this difference will affect the direction in which we take the development of our type system.
-
-  \item[nil] A distinguished value used to represent ``nothing'', denoted by $[]$, commonly used as the terminator for singly linked lists.
-
-  \item[booleans] True/false values. In \textit{Geomlab} booleans are expressible but not as literals. \texttt{true} and \texttt{false} are defined in terms of the predicate \texttt{numeric}:
-    \\ \texttt{define true = numeric(0);}
-    \\ \texttt{define false = numeric(true);}
-
-  \item[functions] \textit{Geomlab} has first-class multi-arity functions.
-\end{description}
-
-All categories of expressible values, barring the last two (booleans and functions) have analogous patterns that can be used to match against values in those categories.
-
-The original language also supports hash tables and mutable reference cells which we have chosen to omit as their interaction with variance and polymorphism is a thorny issue which requires careful handling. (A story for another time.)
+In this project we use a subset of \textit{GeomLab} as our source language. This subset is a strict, dynamically typed, functional language offering a rich set of features such as higher-order functions, pattern matching with guards, operator sectioning, list comprehensions and ranges. We choose this language as it represents a compelling middle-ground between the $\lambda$ calculus, and most popular functional languages in use today, the implication being that if our techniques are applicable in this setting, with minimal effort we may move in either direction to serve both theory and practise. A full exposition of the syntax is available in Appendix\ \ref{app:lang}.
 
 \subsection{Parsing}
 
@@ -552,7 +523,40 @@ Everything I didn't have time to fully flesh out:
 
 \appendix
 
-\section{Language}
+\section{Language}\label{app:lang}
+
+In this project we will be developing a type system for \textit{Geomlab}, a dynamically typed, strict functional programming language used primarily for teaching purposes. In order to maintain focus, we will concentrate on a subset of the language (Figure\ \ref{fig:geomlab-syntax}).
+
+\begin{figure}[htbp]
+  \caption{A subset of the \textit{Geomlab} language. (i) \textit{Comments} are surrounded by curly braces and may be nested. (ii) The formal parameters of functions may be \textit{matched} against patterns. (iii) \textit{Guards}: A case of a function is evaluated only if all parameters match their patterns \textit{and} the guard expression (after the \texttt{when}) evaluates to \texttt{true}. (iv) \textit{Anonymous functions} are preceded by the \texttt{function} keyword. (v) Consecutive sequences of numbers may be generated by \textit{ranges}. (vi) \textit{List comprehensions} can be used to combine mapping, filter, and concatenation operations. (vii) Operators may be partially applied by \textit{sectioning}: \texttt{(+10)} corresponds to \texttt{function (x) x + 10}.}\label{fig:geomlab-syntax}
+  \input{aux/geomlab_syntax.tex}
+\end{figure}
+
+This subset omits unification patterns (where different variables in the pattern must be bound to the same value) and $n+k$ patterns (matching numbers $m\geq k$, and binding $n\triangleq m-k$) as these features could be added as syntactic sugar on top of the existing ones without affecting the type theory.
+
+\subsection{Expressible Values}
+
+\begin{description}
+  \item[numbers] Using a double-precision floating point representation. We sidestep the issue of operator overloading by not distinguishing between integer and floating point numbers.
+
+  \item[strings] Finite sequences of UTF-8 encoded characters, surrounded by double quotes.
+
+  \item[atoms] Short strings, with fast equality checks, distinguished from identiifiers by prefixing a \#.
+
+  \item[cons cells] Pairs of values $a$ and $b$, denoted by $a:b$. These form the building blocks for compound data structures. In statically typed functional programming languages, they tend to only be used to construct singly linked-lists, but in dynamically typed languages (including \textit{Geomlab}) they are used in the construction of all product types. As we will see later, this difference will affect the direction in which we take the development of our type system.
+
+  \item[nil] A distinguished value used to represent ``nothing'', denoted by $[]$, commonly used as the terminator for singly linked lists.
+
+  \item[booleans] True/false values. In \textit{Geomlab} booleans are expressible but not as literals. \texttt{true} and \texttt{false} are defined in terms of the predicate \texttt{numeric}:
+    \\ \texttt{define true = numeric(0);}
+    \\ \texttt{define false = numeric(true);}
+
+  \item[functions] \textit{Geomlab} has first-class multi-arity functions.
+\end{description}
+
+All categories of expressible values, barring the last two (booleans and functions) have analogous patterns that can be used to match against values in those categories.
+
+The original language also supports hash tables and mutable reference cells which we have chosen to omit as their interaction with variance and polymorphism is a thorny issue which requires careful handling. (A story for another time.)
 
 \section{Listings}
 
