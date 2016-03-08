@@ -10,9 +10,17 @@ abstract: |
 
 \section{Introduction}
 
-Lorem Ipsum.
+Whilst united in the face of the imperative programmer, there has always been a divide between the proponents of static and dynamic functional languages. The same types that statically persuaded individuals benefitted from in verifying the correctness of their programs, stifled the dynamically minded, for whom the extra type annotations were just more line noise, detracting from --- not adding to --- the meaning of their programs.
 
-\section{Background}
+With the ever-growing popularity of type inference as a tool in programming language design, many of these differences are resolving themselves: Programmers can benefit from a strongly typed program without having to write the types themselves. However, it is still the case that in the majority of statically typed languages, data types must be declared and named before use, whilst in dynamically type languages, data structures may be constructed on the fly from a relatively small set of constructors, with the caveat that the programmer must ensure the correct contracts and invariants are maintained.
+
+Whereas traditional type inference relies on these data definitions, in this project, we extend Hindley and Milner's type system, so that we may infer the shape of a data structure as composed of a few base constructors without having to explicitly declare it and give it a name. We do this in a way that aims to mirror the specifications programmers naturally follow when working with such composite types.
+
+In Section\ \ref{sec:bg} we introduce the source language, \textit{GeomLab}, and the transformations it undergoes before being type checked. Section\ \ref{sec:hm} then describes an optimised implementation of the Hindley-Milner type system for \textit{GeomLab}.
+
+Finally, sections\ \ref{sec:adhoc-adts},\ \ref{sec:tagged-variants}, and\ \ref{sec:recursive} successively expand the type system so that it may specify more idiomatic programs, each section moving the system closer to the goal of being able to infer shape as well as type.
+
+\section{Background}\label{sec:bg}
 
 \subsection{Source Language}
 
@@ -133,7 +141,7 @@ By convention, the lowercase roman alphabet denotes terms, $r,s,t,\ldots$ (and v
 
 Exactly what constitutes a type and what constitutes a deduction of a type judgement differs between type theories, but the above definitions always apply.
 
-\section{Hindley and Milner's Type System}
+\section{Hindley and Milner's Type System}\label{sec:hm}
 
 We begin our search with the Hindley-Milner (henceforth HM) type system\ \cite{10.2307/1995158, MILNER1978348}. This theory forms the basis of many production quality type systems, including those found in \textit{Haskell} and the \textit{ML} family of languages.
 
@@ -389,7 +397,7 @@ The fact that the latter program is typeable and the former is not is of particu
 All these programs yield infinite types, which in our implementation are represented by cyclic data structures.
 The implementation detects these cycles, and terminates, printing the types. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is printed as the special variable \texttt{'*}.
 
-\section{Ad-hoc Algebraic Data-types}
+\section{Ad-hoc Algebraic Data-types}\label{sec:adhoc-adts}
 
 Often it is useful to "couple" data together. In many existing statically typed functional programming languages this is achieved by defining a new named data type, but a common technique in \textit{Geomlab} is to use \textit{lists}. For instance, to fully describe a rectangle requires two numbers:
 
@@ -440,7 +448,7 @@ Generalising flags in the \text{R\'emy} encoding to trees where internal nodes r
 
 A discussion on decoding the \text{R\'emy} encoding back into a legible type, described in terms of rational trees.
 
-\section{Tagged Variants}
+\section{Tagged Variants}\label{sec:tagged-variants}
 
 In our \texttt{area} example, when we introduced squares, we were lucky that they had a different structure to our representation of rectangles (one number instead of a pair of numbers), but suppose now we wish to introduce circles, represented by their radius; How would we distinguish between circles and squares?
 
@@ -474,7 +482,7 @@ This is clearly not ideal, as the latter function will throw an error at runtime
 
 A technique to get around the "finite constructor" limitation of the R\'emy encoding whereby if we have an infinite family of constructors (like multi-arity functions or atoms) we have a constructor for each member of the family, as well as a wildcard constructor to capture our knowledge about the rest of the constructors in the family.
 
-\section{Recursive Types}
+\section{Recursive Types}\label{sec:recursive}
 
 In HM, the list was a recursive type that we had built in support for. We lost this support when we stopped treating $\texttt{[]}$ and $\texttt{(:)}$ as special, related constructors. Now, if we try to encode the a list of type \texttt{'a}, we get: \texttt{[] + ('a':'l)} where \texttt{'l} refers back to the type we are defining, yielding an infinite (cyclic) type, which our typechecker balks at. Similarly, an attempt to construct a representation of binary trees using our existing machinery may look something like this:
 
@@ -521,13 +529,20 @@ Everything I didn't have time to fully flesh out:
   \item Type inference of recursive types.
   \item Useful errors.
   \item Type level booleans.
+  \item Generative types (for encapsulation).
 \end{itemize}
 
 \section{References}
 
 \bibliography{references}
 
+\vbox{
+  %TC:ignore
+}
+
 \appendix
+
+\section{Language}
 
 \section{Listings}
 
@@ -536,3 +551,7 @@ Code for the Parser, Lexer, and Type Inference algorithm.
 \section{Tests}
 
 Accompanying unit tests.
+
+\vbox{
+  %TC:endignore
+}
