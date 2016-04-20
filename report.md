@@ -33,6 +33,8 @@ In this project we use a subset of \textit{GeomLab} as our source language. This
 
 We parse programs into abstract syntax trees of the $\mathbf{Sugar}$ type (Figure\ \ref{fig:sugar_adt}) which is ideal for parsing due to its similarity in structure to \textit{Geomlab}'s syntax. But, many of the nodes in $\mathbf{Sugar}$ --- corresponding to syntactic sugar --- are, in a sense, "redundant" from a typechecker's perspective. These nodes are mechanically derivable from the composition of others in $\mathbf{Sugar}$, and so in turn, the definition of the typechecker at these "sugary" nodes is derivable from its definition at other nodes. We avoid repeating this logic by \textit{desugaring} the input.
 
+A potential cost of this operation is that errors may be hard to relate to the source text. In \text{Section~\ref{sec:errors}} we explore ways of maintaining contextual information (such as source location annotations) after desugaring to alleviate this issue.
+
 \subsection{Desugaring}
 
 Desugaring involves replacing sugar with extensionally equivalent expressions from a restricted subset of the source language. We represent the AST after desugaring with a new type (Figure\ \ref{fig:expr_adt}) to ensure at compile-time that after desugaring, no sugar exists in the AST.
