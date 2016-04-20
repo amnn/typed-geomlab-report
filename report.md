@@ -1,8 +1,8 @@
 ---
-title: Structural Type Inference in Functional Programming Languages
+title: Structural Type Inference in a Functional Programming Language
 author: Ashok Menon
 abstract: |
-  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically typed functional programming languages. In particular, rather than simply inferring the types of parameters to composite data structures (The type of the elements in a list structure, for example), we aim to infer the shape of the structure itself as composed of atomic values, cons cells and nils --- In the case of the list, that it is either a \texttt{[]} or a \texttt{(:)} with an element on the left and another list on the right.
+  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically typed functional programming languages. In particular, rather than simply inferring the types of parameters to composite data structures (The type of the elements in a list structure, for example), we aim to infer the shape of the structure itself as composed of atomic values, cons cells and nils --- In the case of a list, that it is either empty, or is an element, followed by a list containing more of the same type of element.
 ...
 
 ```{.haskell}
@@ -10,11 +10,7 @@ abstract: |
 
 \section{Introduction}
 
-Whilst united in the face of the imperative programmer, there has always been a divide between the proponents of static and dynamic functional languages. The same types that statically-minded individuals benefitted from in verifying the correctness of their programs, stifled the dynamically-persuaded, for whom the extra type annotations were just more line noise, detracting from --- not adding to --- the meaning of their programs.
-
-There is truth to both sides of this argument. Whilst types do provide a useful tool for catching common errors that other methods, such as testing, may miss, they are inherently limited by matters of decidability: The set of typable programs is strictly smaller than the set of correct programs, for any decidable type theory. What is more, having to constantly write types "instead" of code may present a jarring context switch. For some, the combination of these two factors weighs up against types.
-
-Whilst the first point of contention will always remain, the growing popularity of type inference helps to resolve the latter: Programmers can benefit from a strongly typed program whilst leaving (most of) the types unwritten. However, it is still the case that in the majority of statically typed languages, data types must be declared and named before use, whilst in dynamically typed languages, data structures may be constructed on the fly from a relatively small set of constructors, with the caveat that the programmer must ensure the correct contracts and invariants are maintained in their use.
+In the majority of statically typed languages, data types must be declared and named before use, whilst in dynamically typed languages, data structures may be constructed on the fly from a relatively small set of constructors, with the caveat that the programmer must ensure the correct contracts and invariants are maintained in their use.
 
 Whereas traditional type inference relies on such data definitions, in this project, we extend Hindley and Milner's type system, so that we may infer the shape of a data structure as composed of a few base constructors without having to explicitly declare it and give it a name. We do this in a way that aims to mirror the specifications programmers naturally follow when working with these composite types.
 
