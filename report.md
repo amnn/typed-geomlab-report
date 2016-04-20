@@ -53,12 +53,12 @@ The procedure $\textit{desugar} : \mathbf{Sugar} \to \mathbf{Expr}$ treats opera
   \input{aux/standard_defs.tex}
 \end{figure}
 
-\subsection{de-Bruijn Indices}
+\subsection{de Bruijn Indices}
 
 $\mathbf{Expr}$ also alters the way local variables are introduced and denoted, using a notation referred to as \textit{de Bruijn} indices. $\mathbf{Expr}$ AST nodes that introduce new variables (like function definitions, let and case expressions) do not declare variable names, but instead simply declare how many local variables they introduce (functions introduce one for each formal parameter, let expressions always introduce one, and case expressions introduce one for every hole in the pattern). Then a reference to a local variable is denoted by the number of scopes between the reference and the scope introducing it (Figure\ \ref{fig:de_bruijn}).
 
 \begin{figure}[htbp]
-  \caption{Desugaring local variables to de-Bruijn indices.}\label{fig:de_bruijn}
+  \caption{Desugaring local variables to de Bruijn indices.}\label{fig:de_bruijn}
   \input{aux/de_bruijn.tex}
 \end{figure}
 
@@ -241,7 +241,7 @@ In this representation, cyclic types present as cycles of pointers. As a result,
 
 Another target for improvement is \textit{generalisation}: When type checking a \texttt{let} expression or top-level definition, $e$, after inferring a type for the expression being defined, we take its \textit{closure} by universally quantifying any remaining free variables (see the algorithm above) --- The variables quantified by this process are said to be \textit{owned} by $e$.
 
-A \text{na\"ive} algorithm traverses the entire type being closed over, searching for unbound variables. To prune the traversal, we annotate each type with a \textit{level}, associating it with a \texttt{let} expression or definition node: A \texttt{let} expression's level increases with nesting (cf. de-Bruijn indices, but limited to other \texttt{let} expressions). Variables are annotated with the level of the expression that owns them, and compound types are annotated with the max level of any variable they mention. Then when closing over a type for a definition at level $l$, we only traverse compound types with level $l^\prime$ if $l^\prime\geq l$.
+A \text{na\"ive} algorithm traverses the entire type being closed over, searching for unbound variables. To prune the traversal, we annotate each type with a \textit{level}, associating it with a \texttt{let} expression or definition node: A \texttt{let} expression's level increases with nesting (cf. de Bruijn indices, but limited to other \texttt{let} expressions). Variables are annotated with the level of the expression that owns them, and compound types are annotated with the max level of any variable they mention. Then when closing over a type for a definition at level $l$, we only traverse compound types with level $l^\prime$ if $l^\prime\geq l$.
 
 \subsubsection{Instantiation}
 
@@ -791,7 +791,7 @@ In HM, the list was a recursive type that we had built in support for. We lost t
 But again, \texttt{l} and \texttt{r} have the same type as the branch they are contained in. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
 
 \begin{figure}[htbp]
-  \caption{Using ad-hoc recursive types. Fixed points are introduced by the \texttt{(...)*} operator, and we use de-Bruijn indices to represent recursion sites.}\label{fig:rec-type}
+  \caption{Using ad-hoc recursive types. Fixed points are introduced by the \texttt{(...)*} operator, and we use de Bruijn indices to represent recursion sites.}\label{fig:rec-type}
   \begin{Verbatim}
 list 'a ::= ([] + ('a:'0))*
 tree 'a ::= ([#branch, '0, 'a, '0] + #leaf)*
