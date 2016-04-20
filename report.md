@@ -96,12 +96,16 @@ By convention, the lowercase roman alphabet denotes terms, $r,s,t,\ldots$ (and v
   We take $\varnothing$ to denote the identity substitution.
 \end{definition}
 
+\begin{definition}[Composition]
+  Let $\mathbb{S}\equiv[\tau_i/\alpha_i,\sigma_i/\beta_i]$ and $\mathbb{T}\equiv[\rho_i/\beta_i,\pi_i/\gamma_i]$, then define their composition by $\mathbb{S}\mathbb{T}\equiv[\tau_i/\alpha_i,\mathbb{S}(\rho_i)/\beta_i,\mathbb{S}(\pi_i)/\gamma_i]$.
+\end{definition}
+
 \begin{definition}[Instance]
   A type $\sigma$ is said to be an instance of another type $\tau$ iff there exists a substitution $\mathbb{S}$ s.t. $\mathbb{S}(\tau)\equiv\sigma$.
 \end{definition}
 
 \begin{definition}[Principal Type]
-  Given a term in our language $t$, we say that $t$ has principal type $A$ given type context $\Gamma$ when $\Gamma\vdash t : A$ and, for any other type $A^\prime$ and context $\Delta$ s.t. $\Delta\vdash t : A^\prime$ there exists a type substitution $\mathbb{S}$ satisfying $\Delta = \mathbb{S}(\Gamma)$ and $A^\prime = \mathbb{S}(A)$.
+  Given a term $t$ in our language, we say that it has principal type $\tau$ when $\Gamma\vdash t : \tau$ for some context $\Gamma$, and if $\Delta\vdash t : \tau^{\prime}$ for some context $\Delta$, then $\tau^{\prime}$ is an instance of $\tau$.
 \end{definition}
 
 Exactly what constitutes a type and what constitutes a deduction of a type judgement differs between type theories, but the above definitions always apply.
