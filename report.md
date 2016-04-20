@@ -2,7 +2,7 @@
 title: Structural Type Inference in Functional Programming Languages
 author: Ashok Menon
 abstract: |
-  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically typed functional programming languages. In particular, rather than simply inferring the types of parameters to composite data structures (The type of the elements in a list structure, for example), we aim to infer the shape of the structure itself as composed ofatomic values, cons cells and nils --- In the case of the list, that it is either a \texttt{[]} or a \texttt{(:)} with an element on the left and another list on the right.
+  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically typed functional programming languages. In particular, rather than simply inferring the types of parameters to composite data structures (The type of the elements in a list structure, for example), we aim to infer the shape of the structure itself as composed of atomic values, cons cells and nils --- In the case of the list, that it is either a \texttt{[]} or a \texttt{(:)} with an element on the left and another list on the right.
 ...
 
 ```{.haskell}
@@ -12,7 +12,7 @@ abstract: |
 
 Whilst united in the face of the imperative programmer, there has always been a divide between the proponents of static and dynamic functional languages. The same types that statically-minded individuals benefitted from in verifying the correctness of their programs, stifled the dynamically-persuaded, for whom the extra type annotations were just more line noise, detracting from --- not adding to --- the meaning of their programs.
 
-There is truth to both sides of this argument. Whilst types do provide a useful tool for catching common errors that other methods, such as testing, may miss, they are inherently limited by matters of decidability: The set of typable programs is strictly smaller than the set of correct programs, for any type theory. What is more, having to constantly write types "instead" of code may present a jarring context switch. For some, the combination of these two factors weighs up against types.
+There is truth to both sides of this argument. Whilst types do provide a useful tool for catching common errors that other methods, such as testing, may miss, they are inherently limited by matters of decidability: The set of typable programs is strictly smaller than the set of correct programs, for any decidable type theory. What is more, having to constantly write types "instead" of code may present a jarring context switch. For some, the combination of these two factors weighs up against types.
 
 Whilst the first point of contention will always remain, the growing popularity of type inference helps to resolve the latter: Programmers can benefit from a strongly typed program whilst leaving (most of) the types unwritten. However, it is still the case that in the majority of statically typed languages, data types must be declared and named before use, whilst in dynamically typed languages, data structures may be constructed on the fly from a relatively small set of constructors, with the caveat that the programmer must ensure the correct contracts and invariants are maintained in their use.
 
@@ -22,7 +22,7 @@ In Section\ \ref{sec:bg} we introduce the source language, \textit{GeomLab}, and
 
 The following Sections\ (\ref{sec:adhoc-adts},\ \ref{sec:tagged-variants}, and\ \ref{sec:recursive}) successively expand the type system so that it may specify more idiomatic programs, each section moving the system closer to the goal of being able to infer shape as well as type.
 
-We finish with Section\ \ref{sec:errors} which discusses techniques for producing reasonable error outputs, with the aid of source location annotations without perturbing the structure of the overall program too much.
+We finish with Section\ \ref{sec:errors} which discusses techniques for producing reasonable error outputs, by introducing source location annotations without perturbing the overall structure of the type checker.
 
 \section{Background}\label{sec:bg}
 
@@ -119,7 +119,7 @@ HM builds on the types in the simply-typed $\lambda$ calculus by introducing \te
   \begin{align*}
     \sigma & \Coloneqq~\forall\alpha\ldotp\sigma~|~\tau
     \tag*{\scriptsize(types)}
-    \\\tau & \Coloneqq~\alpha~|~\iota~|~[~\tau~]~|~(~\pi~)\to\tau~|~(~)\to\tau
+    \\\tau & \Coloneqq~\alpha~|~\iota~|~[\,\tau\,]~|~(\,\pi\,)\to\tau~|~(\,)\to\tau
     \tag*{\scriptsize(quantifier-free types)}
     \\\iota & \Coloneqq~\mathbf{num}~|~\mathbf{str}~|~\mathbf{atom}~|~\mathbf{bool}
     \tag*{\scriptsize(base types)}
@@ -133,7 +133,7 @@ HM builds on the types in the simply-typed $\lambda$ calculus by introducing \te
 
 This type theory is a good starting point for many reasons: It has a reasonably efficient inference algorithm which has been proven sound and complete w.r.t the type system, the ability to specify polymorphic types affords a greater degree of flexibility, and given only a term, it is possible to infer its most general (principal) type. The last point is of particular import to us because our underlying language was originally dynamically typed, so there is no facility in the syntax to provide type annotations.
 
-\subsection{Algorithm}
+\subsection{Algorithm}\label{sec:hm-algorithm}
 
 A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, wherein it is described as operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$, and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typeable).
 
@@ -205,7 +205,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
       \end{math}
       \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
 
-    \item $pat_i\equiv[]$\hfill{\scriptsize(nil pattern)}
+    \item $pat_i\equiv[\,]$\hfill{\scriptsize(nil pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
@@ -374,18 +374,9 @@ define area([width, height]) = width * height;
 
 Our existing typechecker infers the type ${\texttt{area :: [num] -> num}}$. The information that rectangles are \textit{pairs} of numbers has been lost. According to this type, \texttt{area} will accept a list of any size, but we know that it is only defined for lists of two elements.
 
-And what if the values differ in type? Consider this (contrived) example of a counter that can be incremented and whose value can be saved. Its state would be comprised of the current count, and the list of saved counts:
+This issue stems from our special treatment of nil and cons. Implicit in the definition of the algorithm is the assumption that they are used only to construct homogeneous, singly-linked lists (A list where every value has the same type). This precludes our idea of using lists to represent arbitrary product types.
 
-```
-define push([c, cs]) = [c, c:cs];
-define inc([c, cs])  = [c + 1, cs];
-```
-
-This is not typeable in HM! It will produce a unification error between \texttt{num} and \texttt{[num]}.
-
-Both of these issues stem from our special treatment of nil and cons. Implicit in the definition of the algorithm is the assumption that they are used only to construct homogeneous, singly-linked lists (A list where every value has the same type). This precludes our idea of using lists to represent arbitrary product types.
-
-Returning to our shapes example, we may want to define \texttt{area}, not just for rectangles, but for other shapes too. Here we define it for squares represented by the length of their side (\texttt{s}).
+We may also want to define \texttt{area}, not just for rectangles, but for other shapes too. Here we define it for squares represented by the length of their side (\texttt{s}).
 
 ```
 define area([w, h]) = w * h
@@ -403,13 +394,350 @@ In HM, we unify all parameter patterns together. This means to infer a type for 
 
 In this section, we will investigate extensions to HM that allow us to specify product and union types in an ad-hoc manner, thus lifting this restriction (Figure\ \ref{fig:shape-union}).
 
+\subsection{Products}
+
+As mentioned earlier, in the dynamically typed setting we have always had a way to couple data together through the use of the cons cell; it was only by introducing HM that we lost this ability!
+
+We may make a bid to recover it now by freeing the nil (\texttt{[]}) and cons (\texttt{(:)}) constructors from the list type, so that each may inhabit its own type. This corresponds to a change in our type grammar, and the addition of some proof rules to our version of HM (\text{Figures~\ref{fig:prod-ty-grammar}\,\&\,\ref{fig:prod-ty-rules}}).
+
+\begin{figure}[htbp]
+  \caption{Modifications to the HM grammar for types to separate the list type into its constituent constructors.}\label{fig:prod-ty-grammar}
+  \begin{align*}
+    \tau & \Coloneqq~\cdots~|~\cancel{[\,\tau\,]}~|~\tau_1:\tau_2
+    \tag*{\scriptsize(quantifier-free types)}
+    \\\iota & \Coloneqq~\cdots~|~[\,]
+    \tag*{\scriptsize(base types)}
+  \end{align*}
+\end{figure}
+
+\begin{figure}[htbp]
+  \caption{New proof rules in HM for cons and nil types. Note that, as $:$ has now become overloaded to mean both the cons type constructor, and the separator in a type judgement, from now on, we will use $::$ to denote the latter.}\label{fig:prod-ty-rules}
+  \begin{prooftree}
+    \AXC{}
+    \RightLabel{\scriptsize($[\,]$-intro)}
+    \UIC{$\vdash [\,] :: [\,]$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AXC{$\Gamma\vdash t_1 :: \tau_1$}
+    \AXC{$\Gamma\vdash t_2 :: \tau_2$}
+    \RightLabel{\scriptsize($(:)$-intro)}
+    \BIC{$\Gamma\vdash (t_1:t_2) :: (\tau_1:\tau_2)$}
+  \end{prooftree}
+
+  We also modify the \texttt{case}-intro rule, however, in Section~\ref{sec:hm-algorithm}, this is presented not in a natural deduction style, but as part of algorithm $\mathcal{W}$ and its sub-routine $\mathcal{P}$, so we show the changes to the latter here.\\[-.6em]
+
+  $(\mathbb{S}_i,\tau_i)\gets\mathcal{P}(pat_i,e_i)$ where, when:
+  \begin{enumerate}[(a)]
+    \item $pat_i\equiv[\,]$\hfill{\scriptsize(nil pattern)}
+      \\[.2em] \begin{math}
+        \arraycolsep=1.5pt
+        \begin{array}{llll}
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,[\,])
+          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i)\vdash e_i)
+          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1},~\tau^\prime)
+        \end{array}
+      \end{math}
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
+    \item $pat_i\equiv(h:t)$\hfill{\scriptsize(cons pattern)}
+      \\[.2em] \begin{math}
+        \arraycolsep=1.5pt
+        \begin{array}{llll}
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,\alpha:\beta)\text{ ($\alpha$, $\beta$ fresh)}
+          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i, h::\alpha,t::\beta)\vdash e_i)
+          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1},~\tau^\prime)
+        \end{array}
+      \end{math}
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
+  \end{enumerate}
+\end{figure}
+
+Now, when the type checker sees either \texttt{[]} or \texttt{(:)}, it makes no assumptions as to the data structure being built. When faced with \texttt{area}:
+
+```
+define area([width, height]) = width * height;
+```
+
+It will happily assign it the type $(\mathbf{num}:(\mathbf{num}:[\,]))\to\mathbf{num}$, or, by lifting list literals to the type-level \texttt{[num, num] -> num}.
+
+Unfortunately, we have lost the ability to typecheck lists, for two reasons. Firstly, now that nil and cons inhabit distinct types, any case expression with both nil and cons patterns causes a unification error, because we enforce the rule that patterns of case expressions be unifiable. Secondly, if we define a recursive function over lists (e.g. \texttt{length}), it will cause the tail of the list to be unified with the list itself, creating a cyclic type; something else HM prohibits. The first of these issues is addressed immediately --- in \text{Section~\ref{sec:unions}} --- below, and the second will be dealt with in \text{Section~\ref{sec:recursive}}.
+
+\subsection{Unions}\label{sec:unions}
+
+Having split the list type apart, we now need a way to reconstitute it. Our first attempt involves adding a completely unrestricted union operator, ${\tau\Coloneqq\cdots~|~\tau_1\cup\tau_2~|~\cdots}$, and a typing rule that is referred to as \textit{subsumption}.
+
+\begin{definition}[Subsumption]
+  Subsumption is the rule that a term inhabits all the super-types of its type.
+  \begin{prooftree}
+    \AXC{$\Gamma\vdash e::\tau$}
+    \AXC{$\tau\prec\sigma$}
+    \RightLabel{\scriptsize(sub)}
+    \BIC{$\Gamma\vdash e::\sigma$}
+  \end{prooftree}
+\end{definition}
+
+Intrinsic to subsumption is the subtyping relation between types.
+
+\begin{definition}[Subtyping relation ($\prec$)]~\\
+  \begin{minipage}[t]{.33\textwidth}
+    \begin{prooftree}
+      \AXC{\phantom{$\tau\sigma\prec\rho$}}
+      \RightLabel{\scriptsize(refl)}
+      \UIC{$\tau\prec\tau$}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}[t]{.33\textwidth}
+    \begin{prooftree}
+      \AXC{$\tau\prec\sigma$}
+      \AXC{$\sigma\prec\rho$}
+      \RightLabel{\scriptsize(trans)}
+      \BIC{$\tau\prec\rho$}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}[t]{.33\textwidth}
+    \begin{prooftree}
+      \AXC{\phantom{$\tau\sigma\prec\rho$}}
+      \RightLabel{\scriptsize(inst)}
+      \UIC{$(\forall\alpha\ldotp\tau)\prec\tau[\sigma/\alpha]$}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}[t]{.4\textwidth}
+    \vspace{1em}
+    \begin{prooftree}
+      \AXC{$\tau_1\prec\sigma_1$}
+      \AXC{$\tau_2\prec\sigma_2$}
+      \RightLabel{\scriptsize(cons)}
+      \BIC{$(\tau_1:\tau_2)\prec(\sigma_1:\sigma_2)$}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}[t]{.6\textwidth}
+    \vspace{1em}
+    \begin{prooftree}
+      \AXC{$\sigma_1\prec\tau_1$}
+      \AXC{$\cdots$}
+      \AXC{$\sigma_k\prec\tau_k$}
+      \AXC{$\rho\prec\pi$}
+      \RightLabel{\scriptsize(arr)}
+      \QIC{$(\tau_1,\ldots,\tau_k)\to\rho~\prec~(\sigma_1,\ldots,\sigma_k)\to\pi$}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}[t]{.5\textwidth}
+    \vspace{1em}
+    \begin{prooftree}
+      \AXC{$\tau\prec\rho$}
+      \AXC{$\sigma\prec\rho$}
+      \RightLabel{\scriptsize($\cup$-left)}
+      \BIC{$(\tau\cup\sigma)\prec\rho$}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}[t]{.5\textwidth}
+    \vspace{1em}
+    \begin{prooftree}
+      \AXC{$\phantom{\tau\sigma\rho\prec}$}
+      \RightLabel{\scriptsize($\cup$-right)}
+      \UIC{$\tau\prec(\tau\cup\sigma)$}
+    \end{prooftree}
+  \end{minipage}
+\end{definition}
+
+These additions are sound, and highlight some interesting interactions between existing features of the type system, and subtyping. For instance, note how subtyping for function types is contravariant in parameter types, and covariant in the return type, this fits our intuition: It is safe to treat ${(\mathbf{num}\cup\mathbf{bool})\to\mathbf{num}}$ as though it were ${\mathbf{num}\to(\mathbf{num}\cup\mathbf{bool})}$, because, in words, we are promising to feed only numbers to a function that accepts numbers and booleans, and we are prepared to receive numbers (which it produces) and bools (which it does not) from it.
+
+Also interesting (and encouraging) is the fact that HM's instantiation is a special case of subsumption:
+
+\newenvironment{mathprooftree}
+  {\varwidth{.9\textwidth}\centering\leavevmode}
+  {\DisplayProof\endvarwidth}
+\begin{align*}
+  \begin{mathprooftree}
+    \AXC{$\Gamma\vdash t::\forall\alpha\ldotp\tau$}
+    \LeftLabel{\scriptsize(instantiation)}
+    \UIC{$\Gamma\vdash t::\tau[\sigma/\alpha]$}
+  \end{mathprooftree}
+  \triangleq
+  \begin{mathprooftree}
+    \AXC{$\Gamma\vdash t::\forall\alpha\ldotp\tau$}
+    \AXC{}
+    \RightLabel{\scriptsize(inst)}
+    \UIC{$(\forall\alpha\ldotp\tau)\prec\tau[\sigma/\alpha]$}
+    \RightLabel{\scriptsize(sub)}
+    \BIC{$\Gamma\vdash t::\tau[\sigma/\alpha]$}
+  \end{mathprooftree}
+\end{align*}
+
+However, consider the types $(\alpha\cup\beta):\gamma$ and $(\alpha:\gamma)\cup(\beta:\gamma)$. Intuitively, they are equivalent so it should hold that they are subtypes of each other, but while it is possible to prove that $(\alpha:\gamma)\cup(\beta:\gamma)\prec(\alpha\cup\beta):\gamma$, the converse is not. To see why, let us have a look at an attempted proof:
+
+\begin{prooftree}
+  \AXC{$\vdots$}
+  \UIC{$(\alpha\cup\beta)\prec\alpha$}
+  \AXC{}
+  \RightLabel{\scriptsize(refl)}
+  \UIC{$\gamma\prec\gamma$}
+  \RightLabel{\scriptsize(cons)}
+  \BIC{$(\alpha\cup\beta):\gamma\prec\alpha:\gamma$}
+  \AXC{$\vdots$}
+  \UIC{$(\alpha\cup\beta)\prec\beta$}
+  \AXC{}
+  \RightLabel{\scriptsize(refl)}
+  \UIC{$\gamma\prec\gamma$}
+  \RightLabel{\scriptsize(cons)}
+  \BIC{$(\alpha\cup\beta):\gamma\prec\beta:\gamma$}
+  \RightLabel{\scriptsize($\cup$-right)}
+  \BIC{$(\alpha\cup\beta):\gamma\prec(\alpha:\gamma)\cup(\beta:\gamma)$}
+\end{prooftree}
+
+This example highlights a limitation of the $\cup$-right rule. It is treating unions as \textit{disjoint}, meaning that if a term inhabits a union type, it either inhabits its left summand or its right, but not both. This is a convenient assumption to make for our implementation, but as we have seen, does not necessarily hold.
+
+\subsubsection{Disjoint Unions}
+
+As subtyping has received a great deal of attention in the literature, there are already a wealth of solutions to this problem. A popular approach is to enforce disjointness: In \textit{Haskell} this comes in the form of the \textbf{Either} type:
+
+```{.haskell}
+data Either a b = Left a | Right b
+```
+
+The idea being that, at the term level, when constructing an instance of the union type, we tag it with which summand of the union it belongs to (\textbf{Left}, or \textbf{Right}). With this extra information, type assignment can see that $\mathbf{Left}~1::\mathbf{Either}~\mathbf{Int}~\beta$\footnote{Haskell's type inference will actually infer the even more general type of ${\mathbf{Num}~\alpha\,\Rightarrow\,\mathbf{Either}~\alpha~\beta}$, but we will avoid muddying the waters by introducing type classes in this discussion.}
+
+Translating the types that incited these worries in us into \textit{Haskell}, they are (approximately):
+
+```{.haskell}
+type X a b c = (Either a b, c)
+type Y a b c = Either (a, c) (b, c)
+
+xToY :: X a b c -> Y a b c
+xToY (Left a, c)  = Left (a, c)
+xToY (Right b, c) = Right (b, c)
+
+yToX :: Y a b c -> X a b c
+yToX (Left  (a, c)) = (Left a,  c)
+yToX (Right (b, c)) = (Right b, c)
+```
+
+The two types are isomorphic, but converting between them comes at a runtime cost, and must be done explicitly. Ideally we would like to avoid this: We are trying to infer the types of programs without modifying them.
+
+\subsubsection{Type Inclusion Constraints}
+
+Aiken and Wimmers generalised HM \text{in~\cite{aiken1993type}} by replacing equality constraints --- $\tau_1 = \tau_2$ --- which are resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. As well as unions, this generalisation introduces \textit{intersection} types and a notion similar to \textit{negation}, and in so doing, mitigates some of our issues.
+
+Whilst inclusion constraints are a generalisation of equality constraints, the algorithms used to resolve them are not an extension of unification, and if we look at the types of some common functions, such as:
+
+```
+define twice(f, x) = f(f(x));
+```
+
+which we are used to seeing with the type $\forall\alpha\ldotp(\alpha\to\alpha)\to\alpha\to\alpha$. We are given a more general type $\forall\alpha,\beta,\gamma\ldotp((\alpha\to\beta)\cap(\beta\to\gamma))\to\alpha\to\gamma$.
+
+It is debatable whether this extra generality is useful, and as a consequence of it, the type system, type inference algorithm, and the types that are produced are much more complicated.
+
+\subsubsection{Discriminative Types}
+
+We will instead choose to relax disjointness to \textit{discriminativity}, as seen \text{in~\cite{mishra1985declaration}} \text{(Definition~\ref{def:discrim})}.
+
+\begin{definition}[Discriminative Union]\label{def:discrim}
+  A union type is considered discriminative when each of its inhabitants may be projected into one of the union's summands by looking only at its outermost constructor. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary constructors and $[\,]$ can be considered a nullary constructor.
+\end{definition}
+
+The intuition here is that, if terms already look different, then there is no need to tag them as distinct. If we are given a term with type $\mathbf{num}\cup\mathbf{bool}$, then we can tell which summand of the union it will belong to by inspecting its representation. If, however we are given a term of type $\mathbf{num}\cup\mathbf{num}$, we cannot, so we must tag them: $\mathit{kilometres}(\mathbf{num})\cup\mathit{miles}(\mathbf{num})$.
+
+Unfortunately, neither $(\alpha:\gamma)\cup(\beta:\gamma)$ nor $(\alpha\cup\beta):\gamma$ are discriminative types. The former because $\alpha\cup\gamma$ and $\beta:\gamma$ both have a $(:)$ constructor outermost, and the latter because by substituting $\alpha$ and $\beta$ we could violate discriminativity. However, the type of the more complicated \texttt{area}:
+
+```
+define area([w, h]) = w * h
+     | area(s)      = s * s;
+```
+
+is $([\mathbf{num},\mathbf{num}]\cup\mathbf{num})\to\mathbf{num}$, which is discriminative.
+
 \subsection{R\'emy Encoding}
 
-Introducing the type encoding used by Didier \text{R\'emy}, where each type is a finite union over the constructors in the language.
+It is possible to implement type assignment with discriminative union types just by changing the representation of types. This idea was first expounded \text{in~\cite{cartwright1991soft}} as an adaptation of Didier \text{R\'emy's} encoding of record types \text{in~\cite{Remy/records91}}.
+
+The encoding assumes that we have a finite number of constructors and this is not true in \textit{GeomLab}, in which functions of differing arities are considered to have different constructors. In \text{Section~\ref{sec:wildcard}} we will fix this limitation, but for now, we will restrict ourselves to functions with one parameter.
+\begin{align*}
+\intertext{Suppose we have}
+\mathcal{F} & = \{+,-\}
+\tag*{Flags}\\
+\mathcal{V} & = \{\alpha,\beta,\gamma,\ldots\}
+\tag*{Variables}\\
+\mathcal{C} & = \{\mathbf{num},~\mathbf{bool},~\mathbf{atom},~[\,],~(:),~(\to)\}
+\tag*{Constructors}\\
+a_x & =
+\begin{cases}
+  2 & \text{ if }x\in\{(:), (\to)\}\\
+  0 & \text{ if }x\in\mathcal{C}\setminus\{(:), (\to)\}
+\end{cases}
+\tag*{Arities}
+\intertext{Then a R\'emy encoded type $\rho\in\mathcal{T}$ has the form:}
+\rho & = \mathcal{R}(f_{\mathbf{num}};~f_{\mathbf{bool}};~f_{\mathbf{atom}};~f_{[\,]};~f_{(:)}, c^1_{(:)}, c^2_{(:)};~f_{(\to)}, c^1_{(\to)}, c^2_{(\to)})
+\tag{$\star$}\label{eqn:remy}
+\intertext{where}
+f_x & \in\mathcal{F}\cup\mathcal{V}
+\tag*{Flag parameter for constructor $x\in\mathcal{C}$.}\\
+c^i_x & \in\mathcal{T}\cup\mathcal{V}
+\tag*{$i^{\text{\tiny th}}$ Child type for constructor $x\in\mathcal{C}$.}
+\intertext{An instance of this encoding does not represent just one type, but instead describes a set of feasible types. Suppose $\tau$ is feasible with respect to $\rho$'s constraints, then, for any $x\in\mathcal{C}$,}
+f_x = + & \implies x(\gamma^1_x,\ldots,\gamma^{a_x}_x)\subseteq\tau\\
+f_x = - & \implies x(\gamma^1_x,\ldots,\gamma^{a_x}_x)\cap\tau = \varnothing\\
+\gamma^i_x & \text{ is feasible with respect to $c^i_x$'s constraints.}
+\end{align*}
+
+When a flag parameter $f_x$ is a variable, it indicates that $\rho$ does not constrain whether or not $x(\gamma^1_x,\ldots,\gamma^{a_x}_x)$ is in the type. Variables in child types have their usual meaning as type variables.
+
+\subsubsection{Examples}
+
+Suppose we wish to represent the supersets of $\mathbf{num}\cup\mathbf{bool}$ using \text{R\'emy} encoding, it would look like this ($\star$ represents a fresh variable whose symbol is not relevant):
+\begin{math}
+  \begin{array}{rrrrrrrrrrrrl}
+    && f_{\mathbf{num}} & f_{\mathbf{bool}} & f_{\mathbf{atom}} & f_{[\,]} & f_{(:)} & c^1_{(:)} & c^2_{(:)} & f_{(\to)} & c^1_{(\to)} & c^2_{(\to)}\\
+    \phantom{\varepsilon:} & \mathcal{R}( & +; & +; & \star; & \star; & \star & \star & \star; & \star & \star & \star & )\\
+  \end{array}
+\end{math}
+Or, subsets of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
+\begin{math}
+  \begin{array}{rrrrrrrrrrrrl}
+    && f_{\mathbf{num}} & f_{\mathbf{bool}} & f_{\mathbf{atom}} & f_{[\,]} & f_{(:)} & c^1_{(:)} & c^2_{(:)} & f_{(\to)} & c^1_{(\to)} & c^2_{(\to)}\\
+    \alpha: & \mathcal{R}( & -; & -; & -; & -; & \star & \beta & \gamma; & - & \star & \star & )\\
+    \beta:  & \mathcal{R}( & \star; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
+    \gamma: & \mathcal{R}( & -; & \star; & -; & -; & - & \star & \star; & - & \star & \star & )\\
+  \end{array}
+\end{math}
+Or, the constraints of the \texttt{area} function's type (Given by $\alpha$):
+\begin{math}
+  \begin{array}{rrrrrrrrrrrrl}
+    \alpha:      & \mathcal{R}( & -; & -; & -; & -; & - & \star & \star; & + & \beta & \gamma & )\\
+    \beta:       & \mathcal{R}( & -; & -; & -; & -; & \star & \delta & \varepsilon; & - & \star & \star & )\\
+    \gamma:      & \mathcal{R}( & +; & \star; & \star; & \star; & \star & \star & \star; & \star & \star & \star & )\\
+    \delta:      & \mathcal{R}( & \star; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
+    \varepsilon: & \mathcal{R}( & -; & -; & -; & -; & \star & \zeta & \eta; & - & \star & \star & )\\
+    \zeta:       & \mathcal{R}( & \star; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
+    \eta:        & \mathcal{R}( & -; & -; & -; & \star; & - & \star & \star; & - & \star & \star & )\\
+    && f_{\mathbf{num}} & f_{\mathbf{bool}} & f_{\mathbf{atom}} & f_{[\,]} & f_{(:)} & c^1_{(:)} & c^2_{(:)} & f_{(\to)} & c^1_{(\to)} & c^2_{(\to)}\\
+  \end{array}
+\end{math}
+
+Notice that the return type ($\gamma$) of \texttt{area} is not satisfied just by $\mathbf{num}$ but also by any supertype of $\mathbf{num}$. Conversely, the parameter type ($\beta$) is constrained to be a subset of $[\mathbf{num}, \mathbf{num}]$.
+
+\subsection{Adapting HM}
+
+In order to use \text{R\'emy} encoded types in HM, we must change how types are introduced: Before, we assigned each expression a specific type, which was its most general type. Now, we assign each expression a set of constraints over its type, so, we should ensure that these constraints are the most general constraints.
+
+\begin{definition}[Superset encoding]
+  Given a constructor $x\in\mathcal{C}$, and R\'emy encoded types $c^1_x,\ldots,c^{a_x}_x\in\mathcal{T}\cup\mathcal{V}$ let $x(c^1_x,\ldots,c^{a_x}_x)^{\uparrow}$.
+\end{definition}
+
+\begin{definition}[Subset encoding]
+  Given a constructor $x\in\mathcal{C}$ let
+\end{definition}
+
+
+The beauty of this encoding is that, if we treat $\mathcal{R}$ as a constructor, and flag parameters as types, then \text{R\'emy} encoded types may be combined using Robinson's unification algorithm: Two \text{R\'emy} types are unified by unifying their flag parameters and child types, whilst a variable $v$ is unified with another term $t$ (so long as $v$ appears free in $t$) by substituting $t$ for $v$.
 
 \subsection{Case Types}
 
 Generalising flags in the \text{R\'emy} encoding to trees where internal nodes represent a choice of what the outer-most constructor is in another type, and leaf nodes represent possible values the flag could take.
+Whilst some unions are not discriminative because they contain redundant subtypes --- like $\mathbf{num}\cup\mathbf{num}$ --- and some unions have equivalent discriminative representations --- like $(\alpha:\gamma)\cup(\beta:\gamma)$ --- $(\mathbf{num}:\mathbf{num})\cup(\mathbf{bool}:\mathbf{bool})$ is an example of a type with no discriminative representation.
+
+If it is possible to discriminate between $\mathbf{bool}$ and $\mathbf{num}$, then it should also be possible to distinguish a pair of $\mathbf{bool}$s from a pair of $\mathbf{num}$s, but discriminative types do not accommodate this case.
+
+\subsection{Optimisation}
 
 \subsection{Rationalisation}
 
@@ -445,9 +773,9 @@ define area([#rect, w, h]) = w * h
 
 This is clearly not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type \texttt{[\#square, num]}, and circles \texttt{[\#circle, num]} (Figure\ \ref{fig:shape-tagged}).
 
-\subsection{Wildcard Constructors}
+\subsection{Wildcard Constructors}\label{sec:wildcard}
 
-A technique to get around the "finite constructor" limitation of the R\'emy encoding whereby if we have an infinite family of constructors (like multi-arity functions or atoms) we have a constructor for each member of the family, as well as a wildcard constructor to capture our knowledge about the rest of the constructors in the family.
+A technique to get around the "finite constructor" limitation of the \text{R\'emy} encoding whereby if we have an infinite family of constructors (like multi-arity functions or atoms) we have a constructor for each member of the family, as well as a wildcard constructor to capture our knowledge about the rest of the constructors in the family.
 
 \section{Recursive Types}\label{sec:recursive}
 
@@ -471,10 +799,6 @@ list 'a ::= ([] + ('a:'0))*
 tree 'a ::= ([#branch, '0, 'a, '0] + #leaf)*
   \end{Verbatim}
 \end{figure}
-
-\subsection{Type Annotations}
-
-We will mandate that recursive definitions must have type annotations to side step the issues of inferring such types. Motivating examples for this decision will include definitions of \texttt{reverse} and \texttt{append}, whose types, whilst sound, are useless.
 
 \subsection{Circular Unification}
 
@@ -507,7 +831,6 @@ W Swierstra's Data-types a la carte which builds a similar type system, using Ha
 \section{Future Work}
 Everything I didn't have time to fully flesh out:
 \begin{itemize}
-  \item Type inference of recursive types.
   \item Useful errors.
   \item Type level booleans.
   \item Type Aliasing
@@ -519,7 +842,7 @@ Everything I didn't have time to fully flesh out:
 
 \bibliography{references}
 
-\vbox{
+\vbox {
   %TC:ignore
 }
 
