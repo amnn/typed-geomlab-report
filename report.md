@@ -301,15 +301,15 @@ For the most part, type inference is run on correct programs\footnote{Even in un
 
 \subsubsection{Generalisation}
 
-Another target for improvement is \textit{generalisation}: When type checking a \texttt{let} expression or top-level definition, $e$, after inferring a type for the expression being defined, we take its \textit{closure} by universally quantifying any remaining free variables (see the algorithm above) --- The variables quantified by this process are said to be \textit{owned} by $e$.
+When type checking a \texttt{let} expression or top-level definition, $e$, after inferring a type for the expression being defined, we take its \textit{closure} by universally quantifying any remaining free type variables (see the algorithm above). This process is referred to as \textit{generalisation} and the variables quantified by it are said to be \textit{owned} by $e$.
 
-A \text{na\"ive} algorithm traverses the entire type being closed over, searching for unbound variables. To prune the traversal, we annotate each type with a \textit{level}, associating it with a \texttt{let} expression or definition node: A \texttt{let} expression's level increases with nesting (cf. de Bruijn indices, but limited to other \texttt{let} expressions). Variables are annotated with the level of the expression that owns them, and compound types are annotated with the max level of any variable they mention. Then when closing over a type for a definition at level $l$, we only traverse compound types with level $l^\prime$ if $l^\prime\geq l$.
+A \text{na\"ive} algorithm traverses the entire type being closed over, searching for unbound variables. We can prune the traversal, by annotating each type with the \textit{level} of a \texttt{let} expression or definition, where a \texttt{let} expression's level increases with nesting (cf. de Bruijn indices). Variables are annotated with the level of the expression that owns them, and compound types are annotated with the max level of any variable they mention. Then when closing over a type for a definition at level $l$, we only traverse compound types with level $l^\prime$ if $l^\prime\geq l$.
 
 \subsubsection{Instantiation}
 
 We can extend this pruning approach to also deal with \textit{instantiation}: The process of replacing quantified (type) variables with fresh (type) variables, done when type checking a bound (term) variable; In some senses an inverse of \textit{generalisation}.
 
-By annotating types with a flag that is true when the type contains a quantified variable, when traversing for instantiation, we need only look at types where this flag is set. In our implementation, instead of a flag we use a special level, call it $\top$, such that for all levels $l\in\mathbb{N}$, $l<\top$. As we generalise a type, every variable we touch has its level set to $\top$, the rules for propogating levels to compound types takes care of the rest.
+By annotating types with a flag that is true when the type contains a quantified variable, when traversing for instantiation, we need only look at types where this flag is set. In our implementation, instead of a flag we use a special level, call it $\top$, such that for all levels $l\in\mathbb{N}$, $l<\top$. As we generalise a type, every variable we touch has its level set to $\top$, and the rules for propogating levels to compound types takes care of the rest.
 
 \subsubsection{Level Adjustments}
 
