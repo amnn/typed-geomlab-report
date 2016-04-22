@@ -112,7 +112,7 @@ Exactly what constitutes a type and what constitutes a deduction of a type judge
 
 \section{Hindley and Milner's Type System}\label{sec:hm}
 
-We begin our search with the Hindley-Milner (henceforth HM) type system\ \cite{10.2307/1995158, MILNER1978348}. This theory forms the basis of many production quality type systems, including those found in \textit{Haskell} and the \textit{ML} family of languages.
+We begin our search with the Hindley--Milner (henceforth HM) type system\ \cite{10.2307/1995158, MILNER1978348}. This theory forms the basis of many production quality type systems, including those found in \textit{Haskell} and the \textit{ML} family of languages.
 
 HM builds on the types in the simply-typed $\lambda$ calculus by introducing \textit{universally quantified} variables in prenex form (Definition\ \ref{def:hm-types}). This allows us to describe the types of polymorphic functions. For example, the identity function \texttt{define id(x) = x;} has principal type $\forall\alpha\ldotp(\alpha)\to\alpha$.
 
@@ -133,11 +133,11 @@ HM builds on the types in the simply-typed $\lambda$ calculus by introducing \te
 
 \end{definition}
 
-This type theory is a good starting point for many reasons: It has a reasonably efficient inference algorithm which has been proven sound and complete w.r.t the type system, the ability to specify polymorphic types affords a greater degree of flexibility, and given only a term, it is possible to infer its most general (principal) type. The last point is of particular import to us because our underlying language was originally dynamically typed, so there is no facility in the syntax to provide type annotations.
+This type theory is a good starting point for many reasons: It has a reasonably efficient inference algorithm which has been proven sound and complete with respect to the type system, the ability to specify polymorphic types affords a greater degree of flexibility, and given only a term, it is possible to infer its most general (principal) type. The last point is of particular importance to us because our underlying language was originally dynamically typed, so there is no facility in the syntax to provide type annotations.
 
 \subsection{Algorithm}\label{sec:hm-algorithm}
 
-A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, wherein it is described as operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$, and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typeable).
+A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, where it is described as operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$, and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typeable).
 
 As in\ \cite{damas1982principal}, we rely on Robinson's unification algorithm and the ability to produce the closure of a type with respect to a context.
 
@@ -149,7 +149,9 @@ As in\ \cite{damas1982principal}, we rely on Robinson's unification algorithm an
   $\overline{\Gamma}(\tau) = \forall\alpha_1,\ldots,\alpha_n\ldotp\tau$ where $\alpha_1,\ldots,\alpha_n$ are all the variables that appear free in $\tau$ but do not appear in the domain of $\Gamma$.
 \end{definition}
 
-We extend the algorithm, to deal with literals, recursion, sequencing, conditionals, and case expressions for our needs. For the most part these extensions are the common ones used by most practical implementations of HM, so we touch on only a few below.
+We extend the algorithm for our needs, to deal with literals, recursion, sequencing, conditionals, and case expressions. For the most part these extensions are the common ones used by most practical implementations of HM, so we touch on only a few below.
+
+\textbf{Algorithm W:}
 
 $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
 \begin{enumerate}[(i)]
@@ -164,7 +166,6 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
     \end{math}
     \\[.5em] $\mathbb{S}\equiv\mathbb{U}\mathbb{S}_k\ldots\mathbb{S}_0$ and $\tau\equiv\mathbb{U}(\beta)$.
     \\[1em] Unlike languages such as \textit{Haskell} where the true arity of a function is hidden (and often very difficult to ascertain for compiler and programmer alike), \textit{GeomLab} separates functions of different arities by syntax. As such, it is now a type error to partially apply a function.
-    \\[1em] Complementarily, the inference rule for function abstraction produces function types of a statically fixed arity.
 
   \item $t\equiv \texttt{let $x$ = $e_1$ in $e_2$}$\hfill{\scriptsize(\textit{recursive} let expressions)}
     \\[.5em] \begin{math}
@@ -178,7 +179,8 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
     \end{math}
     \\[.5em] $\mathbb{S}\equiv\mathbb{S}_2\mathbb{US}_1$ and $\tau\equiv\tau_2$
     \\[1em] Bindings in \textit{let} expressions may be recursive, that is to say $e_1$ may refer to $x$. Accordingly, when inferring a type for $e_1$, we add $x : \beta$ to the type context, for a fresh type variable $\beta$. Following this, we ``tie the knot'' by unifying $\beta$ with $e_1$'s type.
-    \\[1em] Also note that by type checking $e_2$ with $x : \overline{\Gamma^\prime}(\tau^\prime_1)$ in the context, variables in the type we inferred for $x$ have been universally quantified, and each instantiation of $x$ in $e_2$ may substitute them with different variables.
+    \\[1em] Also note that by type checking $e_2$ with $x : \overline{\Gamma^\prime}(\tau^\prime_1)$ in the context, free variables in the type we inferred for $x$ that do not appear in the context $\Gamma^{\prime}$ have been universally quantified, and each instance of $x$ in $e_2$ may substitute them with different variables.
+    \\[1em] This means that $x$ may be treated \textit{polymorphically} in the body of the let expression, but monomorphically in its own definition. This is specifically to forbid \textit{polymorphic recursion} as type inference in its presence is known to be undecidable~\cite{henglein1993type}.
 
   \item $t\equiv \texttt{case $c$ of } pat_1\to e_1;\cdots ;pat_k\to e_k$\hfill{\scriptsize(case expressions)}
     \\[.5em] \begin{math}
@@ -193,7 +195,6 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
 
     $\mathbb{S}\equiv\mathbb{S}_k\ldots\mathbb{S}_1$ and $\tau\equiv\tau_k$.
     \\[1em] As our desugaring procedure removes nested patterns in favour of nested case expressions, our rule here only needs to deal with patterns that are one constructor deep. For each such pattern, we create the smallest type that contains any expression that could match it ($\mathcal{P}$ defined below), and we unify all of these with the type of the case argument. To get the type of the expression, we unify the types of all the $e_i$'s.
-    \\[1em] Although this is a common type semantics for case expressions, it poses some problems. For instance, a pattern that expects only \texttt{[]} will also purport to accept cons cells, when doing so would cause an exception at run-time (The very thing a type system aims to avoid).
     \\[1em] $\mathcal{P}(pat_i, e_i)$ is defined as:
     \begin{enumerate}[(a)]
     \item $pat_i$ a numeric, string or atom literal pattern\hfill{\scriptsize(literal pattern)}
@@ -229,15 +230,70 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
       \end{math}
       \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
     \end{enumerate}
+    Although this is a common type semantics for case expressions, it poses some problems. For instance, a pattern that expects only \texttt{[]} will also purport to accept cons cells, when doing so would cause an exception at runtime (The very thing a type system aims to avoid).
+    \\[1em] In other languages, catching such errors is the job of \textit{exhaustiveness checking}, which verifies that if one of a type's constructors appears in a case expression as a pattern, then they must all be covered. This also relies on knowing which constructors belong to which types\footnote{Verifying exhaustiveness is also known to be an NP-Complete problem, so we are keen to avoid relying upon it.}. In Section~\ref{sec:adapt-hm}, we will suggest an alternative treatment that exposes exhaustiveness as a property of types, by changing their representation.
 \end{enumerate}
 
 \subsection{Implementation}
 
-\text{Na\"ive} implementations of this algorithm --- in which types are represented as strings and all operations are performed eagerly --- tend to exhibit poor performance. Whilst inference for HM is known to be \textsc{DExpTime-Complete}\ \cite{kfoury90mlexptime}, such a worst-case running time can be avoided in all but the pathalogical cases. We use techniques from Oleg Kiselyov's tutorial on the implementation of \textit{OCaml}'s type inference algorithm\ \cite{oleg13ocamltc} to improve the performance of our algorithm in typical cases.
+Inference for HM is known to be \textsc{DExpTime}--Complete\ \cite{kfoury90mlexptime}, but type assignment for typical programs written by human programmers does not tend to meet this bound. However, \text{na\"ive} implementations --- in which types are represented as strings and all operations are performed eagerly --- can still be greatly improved upon. Oleg Kiselyov's tutorial on the implementation of \textit{OCaml}'s type inference algorithm\ \cite{oleg13ocamltc} suggests changes that, in concert can bring the performance of type assignment, in the typical case, much closer to linear time. We explain the techniques we have employed in our own implementation in the following sections.
 
 \subsubsection{Unification}
 
-We represent types with acyclic graphs, and make unification a side-effectful operation, modifying types in place instead of returning a unifier. This allows for structural sharing, and makes unification cheaper: If we are unifying a variable in one type with another type, we replace the node representing the variable in the former with a forward pointer to the latter, a much cheaper operation than string substitution. Long chains of forward pointers that may arise are also compressed as they are traversed.
+Algorithms $\mathcal{W}$ and $\mathcal{U}$ in Section\ \ref{sec:hm-algorithm} are expressed as pure functions working explicitly with substitutions. Whilst this presentation is useful to show their exact operation, when translated directly into an implementation, they introduce some inefficiencies:
+\begin{enumerate}[(i)]
+\item Applying a substitution often results in repeated work:
+  \begin{align}\label{eqn:unify-same-op}
+    ((\alpha\to\alpha)\to\alpha\to\alpha)[\mathbf{num}/\alpha]\equiv(\mathbf{num}\to\mathbf{num})\to\mathbf{num}\to\mathbf{num}
+  \end{align}
+  $\alpha$ is replaced by \textbf{num} in 4 separate instances when using a string representation.
+\item Substitution copies the type, even though often we do not need to keep the original.
+\item The programmer must work hard to ensure the substitutions are applied consistently, and in the correct order. This is a cognitive --- not runtime --- overhead, but is also important.
+\end{enumerate}
+These issues are addressed by representing types by directed acyclic graphs (DAGs), and modifying types in place instead of returning a unifier. To unify two non-variable types, we checking their outermost constructors match, then pairwise unify their children, and to unify a variable with another type, we replace the variable (in-place) with a forward pointer to the type. Using forward pointers is much cheaper than string substitution, and structural sharing also ensures that we will substitute each variable only once (Figure\ \ref{fig:type-dag}).
+
+Long chains of forward pointers may form when unifying variables together. When a chain is traversed, we replace all the intermediary pointers with a pointer directly to the end of the path (Figure\ \ref{fig:path-compress}). This technique is analagous to \textit{path compression} in disjoint set data structures\ \cite[Ch.~21]{Cormen:2001:IA:580470}.
+
+\begin{figure}[htbp]
+  \caption{Representing types as DAGs, to take advantage of structural sharing. The substitution in Equation~\ref{eqn:unify-same-op} now occurs at only one site, where the variable is replaced by a \textit{forward pointer}.}\label{fig:type-dag}
+  \begin{center}
+    \begin{tikzcd}[column sep=small]
+      & \to \ar[ld] \ar[rd] & &&&&&&& & \to \ar[ld] \ar[rd] &\\
+        \to \ar[rd, out=225, in=180,] \ar[rd] & & \to \ar[ld] \ar[ld, out=315, in=0]
+      & \phantom{.}\ar[rrrr,Mapsto,"{[\mathbf{num}/\alpha]}"] &&&& \phantom{.} &
+      & \to \ar[rd, out=225, in=180,] \ar[rd] & & \to \ar[ld] \ar[ld, out=315, in=0] \\
+      & \alpha & &&&&&&& & \mathbf{\cdot} \ar[d, dashed] &\\
+      &        & &&&&&&& & \mathbf{num} &
+    \end{tikzcd}
+  \end{center}
+\end{figure}
+
+\begin{figure}[htbp]
+  \caption{Making chains of forward pointers and compressing them. (1) represents the type ${(\alpha\to\beta)\to\gamma\to\delta}$, (2) follows after applying the substitution $[\mathbf{num}/\delta][\delta/\gamma][\gamma/\beta][\beta/\alpha]$, (3) follows after path compression.}\label{fig:path-compress}
+  \begin{equation*}
+    \begin{tikzcd}[column sep=1ex,row sep=tiny]
+      &&& \to\ar[lld]\ar[rrd] &&& \\
+      & \to\ar[ld]\ar[rd] &&(1)&& \to\ar[ld]\ar[rd] & \\
+      \alpha && \beta && \gamma && \delta
+    \end{tikzcd}
+    \hspace{2em}
+    \begin{tikzcd}[column sep=1ex,row sep=tiny]
+      &&& \to\ar[lld]\ar[rrd] &&& \\
+      & \to\ar[ld]\ar[rd] &&(2)&& \to\ar[ld]\ar[rd] & \\
+      \cdot\ar[rr,dotted] && \cdot\ar[rr,dotted] && \cdot\ar[rr,dotted] && \cdot\ar[rr,dotted] && \mathbf{num}
+    \end{tikzcd}
+  \end{equation*}
+  \begin{equation*}
+    \begin{tikzcd}[column sep=1ex,row sep=tiny]
+      &&& \to\ar[lld]\ar[rrd] &&& \\
+      & \to\ar[ld]\ar[rd] &&(3)&& \to\ar[ld]\ar[rd] & \\
+      \cdot\ar[rrrd,dotted] && \cdot\ar[rd,dotted] && \cdot\ar[ld,dotted] && \cdot\ar[llld,dotted]\\
+      &&& \mathbf{num} &&&
+    \end{tikzcd}
+  \end{equation*}
+\end{figure}
+
+\subsubsection{Occurs Check}
 
 In this representation, cyclic types present as cycles of pointers. As a result, the algorithm is at risk of looping infinitely, unless we detect such features. We do so by leaving breadcrumbs at every node we enter and removing them once we make our way back. If we find a crumb at a node we have just entered, we know we have doubled back on ourselves. In such a situation, it is appropriate to throw an error as cyclic types are not valid in the HM theory.
 
@@ -717,7 +773,7 @@ Or, the constraints of the \texttt{area} function's type (Given by $\alpha$):
 
 Notice that the return type ($\gamma$) of \texttt{area} is not satisfied just by $\mathbf{num}$ but also by any supertype of $\mathbf{num}$. Conversely, the parameter type ($\beta$) is constrained to be a subset of $[\mathbf{num}, \mathbf{num}]$.
 
-\subsection{Adapting HM}
+\subsection{Adapting HM}\label{sec:adapt-hm}
 
 In order to use \text{R\'emy} encoded types in HM, we must change how types are introduced: Before, we assigned each expression a specific type, which was its most general type. Now, we assign each expression a set of constraints over its type, so, we should ensure that these constraints are the most general constraints.
 
