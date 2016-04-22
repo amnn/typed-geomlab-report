@@ -352,22 +352,21 @@ We provide these as part of the context in which every expression is typed, as t
 
 \subsubsection{\xmark~Basic Type Error}
 
-\HMExample{\texttt{"foo"+"bar";}}{\input{aux/string_add.tex}}{\input{aux/string_add_err.tex}}
+\ShortHMExample{\texttt{"foo"+"bar";}}{\input{aux/string_add_err.tex}}
 
 \textit{Geomlab} has separate operators for the addition of numbers (\texttt{+}) and the concatenation of strings (\texttt{\^}). The assumption made by the programmer here is that \texttt{+} is overloaded to deal with both, which the typechecker catches as a unification error (in this case, between \texttt{num} and \texttt{str}, which are not unifiable because they are distinct base types).
-
 
 Without further context finding the source of the error is quite difficult. To help, we also provide the outermost types that were being unified at the time of the error, as these are usually what correspond to expressions in the source language. In this case, these are ${\texttt{(num, num) -> num}}$ --- the type of \texttt{+} --- and ${\texttt{(str, str) -> 'a}}$ --- a constraint on the type the programmer expected of \texttt{+}.
 
 \subsubsection{\xmark~Arity Mismatch}
 
-\HMExample{\texttt{let k(x, y) = x in k(1);}}{\input{aux/arity_mismatch.tex}}{\input{aux/arity_mismatch_err.tex}}
+\ShortHMExample{\texttt{let k(x, y) = x in k(1);}}{\input{aux/arity_mismatch_err.tex}}
 
 Unlike \textit{Haskell}, Multi-arity functions in \textit{Geomlab} are not curried by default, and as a result, they cannot be partially applied. The type system captures this constraint as a unification error.
 
 \subsubsection{\xmark~Branch Unification}
 
-\HMExample{\texttt{if true then 1 else "foo";}}{\input{aux/branch_unify.tex}}{\input{aux/branch_unify_err.tex}}
+\ShortHMExample{\texttt{if true then 1 else "foo";}}{\input{aux/branch_unify_err.tex}}
 
 In order to assign a type to a conditional, we require that the \textit{then} and \textit{else} expression types are unifiable, but this is not \textit{necessary}. In this example, the condition is constantly \texttt{true}, so we know that we could safely assign the entire expression the type \texttt{num}. Unfortunately, we cannot take advantage of such "degenerate" cases in general, because checking whether the condition is constant is not decidable (the proof of this follows by a reduction from the halting problem).
 
@@ -382,13 +381,13 @@ HM has no way of describing such ad-hoc "unions" between types, so there is no w
 
 \subsubsection{\cmark~Polymorphism}
 
-\HMExample{\texttt{define id(x) = x;}}{\input{aux/id.tex}}{\texttt{id :: 'b -> 'b}}
+\ShortHMExample{\texttt{define id(x) = x;}}{\texttt{id :: 'b -> 'b}}
 
 \texttt{id} is a minimal example of an expression with a polymorphic type: Its type indicates that it may be applied to values of any type, to receive a value of the same type. This ability to abstract over parts of the structure of a type is very compelling and is something that we find in the theory of HM but not in the simply typed $\lambda$-calculus.
 
 \subsubsection{\cmark~Higher-Order Functions}
 
-\HMExample{\texttt{define . (f, g) = function (x) f(g(x));}}{\input{aux/compose.tex}}{\texttt{. :: ('e -> 'f, 'd -> 'e) -> 'd -> 'f}}
+\ShortHMExample{\texttt{define . (f, g) = function (x) f(g(x));}}{\texttt{. :: ('e -> 'f, 'd -> 'e) -> 'd -> 'f}}
 
 Function composition is also polymorphic, but inspite of this generality, we may constrain types in terms of each other. Here, the two parameters must be functions, and the domain of the first must coincide with the co-domain of the second.
 
@@ -402,11 +401,11 @@ Patterns used in case expressions are also used by the inference algorithm in co
 
 \subsubsection{\xmark~Lambda-Bound Polymorphism}
 
-\HMExample{%
+\ShortHMExample{%
   \texttt{define p(a, b) = function (c) c(a, b)}\newline
   \texttt{define f(j) = p(j(true), j(1));}\newline
   \texttt{f(function (x) x);}%
-}{\input{aux/lambda_poly.tex}}{\input{aux/lambda_poly_err.tex}}
+}{\input{aux/lambda_poly_err.tex}}
 
 This valid \textit{Geomlab} program is untypeable in HM. As suggested by the type error, the issue is in the definition of \texttt{f}: Its parameter, \texttt{j}, is applied to both a \texttt{bool} and to a \texttt{num}, which causes a unification error. The trouble is that whilst types may be polymorphic, within the body of a function its parameters may only be instantiated once.
 
@@ -416,10 +415,10 @@ The theory supporting such types is referred to as \textit{System F}, and as can
 
 \subsubsection{\cmark~Let-Bound Polymorphism}
 
-\HMExample{%
+\ShortHMExample{%
   \texttt{let j(x) = x in p(j(true), j(1));}\newline
   \textit{NB.} \texttt{p} \textit{defined as above.}%
-}{\input{aux/let_poly.tex}}{\texttt{((bool, num) -> 'e) -> 'e}}
+}{\texttt{((bool, num) -> 'e) -> 'e}}
 
 This program stands in contrast to the above, as whilst it evaluates to the same value as the previous program, it \textit{is} typeable. The reason for this is that polymorphic types bound to variables introduced by let-expressions \textit{can} be instantiated multiple times.
 
@@ -427,11 +426,11 @@ The fact that the latter program is typeable and the former is not is of particu
 
 \subsubsection{\xmark~Infinite Types}
 
-\HMExample{%
+\ShortHMExample{%
 \texttt{define f(x) = f;}\newline
 \texttt{define g(x) = g(g);}\newline
 \texttt{define h(x) = p(h, h);}%
-}{\input{aux/infinite.tex}}{\input{aux/infinite_err.tex}}
+}{\input{aux/infinite_err.tex}}
 
 All these programs yield infinite types, which in our implementation are represented by cyclic data structures.
 The implementation detects these cycles, and terminates, printing the types. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is printed as the special variable \texttt{'*}.

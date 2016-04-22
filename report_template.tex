@@ -44,11 +44,20 @@
 \newcommand{\xmark}{\ding{55}}
 
 \newcommand{\HMExample}[3]{%
-{\renewcommand{\arraystretch}{2}
+{\renewcommand{\arraystretch}{1}
 \begin{longtable}{l m{9.5cm}}
   \toprule\textbf{Source} & #1
   \\ \midrule\textbf{Desugared} & #2
   \\ \midrule\textbf{Type} & #3
+  \\ \bottomrule
+\end{longtable}%
+}}
+
+\newcommand{\ShortHMExample}[2]{%
+{\renewcommand{\arraystretch}{1}
+\begin{longtable}{l m{9.5cm}}
+  \toprule\textbf{Source} & #1
+  \\ \midrule\textbf{Type} & #2
   \\ \bottomrule
 \end{longtable}%
 }}
