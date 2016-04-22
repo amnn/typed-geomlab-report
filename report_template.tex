@@ -62,6 +62,14 @@
 \end{longtable}%
 }}
 
+\newenvironment{mathprooftree}
+  {\varwidth{.9\textwidth}\centering\leavevmode}
+  {\DisplayProof\endvarwidth}
+
+\newenvironment{bprooftree}
+  {\leavevmode\hbox\bgroup}
+  {\DisplayProof\egroup}
+
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
 \numberwithin{definition}{section}

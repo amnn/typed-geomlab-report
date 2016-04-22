@@ -603,9 +603,9 @@ Intrinsic to subsumption is the subtyping relation between types.
   \begin{minipage}[t]{.5\textwidth}
     \vspace{1em}
     \begin{prooftree}
-      \AXC{$\phantom{\tau\sigma\rho\prec}$}
+      \AXC{$\tau\prec\sigma$}
       \RightLabel{\scriptsize($\cup$-right)}
-      \UIC{$\tau\prec(\tau\cup\sigma)$}
+      \UIC{$\tau\prec(\sigma\cup\rho)$}
     \end{prooftree}
   \end{minipage}
 \end{definition}
@@ -613,10 +613,6 @@ Intrinsic to subsumption is the subtyping relation between types.
 These additions are sound, and highlight some interesting interactions between existing features of the type system, and subtyping. For instance, note how subtyping for function types is contravariant in parameter types, and covariant in the return type, this fits our intuition: It is safe to treat ${(\mathbf{num}\cup\mathbf{bool})\to\mathbf{num}}$ as though it were ${\mathbf{num}\to(\mathbf{num}\cup\mathbf{bool})}$, because, in words, we are promising to feed only numbers to a function that accepts numbers and booleans, and we are prepared to receive numbers (which it produces) and bools (which it does not) from it.
 
 Also interesting (and encouraging) is the fact that HM's instantiation is a special case of subsumption:
-
-\newenvironment{mathprooftree}
-  {\varwidth{.9\textwidth}\centering\leavevmode}
-  {\DisplayProof\endvarwidth}
 \begin{align*}
   \begin{mathprooftree}
     \AXC{$\Gamma\vdash t::\forall\alpha\ldotp\tau$}
@@ -634,25 +630,22 @@ Also interesting (and encouraging) is the fact that HM's instantiation is a spec
   \end{mathprooftree}
 \end{align*}
 
-However, consider the types $(\alpha\cup\beta):\gamma$ and $(\alpha:\gamma)\cup(\beta:\gamma)$. Intuitively, they are equivalent so it should hold that they are subtypes of each other, but while it is possible to prove that $(\alpha:\gamma)\cup(\beta:\gamma)\prec(\alpha\cup\beta):\gamma$, the converse is not. To see why, let us have a look at an attempted proof:
+However, consider the types $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ and $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$. Intuitively, they are equivalent so it should hold that they are subtypes of each other, but while it is possible to prove that:
+\begin{align*}
+  (\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})\prec(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}
+\end{align*}
+The converse is not. To see why, let us have a look at an attempted proof (other attempted proofs will follow a similar pattern):
 
 \begin{prooftree}
   \AXC{$\vdots$}
-  \UIC{$(\alpha\cup\beta)\prec\alpha$}
+  \UIC{$(\mathbf{num}\cup\mathbf{bool})\prec\mathbf{bool}$}
   \AXC{}
   \RightLabel{\scriptsize(refl)}
-  \UIC{$\gamma\prec\gamma$}
+  \UIC{$\mathbf{str}\prec\mathbf{str}$}
   \RightLabel{\scriptsize(cons)}
-  \BIC{$(\alpha\cup\beta):\gamma\prec\alpha:\gamma$}
-  \AXC{$\vdots$}
-  \UIC{$(\alpha\cup\beta)\prec\beta$}
-  \AXC{}
-  \RightLabel{\scriptsize(refl)}
-  \UIC{$\gamma\prec\gamma$}
-  \RightLabel{\scriptsize(cons)}
-  \BIC{$(\alpha\cup\beta):\gamma\prec\beta:\gamma$}
+  \BIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec\mathbf{bool}:\mathbf{str}$}
   \RightLabel{\scriptsize($\cup$-right)}
-  \BIC{$(\alpha\cup\beta):\gamma\prec(\alpha:\gamma)\cup(\beta:\gamma)$}
+  \UIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$}
 \end{prooftree}
 
 This example highlights a limitation of the $\cup$-right rule. It is treating unions as \textit{disjoint}, meaning that if a term inhabits a union type, it either inhabits its left summand or its right, but not both. This is a convenient assumption to make for our implementation, but as we have seen, does not necessarily hold.
@@ -665,21 +658,21 @@ As subtyping has received a great deal of attention in the literature, there are
 data Either a b = Left a | Right b
 ```
 
-The idea being that, at the term level, when constructing an instance of the union type, we tag it with which summand of the union it belongs to (\textbf{Left}, or \textbf{Right}). With this extra information, type assignment can see that $\mathbf{Left}~1::\mathbf{Either}~\mathbf{Int}~\beta$\footnote{Haskell's type inference will actually infer the even more general type of ${\mathbf{Num}~\alpha\,\Rightarrow\,\mathbf{Either}~\alpha~\beta}$, but we will avoid muddying the waters by introducing type classes in this discussion.}
+The idea being that, at the term level, when constructing an instance of the union type, we tag it with which summand of the union it belongs to (\textbf{Left}, or \textbf{Right}). With this extra information, type assignment can see that ${\mathbf{Left}~1::\mathbf{Either}~\mathbf{Int}~\beta}$\footnote{Haskell's type inference will actually infer the even more general type of ${\mathbf{Num}~\alpha\,\Rightarrow\,\mathbf{Either}~\alpha~\beta}$, but we will avoid muddying the waters by introducing type classes in this discussion.}.
 
 Translating the types that incited these worries in us into \textit{Haskell}, they are (approximately):
 
 ```{.haskell}
-type X a b c = (Either a b, c)
-type Y a b c = Either (a, c) (b, c)
+type X = (Either Int Bool, String)
+type Y = Either (Int, String) (Bool, String)
 
-xToY :: X a b c -> Y a b c
-xToY (Left a, c)  = Left (a, c)
-xToY (Right b, c) = Right (b, c)
+xToY :: X -> Y
+xToY (Left  n, s) = Left  (n, s)
+xToY (Right b, s) = Right (b, s)
 
-yToX :: Y a b c -> X a b c
-yToX (Left  (a, c)) = (Left a,  c)
-yToX (Right (b, c)) = (Right b, c)
+yToX :: Y -> X
+yToX (Left  (n, s)) = (Left  n, s)
+yToX (Right (b, s)) = (Right b, s)
 ```
 
 The two types are isomorphic, but converting between them comes at a runtime cost, and must be done explicitly. Ideally we would like to avoid this: We are trying to infer the types of programs without modifying them.
@@ -700,22 +693,20 @@ It is debatable whether this extra generality is useful, and as a consequence of
 
 \subsubsection{Discriminative Types}
 
-We will instead choose to relax disjointness to \textit{discriminativity}, as seen \text{in~\cite{mishra1985declaration}} \text{(Definition~\ref{def:discrim})}.
+We will instead choose to relax disjointness to \textit{discriminativity}, as seen \text{in~\cite{mishra1985declaration}} \text{(Definition~\ref{def:discrim})}. The intuition here is that, if terms already look different, then there is no need to tag them as distinct. If we are given a term with type $\mathbf{num}\cup\mathbf{bool}$, then we can tell which summand of the union it will belong to by inspecting its representation. If, however we are given a term of type $\mathbf{num}\cup\mathbf{num}$, we cannot, so we must tag them: $\mathit{kilometres}(\mathbf{num})\cup\mathit{miles}(\mathbf{num})$.
 
 \begin{definition}[Discriminative Union]\label{def:discrim}
-  A union type is considered discriminative when each of its inhabitants may be projected into one of the union's summands by looking only at its outermost constructor. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary constructors and $[\,]$ can be considered a nullary constructor.
+  A union type is considered discriminative when each of its inhabitting terms may be projected into one of the union's summands by looking only at its outermost constructor. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary constructors and $[\,]$ can be considered a nullary constructor.
 \end{definition}
 
-The intuition here is that, if terms already look different, then there is no need to tag them as distinct. If we are given a term with type $\mathbf{num}\cup\mathbf{bool}$, then we can tell which summand of the union it will belong to by inspecting its representation. If, however we are given a term of type $\mathbf{num}\cup\mathbf{num}$, we cannot, so we must tag them: $\mathit{kilometres}(\mathbf{num})\cup\mathit{miles}(\mathbf{num})$.
-
-Unfortunately, neither $(\alpha:\gamma)\cup(\beta:\gamma)$ nor $(\alpha\cup\beta):\gamma$ are discriminative types. The former because $\alpha\cup\gamma$ and $\beta:\gamma$ both have a $(:)$ constructor outermost, and the latter because by substituting $\alpha$ and $\beta$ we could violate discriminativity. However, the type of the more complicated \texttt{area}:
+Returning to our earlier example $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$ is not discriminative because both summands have a $(:)$ constructor outermost, but $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ is! As only one of these types is well-formed, we avoid our original problem. Furthermore, the more complicated \texttt{area} function:
 
 ```
 define area([w, h]) = w * h
      | area(s)      = s * s;
 ```
 
-is $([\mathbf{num},\mathbf{num}]\cup\mathbf{num})\to\mathbf{num}$, which is discriminative.
+has type $([\mathbf{num},\mathbf{num}]\cup\mathbf{num})\to\mathbf{num}$, which is discriminative.
 
 \subsection{R\'emy Encoding}
 
