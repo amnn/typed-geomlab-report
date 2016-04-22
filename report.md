@@ -411,7 +411,7 @@ This valid \textit{Geomlab} program is untypeable in HM. As suggested by the typ
 
 This restriction on the number of instantiations is equivalent to the restriction that types must be in \textit{prenex} form (with all the universal quantifications outermost). With this restriction lifted, it is possible to assign a type to \texttt{f}: ${\forall\pi\ldotp(\forall\alpha\ldotp\alpha\to\alpha)\to((\mathbf{bool},\mathbf{num})\to\pi)\to\pi}$.
 
-The theory supporting such types is referred to as \textit{System F}, and as can be seen, it is more expressive than HM. The downside to this expressivity is that inferring a most general type in \textit{System F} is undecidable.
+The theory supporting such types is referred to as \textit{System F}, and as can be seen, it is more expressive than HM. The downside to this expressivity is that inferring a most general type in \textit{System F} is undecidable\ \cite{wells1999typability}.
 
 \subsubsection{\cmark~Let-Bound Polymorphism}
 
