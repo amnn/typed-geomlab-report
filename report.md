@@ -299,7 +299,7 @@ A sub-routine of Robinson's unification algorithm is the \textit{occurs check}: 
 
 For the most part, type inference is run on correct programs\footnote{Even in undergraduate functional programming courses.}, and further, most type errors are not due to cyclic types, so we expect the number of occurs check failures we will miss to be low. Nevertheless, we should make up for not performing the occurs check by detecting cyclic types in other parts of the program. We detect these lazily in functions that recurse over the structure of types by leaving breadcrumbs at every node we enter, and removing them before we leave. If we find a crumb at a node we have just entered, we know we have doubled back on ourselves (finding a cycle), so we throw an error.
 
-\subsubsection{Generalisation}
+\subsubsection{Generalisation}\label{sec:gen}
 
 When type checking a \texttt{let} expression or top-level definition, $e$, after inferring a type for the expression being defined, we take its \textit{closure} by universally quantifying any remaining free type variables (see the algorithm above). This process is referred to as \textit{generalisation} and the variables quantified by it are said to be \textit{owned} by $e$.
 
@@ -313,9 +313,21 @@ By annotating types with a flag that is true when the type contains a quantified
 
 \subsubsection{Level Adjustments}
 
-Unification can reduce the level of a type, which means we must work to keep levels consistent after unifications. For compound types, this would involve updating all mentioned variables with the lower level (if doing so lowers the variable's level), and propagating the change back up. Instead of doing this as we unify, we may instead perform this book-keeping lazily: If we unify a compound type we annotate it with the new level that should be propagated to its leaves, and push it onto a queue of types waiting to be adjusted. Just before we perform a generalisation, we force these waiting adjustments (as they could affect the generalisation outcome). Type variables, having no children, can still have their levels updated eagerly.
+In Section\ \ref{sec:gen} we introduced levels, but we did not cover how to combine them when unifying two types. To motivate the discussion, let us see what happens if we ignore levels during unification:
 
-When we force waiting adjustments, we are doing so because a type whose level was once greater than the level we are generalising at could receive a lower level and escape being quantified. So, going a step further, we could force adjustments only when the type's current level is greater than the definition expression's level, and replace those at lower levels to be forced at a later stage.
+\texttt{define$^0$ id(x) = let$^1$ y = x$^0$ in y$^1$;}
+
+Initially, $x$ is introduced under the \texttt{define} with level $0$, whereas $y$ is introduced by the \texttt{let}, with level $1$. When we check the definition of $y$ we unify its type with $x$'s (say $x, y:\alpha$). Then, in generalising the type of $y$, we see that it is a variable with level $1$, and we are at level $1$, \textit{making it safe to universally quantify!}. In the body of the \texttt{let}, $y$ is used, and its universal type is instantiated with a fresh variable (call it $\beta$). This gives $id:\forall\alpha,\beta\ldotp\alpha\to\beta$, which is clearly unsound.
+
+It was \textit{not} safe to universally quantify the type of $y$ because its type was shared with a variable from a lower level. To make sure this does not happen, given two types $\tau_1,\tau_2$ with levels $l_1,l_2$ respectively, we set their levels to $\min(l_1,l_2)$ after unification.
+
+Because the level $l$ of a compound type $\tau$ is the max of its variables' levels, to adjust it to $l^{\prime}$ would involve traversing $\tau$ (Setting each variable's level to the $\min$ of its current value and $l^{\prime}$). Rather than do this eagerly, we put $(\tau,l,l^{\prime})$ in the set $\mathit{delayed}$, to make note of the change.
+
+When we wish to generalise the type $\tau$ of a definition at level $l$, we find
+\begin{align*}
+  \{\sigma:(\sigma,l_o,l_n)\in\mathit{delayed},l_n < l \leq l_o\}
+\end{align*}
+and perform the adjustments on these. We do this because $\tau$ could share a variable with such a $\sigma$, and in performing the adjustment on $\sigma$, the level of that variable will drop below $l$, stopping it from being generalised.
 
 \subsubsection{Type Syntax}
 
