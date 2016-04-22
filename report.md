@@ -295,7 +295,9 @@ Long chains of forward pointers may form when unifying variables together. When 
 
 \subsubsection{Occurs Check}
 
-In this representation, cyclic types present as cycles of pointers. As a result, the algorithm is at risk of looping infinitely, unless we detect such features. We do so by leaving breadcrumbs at every node we enter and removing them once we make our way back. If we find a crumb at a node we have just entered, we know we have doubled back on ourselves. In such a situation, it is appropriate to throw an error as cyclic types are not valid in the HM theory.
+A sub-routine of Robinson's unification algorithm is the \textit{occurs check}: Before substituting a type for a variable, we check that the variable does not occur anywhere in the type that is replacing it. This step prevents us from creating cyclic types, but by throwing caution to the wind and not doing it, we can improve performance, as it is such a common operation.
+
+For the most part, type inference is run on correct programs\footnote{Even in undergraduate functional programming courses.}, and further, most type errors are not due to cyclic types, so we expect the number of occurs check failures we will miss to be low. Nevertheless, we should make up for not performing the occurs check by detecting cyclic types in other parts of the program. We detect these lazily in functions that recurse over the structure of types by leaving breadcrumbs at every node we enter, and removing them before we leave. If we find a crumb at a node we have just entered, we know we have doubled back on ourselves (finding a cycle), so we throw an error.
 
 \subsubsection{Generalisation}
 
