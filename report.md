@@ -719,7 +719,7 @@ The encoding assumes that we have a finite number of constructors and this is no
 \tag*{Flags}\\
 \mathcal{V} & = \{\alpha,\beta,\gamma,\ldots\}
 \tag*{Variables}\\
-\mathcal{C} & = \{\mathbf{num},~\mathbf{bool},~\mathbf{atom},~[\,],~(:),~(\to)\}
+\mathcal{C} & = \{\mathbf{num},~\mathbf{bool},~\mathbf{atom},~\mathbf{str},~[\,],~(:),~(\to)\}
 \tag*{Constructors}\\
 a_x & =
 \begin{cases}
@@ -728,7 +728,7 @@ a_x & =
 \end{cases}
 \tag*{Arities}
 \intertext{Then a R\'emy encoded type $\rho\in\mathcal{T}$ has the form:}
-\rho & = \mathcal{R}(f_{\mathbf{num}};~f_{\mathbf{bool}};~f_{\mathbf{atom}};~f_{[\,]};~f_{(:)}, c^1_{(:)}, c^2_{(:)};~f_{(\to)}, c^1_{(\to)}, c^2_{(\to)})
+\rho & = \mathcal{R}(f_{\mathbf{num}};~f_{\mathbf{bool}};~f_{\mathbf{atom}};~f_{\mathbf{str}};~f_{[\,]};~f_{(:)}, c^1_{(:)}, c^2_{(:)};~f_{(\to)}, c^1_{(\to)}, c^2_{(\to)})
 \tag{$\star$}\label{eqn:remy}
 \intertext{where}
 f_x & \in\mathcal{F}\cup\mathcal{V}
@@ -746,36 +746,44 @@ When a flag parameter $f_x$ is a variable, it indicates that $\rho$ does not con
 \subsubsection{Examples}
 
 Suppose we wish to represent the supersets of $\mathbf{num}\cup\mathbf{bool}$ using \text{R\'emy} encoding, it would look like this ($\star$ represents a fresh variable whose symbol is not relevant):
-\begin{math}
-  \begin{array}{rrrrrrrrrrrrl}
-    && f_{\mathbf{num}} & f_{\mathbf{bool}} & f_{\mathbf{atom}} & f_{[\,]} & f_{(:)} & c^1_{(:)} & c^2_{(:)} & f_{(\to)} & c^1_{(\to)} & c^2_{(\to)}\\
-    \phantom{\varepsilon:} & \mathcal{R}( & +; & +; & \star; & \star; & \star & \star & \star; & \star & \star & \star & )\\
-  \end{array}
-\end{math}
-Or, subsets of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
-\begin{math}
-  \begin{array}{rrrrrrrrrrrrl}
-    && f_{\mathbf{num}} & f_{\mathbf{bool}} & f_{\mathbf{atom}} & f_{[\,]} & f_{(:)} & c^1_{(:)} & c^2_{(:)} & f_{(\to)} & c^1_{(\to)} & c^2_{(\to)}\\
-    \alpha: & \mathcal{R}( & -; & -; & -; & -; & \star & \beta & \gamma; & - & \star & \star & )\\
-    \beta:  & \mathcal{R}( & \star; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
-    \gamma: & \mathcal{R}( & -; & \star; & -; & -; & - & \star & \star; & - & \star & \star & )\\
-  \end{array}
-\end{math}
-Or, the constraints of the \texttt{area} function's type (Given by $\alpha$):
-\begin{math}
-  \begin{array}{rrrrrrrrrrrrl}
-    \alpha:      & \mathcal{R}( & -; & -; & -; & -; & - & \star & \star; & + & \beta & \gamma & )\\
-    \beta:       & \mathcal{R}( & -; & -; & -; & -; & \star & \delta & \varepsilon; & - & \star & \star & )\\
-    \gamma:      & \mathcal{R}( & +; & \star; & \star; & \star; & \star & \star & \star; & \star & \star & \star & )\\
-    \delta:      & \mathcal{R}( & \star; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
-    \varepsilon: & \mathcal{R}( & -; & -; & -; & -; & \star & \zeta & \eta; & - & \star & \star & )\\
-    \zeta:       & \mathcal{R}( & \star; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
-    \eta:        & \mathcal{R}( & -; & -; & -; & \star; & - & \star & \star; & - & \star & \star & )\\
-    && f_{\mathbf{num}} & f_{\mathbf{bool}} & f_{\mathbf{atom}} & f_{[\,]} & f_{(:)} & c^1_{(:)} & c^2_{(:)} & f_{(\to)} & c^1_{(\to)} & c^2_{(\to)}\\
-  \end{array}
-\end{math}
 
-Notice that the return type ($\gamma$) of \texttt{area} is not satisfied just by $\mathbf{num}$ but also by any supertype of $\mathbf{num}$. Conversely, the parameter type ($\beta$) is constrained to be a subset of $[\mathbf{num}, \mathbf{num}]$.
+\makebox[\textwidth][c]{%
+\begin{math}
+  \begin{array}{rrrrrrrrrrrrrl}
+    && f_{\mathbf{num}} & f_{\mathbf{bool}} & f_{\mathbf{atom}} & f_{\mathbf{str}} & f_{[\,]} & f_{(:)} & c^1_{(:)} & c^2_{(:)} & f_{(\to)} & c^1_{(\to)} & c^2_{(\to)}\\
+    \phantom{\varepsilon:} & \mathcal{R}( & +; & +; & \star; & \star; & \star; & \star & \star & \star; & \star & \star & \star & )\\
+  \end{array}
+\end{math}}
+
+Or, subsets of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
+
+\makebox[\textwidth][c]{%
+\begin{math}
+  \begin{array}{rrrrrrrrrrrrrl}
+    && f_{\mathbf{num}} & f_{\mathbf{bool}} & f_{\mathbf{atom}} & f_{\mathbf{str}} & f_{[\,]} & f_{(:)} & c^1_{(:)} & c^2_{(:)} & f_{(\to)} & c^1_{(\to)} & c^2_{(\to)}\\
+    \alpha: & \mathcal{R}( & -; & -; & -; & -; & -; & \star & \beta & \gamma; & - & \star & \star & )\\
+    \beta:  & \mathcal{R}( & \star; & -; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
+    \gamma: & \mathcal{R}( & -; & \star; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
+  \end{array}
+\end{math}}
+
+Or, the constraints of the \texttt{area} function's type (Given by $\alpha$):
+
+\makebox[\textwidth][c]{%
+\begin{math}
+  \begin{array}{rrrrrrrrrrrrrl}
+    && f_{\mathbf{num}} & f_{\mathbf{bool}} & f_{\mathbf{atom}} & f_{\mathbf{str}} & f_{[\,]} & f_{(:)} & c^1_{(:)} & c^2_{(:)} & f_{(\to)} & c^1_{(\to)} & c^2_{(\to)}\\
+    \alpha:      & \mathcal{R}( & \star; & \star; & \star; & \star; & \star; & \star & \star & \star; & + & \beta & \gamma & )\\
+    \beta:       & \mathcal{R}( & -; & -; & -; & -; & -; & \star & \delta & \varepsilon; & - & \star & \star & )\\
+    \gamma:      & \mathcal{R}( & +; & \star; & \star; & \star; & \star; & \star & \star & \star; & \star & \star & \star & )\\
+    \delta:      & \mathcal{R}( & \star; & -; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
+    \varepsilon: & \mathcal{R}( & -; & -; & -; & -; & -; & \star & \zeta & \eta; & - & \star & \star & )\\
+    \zeta:       & \mathcal{R}( & \star; & -; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
+    \eta:        & \mathcal{R}( & -; & -; & -; & -; & \star; & - & \star & \star; & - & \star & \star & )\\
+  \end{array}
+\end{math}}
+
+The return type ($\gamma$) of \texttt{area} is not satisfied just by $\mathbf{num}$ but also by any \textit{supertype} of $\mathbf{num}$. Conversely, the parameter type ($\beta$) is constrained to be a \textit{subtype} of $[\mathbf{num}, \mathbf{num}]$.
 
 \subsection{Adapting HM}\label{sec:adapt-hm}
 
