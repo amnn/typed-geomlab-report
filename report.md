@@ -29,7 +29,7 @@ Inference uses the fact that \texttt{Cons} is a constructor for $\mathbf{List}~\
 \end{math}
 Dynamic languages --- especially of the \textsc{Lisp} tradition --- can treat these operations as the same: A non-empty list is just a pair of its first element and the rest of the list. This is not the case in \textit{Haskell} (as shown by the types) nor is it in many statically typed languages. Seemingly, the difference is that \texttt{head} can be applied to any list (even the empty list, \texttt{Nil}), but this is an artefact of the type system's limitations: \texttt{head Nil} evaluates to a runtime error!
 
-Associating constructors with each other is injurious to the precision of our type system. By extending battle-tested type systems, it is possible to work in a setting where, like terms in a dynamically typed language, types are built up from a small set of constructors. In such an environment, the functionality of both \texttt{head} and \texttt{fst} could be captured in a single function, applicable to both lists and pairs, in such a way that it would be a type error to apply it to an empty list.
+Associating constructors with each other is injurious to the precision of our type system. By extending battle-hardened type systems, it is possible to work in a setting where, like terms in a dynamically typed language, types are built up from a small set of constructors. In such an environment, the functionality of both \texttt{head} and \texttt{fst} could be captured in a single function, applicable to both lists and pairs, in such a way that it would be a type error to apply it to an empty list.
 
 Section\ \ref{sec:bg} introduces the source language, \textit{GeomLab}, and the type checker's internal representation of it. Section\ \ref{sec:hm} then describes an optimised implementation of the Hindley--Milner type system for \textit{GeomLab}.
 
@@ -694,25 +694,25 @@ yToX (Left  (n, s)) = (Left  n, s)
 yToX (Right (b, s)) = (Right b, s)
 ```
 
-The two types are isomorphic, but converting between them comes at a runtime cost, and must be done explicitly. Ideally we would like to avoid this: We are trying to infer the types of programs without modifying them.
+The two types are isomorphic, but converting between them comes at a runtime cost, and must be done explicitly. This is rarely an issue in \textit{Haskell} programs, in which having named types ensures that all functions operating on the same data will be operating on the same (and not an isomorphic) representation of it. This does not carry over to \textit{GeomLab} which lacks the syntax for named types and type annotations.
 
 \subsubsection{Type Inclusion Constraints}
 
-Aiken and Wimmers generalised HM \text{in~\cite{aiken1993type}} by replacing equality constraints --- $\tau_1 = \tau_2$ --- which are resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. As well as unions, this generalisation introduces \textit{intersection} types and a notion similar to \textit{negation}, and in so doing, mitigates some of our issues.
+Aiken and Wimmers generalised HM in\ \cite{aiken1993type} by replacing equality constraints --- $\tau_1 = \tau_2$ --- which are resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation.
 
-Whilst inclusion constraints are a generalisation of equality constraints, the algorithms used to resolve them are not an extension of unification, and if we look at the types of some common functions, such as:
+Aiken and Wimmers' type system has several interesting properties, including having principle types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
 
 ```
 define twice(f, x) = f(f(x));
 ```
 
-which we are used to seeing with the type $\forall\alpha\ldotp(\alpha\to\alpha)\to\alpha\to\alpha$. We are given a more general type $\forall\alpha,\beta,\gamma\ldotp((\alpha\to\beta)\cap(\beta\to\gamma))\to\alpha\to\gamma$.
+which we are used to seeing with the type $\forall\alpha\ldotp(\alpha\to\alpha)\to\alpha\to\alpha$, is given the more general type $\forall\alpha,\beta,\gamma\ldotp((\alpha\to\beta)\cap(\beta\to\gamma))\to\alpha\to\gamma$.
 
-It is debatable whether this extra generality is useful, and as a consequence of it, the type system, type inference algorithm, and the types that are produced are much more complicated.
+We choose not to build upon this type system because compared to HM, there is less literature on its efficient implementation. Furthermore, in the spirit of \textit{GeomLab} being a teaching language, we wish to avoid introducing concepts like type intersection and negation whose benefits are perhaps not as great as product and union types for the programmer.
 
 \subsubsection{Discriminative Types}
 
-We will instead choose to relax disjointness to \textit{discriminativity}, as seen \text{in~\cite{mishra1985declaration}} \text{(Definition~\ref{def:discrim})}. The intuition here is that, if terms already look different, then there is no need to tag them as distinct. If we are given a term with type $\mathbf{num}\cup\mathbf{bool}$, then we can tell which summand of the union it will belong to by inspecting its representation. If, however we are given a term of type $\mathbf{num}\cup\mathbf{num}$, we cannot, so we must tag them: $\mathit{kilometres}(\mathbf{num})\cup\mathit{miles}(\mathbf{num})$.
+Our approach will be to relax disjointness to \textit{discriminativity}, as seen \text{in~\cite{mishra1985declaration}} \text{(Definition~\ref{def:discrim})}. The intuition here is that, if terms already look different, then there is no need to tag them as distinct. If we are given a term with type $\mathbf{num}\cup\mathbf{bool}$, then we can tell which summand of the union it will belong to by inspecting its representation. If, however we are given a term of type $\mathbf{num}\cup\mathbf{num}$, we cannot, so we must tag them: $\mathit{kilometres}(\mathbf{num})\cup\mathit{miles}(\mathbf{num})$.
 
 \begin{definition}[Discriminative Union]\label{def:discrim}
   A union type is considered discriminative when each of its inhabitting terms may be projected into one of the union's summands by looking only at its outermost constructor. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary constructors and $[\,]$ can be considered a nullary constructor.
