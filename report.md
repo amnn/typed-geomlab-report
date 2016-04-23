@@ -10,15 +10,34 @@ abstract: |
 
 \section{Introduction}
 
-In the majority of statically typed languages, data types must be declared and named before use, whilst in dynamically typed languages, data structures may be constructed on the fly from a relatively small set of constructors, with the caveat that the programmer must ensure the correct contracts and invariants are maintained in their use.
+In the majority of statically typed languages, data types are explicitly defined, whilst in dynamically typed languages, arbitrary data structures may be constructed from a relatively small set of constructors. Traditional type inference relies on such data definitions to aid in type assignment. For instance, in \textit{Haskell}:
 
-Whereas traditional type inference relies on such data definitions, in this project, we extend Hindley and Milner's type system, so that we may infer the shape of a data structure as composed of a few base constructors without having to explicitly declare it and give it a name. We do this in a way that aims to mirror the specifications programmers naturally follow when working with these composite types.
+```{.haskell}
+data List a = Nil | Cons a (List a)
 
-In Section\ \ref{sec:bg} we introduce the source language, \textit{GeomLab}, and the transformations it undergoes before being type checked. Section\ \ref{sec:hm} then describes an optimised implementation of the Hindley-Milner type system for \textit{GeomLab}.
+head (Cons x  _) = x
+fst       (x, _) = x
+```
 
-The following Sections\ (\ref{sec:adhoc-adts},\ \ref{sec:tagged-variants}, and\ \ref{sec:recursive}) successively expand the type system so that it may specify more idiomatic programs, each section moving the system closer to the goal of being able to infer shape as well as type.
+Inference uses the fact that \texttt{Cons} is a constructor for $\mathbf{List}~\alpha$ and $(,)$ --- the pair constructor --- is a constructor for $(\alpha,\beta)$ to assign the types:
+\begin{math}
+  \arraycolsep=1pt
+  \begin{array}{llll}
+    \mathit{head} & : \forall \alpha       \ldotp & \mathbf{List}~\alpha & \to\alpha\\
+    \mathit{fst}  & : \forall \alpha,\beta \ldotp & (\alpha,\beta)       & \to\alpha
+  \end{array}
+\end{math}
+Dynamic languages --- especially of the \textsc{Lisp} tradition --- can treat these operations as the same: A non-empty list is just a pair of its first element and the rest of the list. This is not the case in \textit{Haskell} (as shown by the types) nor is it in many statically typed languages. Seemingly, the difference is that \texttt{head} can be applied to any list (even the empty list, \texttt{Nil}), but this is an artefact of the type system's limitations: \texttt{head Nil} evaluates to a runtime error!
 
-We finish with Section\ \ref{sec:errors} which discusses techniques for producing reasonable error outputs, by introducing source location annotations without perturbing the overall structure of the type checker.
+Associating constructors with each other is injurious to the precision of our type system. By extending battle-tested type systems, it is possible to work in a setting where, like terms in a dynamically typed language, types are built up from a small set of constructors. In such an environment, the functionality of both \texttt{head} and \texttt{fst} could be captured in a single function, applicable to both lists and pairs, in such a way that it would be a type error to apply it to an empty list.
+
+Section\ \ref{sec:bg} introduces the source language, \textit{GeomLab}, and the type checker's internal representation of it. Section\ \ref{sec:hm} then describes an optimised implementation of the Hindley--Milner type system for \textit{GeomLab}.
+
+Sections\ \ref{sec:adhoc-adts},\ \ref{sec:tagged-variants} and\ \ref{sec:recursive} extend the type system to make the structure of types more compositional while losing neither expressivity nor type inference.
+
+We finish with Section\ \ref{sec:errors} which discusses producing reasonable error outputs that reference the source code, despite originating from an alternative (desugared) representation of the program.
+
+The resulting framework allows us to capture and infer the specifications programmers are used to maintaining themselves when programming in dynamic languages and enforce them statically.
 
 \section{Background}\label{sec:bg}
 
