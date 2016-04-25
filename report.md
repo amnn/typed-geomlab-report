@@ -217,11 +217,11 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
     \\[1em] As our desugaring procedure removes nested patterns in favour of nested case expressions, our rule here only needs to deal with patterns that are one constructor deep. For each such pattern, we create the smallest type that contains any expression that could match it ($\mathcal{P}$ defined below), and we unify all of these with the type of the case argument. To get the type of the expression, we unify the types of all the $e_i$'s.
     \\[1em] $\mathcal{P}(pat_i, e_i)$ is defined as:
     \begin{enumerate}[(a)]
-    \item $pat_i$ a numeric, string or atom literal pattern\hfill{\scriptsize(literal pattern)}
+    \item $pat_i$ a numeric, string, bool or atom pattern\hfill{\scriptsize(literal pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~\mathbf{num})\text{ ($\mathbf{str}$, $\mathbf{atom}$ respectively)}
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~\mathbf{num})\text{ ($\mathbf{str}$, $\mathbf{bool}$,  $\mathbf{atom}$ respectively)}
           \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i)\vdash e_i)
           \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}), \tau^\prime)
         \end{array}
@@ -925,7 +925,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
     \\[1em] When type checking a case expression, first we unify together the types of each arm's body. This forms the type of the entire expression.
     \\[1em] $\mathcal{A}(pat_i, e_i)$ is defined as:
     \begin{enumerate}[(a)]
-    \item $pat_i$ a numeric, string, atom or nil literal pattern\hfill{\scriptsize(literal pattern)}
+    \item $pat_i$ a numeric, string, bool, atom or nil pattern\hfill{\scriptsize(literal pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
@@ -972,6 +972,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
       \begin{cases}
         \mathbf{num} & \text{ if $pat_i$ is a numeric pattern}\\
         \mathbf{str} & \text{ if $pat_i$ is a string pattern}\\
+        \mathbf{bool} & \text{ if $pat_i$ is a boolean pattern}\\
         \mathbf{atom} & \text{ if $pat_i$ is a atom pattern}\\
         [\,] & \text{ if $pat_i$ is a nil pattern}\\
         (\gamma^1_i:\gamma^2_i) & \text{ if $pat_i$ is a cons pattern}
