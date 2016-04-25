@@ -205,10 +205,11 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
     \\[.5em] \begin{math}
     \arraycolsep=1.5pt
     \begin{array}{llll}
-      \text{let} & (\mathbb{S}_0,\tau_0) & \gets & \mathcal{W}(\Gamma\vdash c)
+      \text{let} & \phantom{(}\tau_0 & \gets & \alpha \text{ ($\alpha$ fresh)}
+      \\ & (\mathbb{S}_0,\tau^{\prime}) & \gets & \mathcal{W}(\Gamma\vdash c)
       \\ & (\mathbb{S}_i, \tau_i) & \gets & \mathcal{P}(pat_i, e_i)
-      \\ & \phantom{(}\rho_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\tau_0)
-      \\ & \phantom{(}\Delta_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\Gamma)
+      \\ & \phantom{(}\rho_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\tau^{\prime})
+      \\ & \phantom{(}\Delta_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_0(\Gamma)
     \end{array}
     \end{math}
 
