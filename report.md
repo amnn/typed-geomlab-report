@@ -875,8 +875,8 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
 \begin{enumerate}[(i)]
   \item
     \begin{enumerate}[(a)]
-      \item $t$ a number, string boolean, atom or nil literal\hfill{\scriptsize(literals)}
-        \\[.5em] $\mathbb{S}\equiv\varnothing$ and $\tau\equiv\mathbf{num}^{\uparrow},\mathbf{str}^{\uparrow},\mathbf{atom}^{\uparrow},[\,]^{\uparrow}$ respectively.
+      \item $t$ a number, string, boolean, atom or nil literal\hfill{\scriptsize(literals)}
+        \\[.5em] $\mathbb{S}\equiv\varnothing$ and $\tau\equiv\mathbf{num}^{\uparrow},\mathbf{str}^{\uparrow},\mathbf{bool}^{\uparrow},\mathbf{atom}^{\uparrow},[\,]^{\uparrow}$ respectively.
       \item $t\equiv(a:b)$\hfill{\scriptsize(cons cells)}
         \\[.5em] \begin{math}
           \arraycolsep=1.5pt
@@ -891,17 +891,17 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
     \\[.5em] \begin{math}
       \arraycolsep=1.5pt
       \begin{array}{llll}
-        \text{let} & (\mathbb{S}_1,\tau^\prime_1) & \gets & \mathcal{W}(\Gamma,x:\alpha\vdash f) \text{ ($\alpha$ fresh)}
+        \text{let} & (\mathbb{S}_1,\tau^\prime_1) & \gets & \mathcal{W}(\Gamma,x:\alpha\vdash e) \text{ ($\alpha$ fresh)}
       \end{array}
     \end{math}
-    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_1$ and $\tau\equiv((\mathbb{S}_1(\alpha))\to\tau^{\prime}_1)^{\uparrow}$.
+    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_1$ and $\tau\equiv(\mathbb{S}_1(\alpha)\to\tau^{\prime}_1)^{\uparrow}$.
   \item $t\equiv f(e)$\hfill{\scriptsize(function applications)}
     \\[.5em] \begin{math}
       \arraycolsep=1.5pt
       \begin{array}{llll}
         \text{let} & (\mathbb{S}_0,\tau^\prime_0) & \gets & \mathcal{W_R}(\Gamma\vdash f)
         \\ & (\mathbb{S}_1,\tau^\prime_1) & \gets & \mathcal{W_R}(\mathbb{S}_{0}(\Gamma)\vdash e)
-        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_1(\tau^\prime_0),~((\tau^\prime_1)\to\beta)^{\downarrow}) \text{ ($\beta$ fresh)}
+        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_1(\tau^\prime_0),~(\tau^\prime_1\to\beta)^{\downarrow}) \text{ ($\beta$ fresh)}
       \end{array}
     \end{math}
     \\[.5em] $\mathbb{S}\equiv\mathbb{U}\mathbb{S}_1\mathbb{S}_0$ and $\tau\equiv\mathbb{U}(\beta)$.
@@ -911,52 +911,72 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
     \\[.5em] \begin{math}
     \arraycolsep=1.5pt
     \begin{array}{llll}
-      \text{let} & (\mathbb{S}_0,\tau_0) & \gets & \mathcal{W}(\Gamma\vdash c)
-      \\ & (\mathbb{S}_i, \tau_i) & \gets & \mathcal{P}(pat_i, e_i)
-      \\ & \phantom{(}\rho_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\tau_0)
-      \\ & \phantom{(}\Delta_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\Gamma)
+      \text{let} & \phantom{(}\tau_0 & \gets & \star
+      \\ & (\mathbb{S}_0,\tau^{\prime}) & \gets & \mathcal{W_R}(\Gamma\vdash c)
+      \\ & (\mathbb{S}_i,\tau_i) & \gets & \mathcal{A}(pat_i,e_i)
+      \\ & \phantom{(}\rho_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\tau^{\prime})
+      \\ & \phantom{(}\Delta_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_0(\Gamma)
+      \\ & \phantom{(}\gamma & \gets & \mathcal{C}(\{pat_1,\ldots,pat_k\})
+      \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_k,\gamma)
     \end{array}
     \end{math}
 
-    $\mathbb{S}\equiv\mathbb{S}_k\ldots\mathbb{S}_1$ and $\tau\equiv\tau_k$.
-    \\[1em] As our desugaring procedure removes nested patterns in favour of nested case expressions, our rule here only needs to deal with patterns that are one constructor deep. For each such pattern, we create the smallest type that contains any expression that could match it ($\mathcal{P}$ defined below), and we unify all of these with the type of the case argument. To get the type of the expression, we unify the types of all the $e_i$'s.
-    \\[1em] $\mathcal{P}(pat_i, e_i)$ is defined as:
+    $\mathbb{S}\equiv\mathbb{U}\mathbb{S}_k\ldots\mathbb{S}_0$ and $\tau\equiv\tau^{\prime}_k$.
+    \\[1em] When type checking a case expression, first we unify together the types of each arm's body. This forms the type of the entire expression.
+    \\[1em] $\mathcal{A}(pat_i, e_i)$ is defined as:
     \begin{enumerate}[(a)]
-    \item $pat_i$ a numeric, string or atom literal pattern\hfill{\scriptsize(literal pattern)}
+    \item $pat_i$ a numeric, string, atom or nil literal pattern\hfill{\scriptsize(literal pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~\mathbf{num})\text{ ($\mathbf{str}$, $\mathbf{atom}$ respectively)}
-          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i)\vdash e_i)
-          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}), \tau^\prime)
+          \text{let} & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W_R}(\Delta_i\vdash e_i)
+          \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}^\prime(\tau_{i-1}), \tau^\prime)
         \end{array}
       \end{math}
-      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}\mathbb{S}^\prime$ and $\tau_i\equiv\mathbb{U}(\tau^\prime)$
 
-    \item $pat_i\equiv[\,]$\hfill{\scriptsize(nil pattern)}
+    \item $pat_i\equiv v$\hfill{\scriptsize(variable pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~[\alpha])\text{ ($\alpha$ fresh) }
-          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i)\vdash e_i)
-          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}),~\tau^\prime)
+          \text{let} & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W_R}(\Delta_i,v : \rho_i\vdash e_i)
+          \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}^\prime(\tau_{i-1}), \tau^\prime)
         \end{array}
       \end{math}
-      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}\mathbb{S}^\prime$ and $\tau_i\equiv\mathbb{U}(\tau^\prime)$
 
-    \item $pat_i\equiv(h:t)$\hfill{\scriptsize(cons pattern)}
+    \item $pat_i\equiv(h : t)$ \hfill{\scriptsize(cons pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~[\alpha])\text{ ($\alpha$ fresh)}
-          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i,h:\alpha,t:[\alpha])\vdash e_i)
-          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}),~\tau^\prime)
+          \text{let} & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W_R}(\Delta_i,h:\gamma^1_i, t:\gamma^{\prime}_i \vdash e_i) \text{ ($\gamma^1_i,\gamma^2_i$ fresh)}
+          \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}^\prime(\tau_{i-1}), \tau^\prime)
         \end{array}
       \end{math}
-      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}\mathbb{S}^\prime$ and $\tau_i\equiv\mathbb{U}(\tau^\prime)$
     \end{enumerate}
-    Although this is a common type semantics for case expressions, it poses some problems. For instance, a pattern that expects only \texttt{[]} will also purport to accept cons cells, when doing so would cause an exception at runtime (The very thing a type system aims to avoid).
-    \\[1em] In other languages, catching such errors is the job of \textit{exhaustiveness checking}, which verifies that if one of a type's constructors appears in a case expression as a pattern, then they must all be covered. This also relies on knowing which constructors belong to which types\footnote{Verifying exhaustiveness is also known to be an NP-Complete problem, so we are keen to avoid relying upon it.}. In Section~\ref{sec:adapt-hm}, we will suggest an alternative treatment that exposes exhaustiveness as a property of types, by changing their representation.
+
+    Then, we constrain the type of the expression being matched upon by looking at each arm's pattern.
+    \begin{flalign*}
+      \mathcal{C}(pats) & = \left[ \bigcup_{x(\gamma^1,\ldots,\gamma^{a_x})\in\llbracket pats\rrbracket}x(\gamma^1,\ldots,\gamma^{a_x}) \right]^{\downarrow} &&\\
+      \intertext{If there is a variable pattern, the case could match against an expression with any outermost constructor, otherwise, in the absence of a variable pattern, we may say that the matched term's outermost constructor must be one of those mentioned in the case.}
+      \llbracket pats\rrbracket & =
+      \begin{cases}
+        \left\{ \overline{pat_i} : pat_i\in pats, pat_i\text{ not a variable} \right\}\oplus\mathcal{P} & \text{ if $v$ a variable, }v\in pats\\
+        \left\{ \overline{pat_i} : pat_i\in pats\right\} & \text{ otherwise}
+      \end{cases}&&\\
+      \mathcal{P} & = \{\mathbf{num}, \mathbf{str}, \mathbf{bool}, \mathbf{atom}, [\,], (\star:\star),\star\to\star \} &&\\
+      X\oplus Y & = \{ x(\gamma^1,\ldots,\gamma^{a_x}) : x\in\mathcal{C},\text{ if }x(\gamma^1,\ldots,\gamma^{a_x})\in X \text{ else if }x(\gamma^1,\ldots,\gamma^{a_x})\in Y\}
+      \intertext{Note that $\overline{pat_i}$'s cons pattern branch uses type variables $\gamma^1_i$ and $\gamma^2_i$ which are introduced in $\mathcal{A}$'s cons pattern branch (above).}
+      \overline{pat_i} & =
+      \begin{cases}
+        \mathbf{num} & \text{ if $pat_i$ is a numeric pattern}\\
+        \mathbf{str} & \text{ if $pat_i$ is a string pattern}\\
+        \mathbf{atom} & \text{ if $pat_i$ is a atom pattern}\\
+        [\,] & \text{ if $pat_i$ is a nil pattern}\\
+        (\gamma^1_i:\gamma^2_i) & \text{ if $pat_i$ is a cons pattern}
+      \end{cases}&&
+    \end{flalign*}
 \end{enumerate}
 
 \subsection{Case Types}
