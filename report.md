@@ -227,6 +227,15 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
       \end{math}
       \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
 
+    \item $pat_i\equiv v$\hfill{\scriptsize(variable pattern)}
+      \\[.2em] \begin{math}
+        \arraycolsep=1.5pt
+        \begin{array}{llll}
+          \text{let} & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\Delta_i,v:\rho_i\vdash e_i)
+        \end{array}
+      \end{math}
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{S}^\prime$ and $\tau_i\equiv\tau^{\prime}$
+
     \item $pat_i\equiv[\,]$\hfill{\scriptsize(nil pattern)}
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
