@@ -820,7 +820,7 @@ Always dealing with \text{R\'emy} encodings in the form given in Equation\ \ref{
 
 Suppose we have \textit{pairwise distinct} constructors $\{x_1,\ldots,x_k\}=\mathcal{X}\subseteq\mathcal{C}$ and \text{R\'emy} encodings $\gamma_1^1,\ldots,\gamma_1^{a_{x_1}},\ldots,\gamma_k^{a_{x_k}}\in\mathcal{T}\cup\mathcal{V}$.
 
-\begin{definition}[Superset encoding]
+\begin{definition}[Supertype encoding]
   \begin{flalign*}
   \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\uparrow} & = \rho\in\mathcal{T}&&
   \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
@@ -837,7 +837,7 @@ Suppose we have \textit{pairwise distinct} constructors $\{x_1,\ldots,x_k\}=\mat
   \end{flalign*}
 \end{definition}
 
-\begin{definition}[Subset encoding]
+\begin{definition}[Subtype encoding]
   \begin{flalign*}
   \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\downarrow} & = \rho\in\mathcal{T}&&
   \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
