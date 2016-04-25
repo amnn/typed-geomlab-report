@@ -212,7 +212,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
     \end{array}
     \end{math}
 
-    $\mathbb{S}\equiv\mathbb{S}_k\ldots\mathbb{S}_1$ and $\tau\equiv\tau_k$.
+    $\mathbb{S}\equiv\mathbb{S}_k\ldots\mathbb{S}_0$ and $\tau\equiv\tau_k$.
     \\[1em] As our desugaring procedure removes nested patterns in favour of nested case expressions, our rule here only needs to deal with patterns that are one constructor deep. For each such pattern, we create the smallest type that contains any expression that could match it ($\mathcal{P}$ defined below), and we unify all of these with the type of the case argument. To get the type of the expression, we unify the types of all the $e_i$'s.
     \\[1em] $\mathcal{P}(pat_i, e_i)$ is defined as:
     \begin{enumerate}[(a)]
@@ -864,9 +864,99 @@ The examples in the previous section now have much more compact, recognisable re
 
 \subsection{Adapting HM}\label{sec:adapt-hm}
 
-In order to use \text{R\'emy} encoded types in HM, we must change how types are introduced: Before, we assigned each expression a specific type, which was its most general type. Now, we assign each expression a set of constraints over its type, so, we should ensure that these constraints are the most general constraints.
-
 The beauty of this encoding is that, if we treat $\mathcal{R}$ as a constructor, and flag parameters as types, then \text{R\'emy} encoded types may be combined using Robinson's unification algorithm: Two \text{R\'emy} types are unified by unifying their flag parameters and child types, whilst a variable $v$ is unified with another term $t$ (so long as $v$ appears free in $t$) by substituting $t$ for $v$.
+
+All the necessary changes are in Algorithm $\mathcal{W}$: Previously, we assigned each expression its most general type. Now, we assign each expression a set of constraints over its type, so, we should ensure that these are, in some sense, the most general constraints. What follows is an adaption of Algorithm $\mathcal{W}$ that we will dub $\mathcal{W_R}$, we touch on only the cases which differ.
+
+\textbf{Algorithm $\mathcal{W_R}$:}
+
+$(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
+\begin{enumerate}[(i)]
+  \item
+    \begin{enumerate}[(a)]
+      \item $t$ a number, string boolean, atom or nil literal\hfill{\scriptsize(literals)}
+        \\[.5em] $\mathbb{S}\equiv\varnothing$ and $\tau\equiv\mathbf{num}^{\uparrow},\mathbf{str}^{\uparrow},\mathbf{atom}^{\uparrow},[\,]^{\uparrow}$ respectively.
+      \item $t\equiv(a:b)$\hfill{\scriptsize(cons cells)}
+        \\[.5em] \begin{math}
+          \arraycolsep=1.5pt
+          \begin{array}{llll}
+            \text{let} & (\mathbb{S}_1,\tau^\prime_1) & \gets & \mathcal{W_R}(\Gamma\vdash a)
+            \\ & (\mathbb{S}_2,\tau^\prime_2) & \gets & \mathcal{W_R}(\mathbb{S}_1(\Gamma)\vdash b)
+          \end{array}
+        \end{math}
+    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_2\mathbb{S}_1$ and $\tau\equiv(\mathbb{S}_2(\tau^{\prime}_1):\tau^{\prime}_2)^{\uparrow}$.
+    \end{enumerate}
+  \item $t\equiv \texttt{function}\;(x)~e$\hfill{\scriptsize(abstractions)}
+    \\[.5em] \begin{math}
+      \arraycolsep=1.5pt
+      \begin{array}{llll}
+        \text{let} & (\mathbb{S}_1,\tau^\prime_1) & \gets & \mathcal{W}(\Gamma,x:\alpha\vdash f) \text{ ($\alpha$ fresh)}
+      \end{array}
+    \end{math}
+    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_1$ and $\tau\equiv((\mathbb{S}_1(\alpha))\to\tau^{\prime}_1)^{\uparrow}$.
+  \item $t\equiv f(e)$\hfill{\scriptsize(function applications)}
+    \\[.5em] \begin{math}
+      \arraycolsep=1.5pt
+      \begin{array}{llll}
+        \text{let} & (\mathbb{S}_0,\tau^\prime_0) & \gets & \mathcal{W_R}(\Gamma\vdash f)
+        \\ & (\mathbb{S}_1,\tau^\prime_1) & \gets & \mathcal{W_R}(\mathbb{S}_{0}(\Gamma)\vdash e)
+        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_1(\tau^\prime_0),~((\tau^\prime_1)\to\beta)^{\downarrow}) \text{ ($\beta$ fresh)}
+      \end{array}
+    \end{math}
+    \\[.5em] $\mathbb{S}\equiv\mathbb{U}\mathbb{S}_1\mathbb{S}_0$ and $\tau\equiv\mathbb{U}(\beta)$.
+    \\[1em] We are restricted to functions with one parameter by the limitations of our current encoding.
+
+  \item $t\equiv \texttt{case $c$ of } pat_1\to e_1;\cdots ;pat_k\to e_k$\hfill{\scriptsize(case expressions)}
+    \\[.5em] \begin{math}
+    \arraycolsep=1.5pt
+    \begin{array}{llll}
+      \text{let} & (\mathbb{S}_0,\tau_0) & \gets & \mathcal{W}(\Gamma\vdash c)
+      \\ & (\mathbb{S}_i, \tau_i) & \gets & \mathcal{P}(pat_i, e_i)
+      \\ & \phantom{(}\rho_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\tau_0)
+      \\ & \phantom{(}\Delta_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\Gamma)
+    \end{array}
+    \end{math}
+
+    $\mathbb{S}\equiv\mathbb{S}_k\ldots\mathbb{S}_1$ and $\tau\equiv\tau_k$.
+    \\[1em] As our desugaring procedure removes nested patterns in favour of nested case expressions, our rule here only needs to deal with patterns that are one constructor deep. For each such pattern, we create the smallest type that contains any expression that could match it ($\mathcal{P}$ defined below), and we unify all of these with the type of the case argument. To get the type of the expression, we unify the types of all the $e_i$'s.
+    \\[1em] $\mathcal{P}(pat_i, e_i)$ is defined as:
+    \begin{enumerate}[(a)]
+    \item $pat_i$ a numeric, string or atom literal pattern\hfill{\scriptsize(literal pattern)}
+      \\[.2em] \begin{math}
+        \arraycolsep=1.5pt
+        \begin{array}{llll}
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~\mathbf{num})\text{ ($\mathbf{str}$, $\mathbf{atom}$ respectively)}
+          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i)\vdash e_i)
+          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}), \tau^\prime)
+        \end{array}
+      \end{math}
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
+
+    \item $pat_i\equiv[\,]$\hfill{\scriptsize(nil pattern)}
+      \\[.2em] \begin{math}
+        \arraycolsep=1.5pt
+        \begin{array}{llll}
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~[\alpha])\text{ ($\alpha$ fresh) }
+          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i)\vdash e_i)
+          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}),~\tau^\prime)
+        \end{array}
+      \end{math}
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
+
+    \item $pat_i\equiv(h:t)$\hfill{\scriptsize(cons pattern)}
+      \\[.2em] \begin{math}
+        \arraycolsep=1.5pt
+        \begin{array}{llll}
+          \text{let} & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_i,~[\alpha])\text{ ($\alpha$ fresh)}
+          \\ & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W}(\mathbb{U}(\Delta_i,h:\alpha,t:[\alpha])\vdash e_i)
+          \\ & \phantom{(}\mathbb{U}^\prime & \gets & \mathcal{U}(\mathbb{S}^\prime\mathbb{U}(\tau_{i-1}),~\tau^\prime)
+        \end{array}
+      \end{math}
+      \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
+    \end{enumerate}
+    Although this is a common type semantics for case expressions, it poses some problems. For instance, a pattern that expects only \texttt{[]} will also purport to accept cons cells, when doing so would cause an exception at runtime (The very thing a type system aims to avoid).
+    \\[1em] In other languages, catching such errors is the job of \textit{exhaustiveness checking}, which verifies that if one of a type's constructors appears in a case expression as a pattern, then they must all be covered. This also relies on knowing which constructors belong to which types\footnote{Verifying exhaustiveness is also known to be an NP-Complete problem, so we are keen to avoid relying upon it.}. In Section~\ref{sec:adapt-hm}, we will suggest an alternative treatment that exposes exhaustiveness as a property of types, by changing their representation.
+\end{enumerate}
 
 \subsection{Case Types}
 
