@@ -288,7 +288,7 @@ Long chains of forward pointers may form when unifying variables together. When 
 \end{figure}
 
 \begin{figure}[htbp]
-  \caption{Making chains of forward pointers and compressing them. (1) represents the type ${(\alpha\to\beta)\to\gamma\to\delta}$, (2) follows after applying the substitution $[\mathbf{num}/\delta][\delta/\gamma][\gamma/\beta][\beta/\alpha]$, (3) follows after path compression.}\label{fig:path-compress}
+  \caption{Making chains of forward pointers and compressing them. (1) represents the type ${(\alpha\to\beta)\to\gamma\to\delta}$, (2) follows after applying the substitutions $[\beta/\alpha]$, $[\gamma/\beta]$, $[\delta/\gamma]$, $[\mathbf{num}/\delta]$ in that order. (3) follows after path compression.}\label{fig:path-compress}
   \begin{equation*}
     \begin{tikzcd}[column sep=1ex,row sep=tiny]
       &&& \to\ar[lld]\ar[rrd] &&& \\
@@ -340,7 +340,7 @@ Initially, $x$ is introduced under the \texttt{define} with level $0$, whereas $
 
 It was \textit{not} safe to universally quantify the type of $y$ because its type was shared with a variable from a lower level. To make sure this does not happen, given two types $\tau_1,\tau_2$ with levels $l_1,l_2$ respectively, we set their levels to $\min(l_1,l_2)$ after unification.
 
-Because the level $l$ of a compound type $\tau$ is the max of its variables' levels, to adjust it to $l^{\prime}$ would involve traversing $\tau$ (Setting each variable's level to the $\min$ of its current value and $l^{\prime}$). Rather than do this eagerly, we put $(\tau,l,l^{\prime})$ in the set $\mathit{delayed}$, to make note of the change.
+Because the level $l$ of a compound type $\tau$ is the max of its variables' levels, to adjust it to $l^{\prime}$ would involve traversing $\tau$ (Setting each variable's level to the $\min$ of its current value and $l^{\prime}$). Rather than do this eagerly, we put $(\tau,l,l^{\prime})$ in the $\mathit{delayed}$ set, to make note of the change.
 
 When we wish to generalise the type $\tau$ of a definition at level $l$, we find
 \begin{align*}
@@ -491,7 +491,7 @@ As mentioned earlier, in the dynamically typed setting we have always had a way 
 We may make a bid to recover it now by freeing the nil (\texttt{[]}) and cons (\texttt{(:)}) constructors from the list type, so that each may inhabit its own type. This corresponds to a change in our type grammar, and the addition of some proof rules to our version of HM (\text{Figures~\ref{fig:prod-ty-grammar}\,\&\,\ref{fig:prod-ty-rules}}).
 
 \begin{figure}[htbp]
-  \caption{Modifications to the HM grammar for types to separate the list type into its constituent constructors.}\label{fig:prod-ty-grammar}
+  \caption{Modifications to the HM grammar for types (Definition~\ref{def:hm-types}) to separate the list type into its constituent constructors.}\label{fig:prod-ty-grammar}
   \begin{align*}
     \tau & \Coloneqq~\cdots~|~\cancel{[\,\tau\,]}~|~\tau_1:\tau_2
     \tag*{\scriptsize(quantifier-free types)}
@@ -567,7 +567,7 @@ Having split the list type apart, we now need a way to reconstitute it. Our firs
 
 Intrinsic to subsumption is the subtyping relation between types.
 
-\begin{definition}[Subtyping relation ($\prec$)]~\\
+\begin{definition}[Subtyping relation ($\prec$)]\label{def:subtyping}~\\
   \begin{minipage}[t]{.33\textwidth}
     \begin{prooftree}
       \AXC{\phantom{$\tau\sigma\prec\rho$}}
@@ -718,14 +718,14 @@ Our approach will be to relax disjointness to \textit{discriminativity}, as seen
   A union type is considered discriminative when each of its inhabitting terms may be projected into one of the union's summands by looking only at its outermost constructor. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary constructors and $[\,]$ can be considered a nullary constructor.
 \end{definition}
 
-Returning to our earlier example $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$ is not discriminative because both summands have a $(:)$ constructor outermost, but $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ is! As only one of these types is well-formed, we avoid our original problem. Furthermore, the more complicated \texttt{area} function:
+Returning to our earlier example $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$ is not discriminative because both summands have a $(:)$ constructor outermost, but $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ is! As only one of these types is well-formed, we avoid our original problem. Moreover, many useful terms have discriminative types, such as the more complicated \texttt{area} function:
 
 ```
 define area([w, h]) = w * h
      | area(s)      = s * s;
 ```
 
-has type $([\mathbf{num},\mathbf{num}]\cup\mathbf{num})\to\mathbf{num}$, which is discriminative.
+with type $([\mathbf{num},\mathbf{num}]\cup\mathbf{num})\to\mathbf{num}$.
 
 \subsection{R\'emy Encoding}
 
@@ -748,7 +748,7 @@ a_x & =
 \tag*{Arities}
 \intertext{Then a R\'emy encoded type $\rho\in\mathcal{T}$ has the form:}
 \rho & = \mathcal{R}(f_{\mathbf{num}};~f_{\mathbf{bool}};~f_{\mathbf{atom}};~f_{\mathbf{str}};~f_{[\,]};~f_{(:)}, c^1_{(:)}, c^2_{(:)};~f_{(\to)}, c^1_{(\to)}, c^2_{(\to)})
-\tag{$\star$}\label{eqn:remy}
+\tag{$\dagger$}\label{eqn:remy}
 \intertext{where}
 f_x & \in\mathcal{F}\cup\mathcal{V}
 \tag*{Flag parameter for constructor $x\in\mathcal{C}$.}\\
@@ -764,7 +764,7 @@ When a flag parameter $f_x$ is a variable, it indicates that $\rho$ does not con
 
 \subsubsection{Examples}
 
-Suppose we wish to represent the supersets of $\mathbf{num}\cup\mathbf{bool}$ using \text{R\'emy} encoding, it would look like this ($\star$ represents a fresh variable whose symbol is not relevant):
+Suppose we wish to represent the supertypes of $\mathbf{num}\cup\mathbf{bool}$ using \text{R\'emy} encoding, it would look like this ($\star$ represents a fresh variable whose symbol is not relevant):
 
 \makebox[\textwidth][c]{%
 \begin{math}
@@ -774,7 +774,7 @@ Suppose we wish to represent the supersets of $\mathbf{num}\cup\mathbf{bool}$ us
   \end{array}
 \end{math}}
 
-Or, subsets of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
+Or, subtypes of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
 
 \makebox[\textwidth][c]{%
 \begin{math}
@@ -786,14 +786,14 @@ Or, subsets of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
   \end{array}
 \end{math}}
 
-Or, the constraints of the \texttt{area} function's type (Given by $\alpha$):
+Or, the supertypes of the \texttt{area} function (Given by $\alpha$):
 
 \makebox[\textwidth][c]{%
 \begin{math}
   \begin{array}{rrrrrrrrrrrrrl}
     && f_{\mathbf{num}} & f_{\mathbf{bool}} & f_{\mathbf{atom}} & f_{\mathbf{str}} & f_{[\,]} & f_{(:)} & c^1_{(:)} & c^2_{(:)} & f_{(\to)} & c^1_{(\to)} & c^2_{(\to)}\\
     \alpha:      & \mathcal{R}( & \star; & \star; & \star; & \star; & \star; & \star & \star & \star; & + & \beta & \gamma & )\\
-    \beta:       & \mathcal{R}( & -; & -; & -; & -; & -; & \star & \delta & \varepsilon; & - & \star & \star & )\\
+    \beta:       & \mathcal{R}( & \star; & -; & -; & -; & -; & \star & \delta & \varepsilon; & - & \star & \star & )\\
     \gamma:      & \mathcal{R}( & +; & \star; & \star; & \star; & \star; & \star & \star & \star; & \star & \star & \star & )\\
     \delta:      & \mathcal{R}( & \star; & -; & -; & -; & -; & - & \star & \star; & - & \star & \star & )\\
     \varepsilon: & \mathcal{R}( & -; & -; & -; & -; & -; & \star & \zeta & \eta; & - & \star & \star & )\\
@@ -802,20 +802,60 @@ Or, the constraints of the \texttt{area} function's type (Given by $\alpha$):
   \end{array}
 \end{math}}
 
-The return type ($\gamma$) of \texttt{area} is not satisfied just by $\mathbf{num}$ but also by any \textit{supertype} of $\mathbf{num}$. Conversely, the parameter type ($\beta$) is constrained to be a \textit{subtype} of $[\mathbf{num}, \mathbf{num}]$.
+The return type ($\gamma$) of \texttt{area} is not satisfied just by $\mathbf{num}$ but also by any \textit{supertype} of $\mathbf{num}$. Conversely, the parameter type ($\beta$) is constrained to be a \textit{subtype} of $[\mathbf{num}, \mathbf{num}]\cup\mathbf{num}$. This fits our definition of subtyping between function types (Definition\ \ref{def:subtyping}): A supertype of \texttt{area} has a larger return type and a smaller parameter type.
+
+\subsubsection{Notation}
+
+Always dealing with \text{R\'emy} encodings in the form given in Equation\ \ref{eqn:remy} can be cumbersome, we adopt a more compact notation for typical cases. Again we use $\star$ to refer to fresh variables (each instance is distinct from all others).
+
+Suppose we have \textit{pairwise distinct} constructors $\{x_1,\ldots,x_k\}=\mathcal{X}\subseteq\mathcal{C}$ and \text{R\'emy} encodings $\gamma_1^1,\ldots,\gamma_1^{a_{x_1}},\ldots,\gamma_k^{a_{x_k}}\in\mathcal{T}\cup\mathcal{V}$.
+
+\begin{definition}[Superset encoding]
+  \begin{flalign*}
+  \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\uparrow} & = \rho\in\mathcal{T}&&
+  \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
+  f_x & =
+  \begin{cases}
+    + & \text{ if } x\in\mathcal{X}\\
+    \star & \text{ otherwise}
+  \end{cases}&&\\
+  c^j_x & =
+  \begin{cases}
+    \gamma_i^j & \text{ if } x = x_i\in\mathcal{X}\\
+    \star & \text{ otherwise}
+  \end{cases}&&\\
+  \end{flalign*}
+\end{definition}
+
+\begin{definition}[Subset encoding]
+  \begin{flalign*}
+  \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\downarrow} & = \rho\in\mathcal{T}&&
+  \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
+  f_x & =
+  \begin{cases}
+    \star & \text{ if } x\in\mathcal{X}\\
+    - & \text{ otherwise}
+  \end{cases}&&\\
+  c^j_x & =
+  \begin{cases}
+    \gamma_i^j & \text{ if } x = x_i\in\mathcal{X}\\
+    \star & \text{ otherwise}
+  \end{cases}&&\\
+  \end{flalign*}
+\end{definition}
+
+This notation also interacts sensibly with the list literal syntax, so that $[\tau_1,\ldots,\tau_k]^{\uparrow}\equiv(\tau_1:\cdots:(\tau_k:[\,]^{\uparrow})^{\uparrow}\cdots)^{\uparrow}$, and similarly for the subset encoding.
+
+The examples in the previous section now have much more compact, recognisable representations:
+\begin{tabular}{l|l}
+  Supertypes of $\mathbf{num}\cup\mathbf{bool}$ & $(\mathbf{num}\cup\mathbf{bool})^{\uparrow}$\\[.5em]
+  Subtypes of $(\mathbf{num}:\mathbf{bool})$ & $(\mathbf{num}:\mathbf{bool})^{\downarrow}$\\[.5em]
+  Supertypes of the \texttt{area} function & $(([\mathbf{num}, \mathbf{num}]\cup\mathbf{num})^{\downarrow}\to\mathbf{num}^{\uparrow})^{\uparrow}$ \\
+\end{tabular}
 
 \subsection{Adapting HM}\label{sec:adapt-hm}
 
 In order to use \text{R\'emy} encoded types in HM, we must change how types are introduced: Before, we assigned each expression a specific type, which was its most general type. Now, we assign each expression a set of constraints over its type, so, we should ensure that these constraints are the most general constraints.
-
-\begin{definition}[Superset encoding]
-  Given a constructor $x\in\mathcal{C}$, and R\'emy encoded types $c^1_x,\ldots,c^{a_x}_x\in\mathcal{T}\cup\mathcal{V}$ let $x(c^1_x,\ldots,c^{a_x}_x)^{\uparrow}$.
-\end{definition}
-
-\begin{definition}[Subset encoding]
-  Given a constructor $x\in\mathcal{C}$ let
-\end{definition}
-
 
 The beauty of this encoding is that, if we treat $\mathcal{R}$ as a constructor, and flag parameters as types, then \text{R\'emy} encoded types may be combined using Robinson's unification algorithm: Two \text{R\'emy} types are unified by unifying their flag parameters and child types, whilst a variable $v$ is unified with another term $t$ (so long as $v$ appears free in $t$) by substituting $t$ for $v$.
 
