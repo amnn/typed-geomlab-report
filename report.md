@@ -170,7 +170,7 @@ As in\ \cite{damas1982principal}, we rely on Robinson's unification algorithm an
 
 We extend the algorithm for our needs, to deal with literals, recursion, sequencing, conditionals, and case expressions. For the most part these extensions are the common ones used by most practical implementations of HM, so we touch on only a few below.
 
-\textbf{Algorithm W:}
+\textbf{Algorithm $\mathcal{W}$:}
 
 $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
 \begin{enumerate}[(i)]
@@ -180,7 +180,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
       \begin{array}{llll}
         \text{let} & (\mathbb{S}_0,\tau^\prime_0) & \gets & \mathcal{W}(\Gamma\vdash f)
         \\ & (\mathbb{S}_i,\tau^\prime_i) & \gets & \mathcal{W}(\mathbb{S}_{i-1}\ldots\mathbb{S}_{0}(\Gamma)\vdash e_i)
-        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_k\ldots\mathbb{S}_1(\tau^\prime_0),~(\tau^\prime_1,\ldots,\tau^\prime_k)\to\beta) \text{ ($\beta$ fresh)}
+        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_k\ldots\mathbb{S}_1(\tau^\prime_0),~(\mathbb{S}_k\ldots\mathbb{S}_2(\tau^\prime_1),\ldots,\tau^\prime_k)\to\beta) \text{ ($\beta$ fresh)}
       \end{array}
     \end{math}
     \\[.5em] $\mathbb{S}\equiv\mathbb{U}\mathbb{S}_k\ldots\mathbb{S}_0$ and $\tau\equiv\mathbb{U}(\beta)$.
