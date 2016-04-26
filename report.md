@@ -869,7 +869,7 @@ The beauty of this encoding is that, if we treat $\mathcal{R}$ as a constructor,
 
 All the necessary changes are in Algorithm $\mathcal{W}$: Previously, we assigned each expression its most general type. Now, we assign each expression a set of constraints over its type, so, we should ensure that these are, in some sense, the most general constraints. What follows is an adaption of Algorithm $\mathcal{W}$ that we will dub $\mathcal{W_R}$, we touch on only the cases which differ.
 
-\textbf{Algorithm $\mathcal{W_R}$:}
+\textbf{Algorithm $\mathcal{W_R}$\footnote{Incidentally, the classes of expression mentioned in the new rules for $\mathcal{W_R}$ can be split into two groups: Constructing terms, such as literals and abstractions, and consuming terms, such as function applications and case expressions. In these rules, the former are bounded from below (through use of the supertype encoding) whilst the latter are bounded from above (using the subtype encoding).}:}
 
 $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
 \begin{enumerate}[(i)]
@@ -979,6 +979,17 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
       \end{cases}&&
     \end{flalign*}
 \end{enumerate}
+
+Consider \texttt{head}, the example we used in the introduction, and its desugaring:
+```
+define head(x:_) = x;
+
+define head = function (xs)
+  case xs of (x:y) -> x;
+```
+Through the application of typing rules in Algorithm $\mathcal{W_R}$, it is assigned the \text{R\'emy} encoding $\forall\alpha,\beta\ldotp((\alpha:\beta)^{\downarrow}\to\alpha)^{\uparrow}$. Rather than \textit{exhaustiveness checking} indicating that \texttt{head} should implement support for the $[\,]$ pattern, the parameter type has been bounded above to indicate that it is a type error to pass anything other than a cons cell to it: It is now the caller's responsibility to ensure that \texttt{head} is only applied to non-empty lists.
+
+The need for exhaustiveness checking has not been entirely obviated however: If a case expression contains a numeric literal pattern (matching a single number), it still purports to support all numeric values because $\mathbf{num}$ is the smallest type that covers a numeric literal.
 
 \subsection{Case Types}
 
