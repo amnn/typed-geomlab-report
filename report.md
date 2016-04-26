@@ -116,7 +116,7 @@ By convention, the lowercase roman alphabet denotes terms, $r,s,t,\ldots$ (and v
 \end{definition}
 
 \begin{definition}[Composition]
-  Let $\mathbb{S}\equiv[\tau_i/\alpha_i,\sigma_i/\beta_i]$ and $\mathbb{T}\equiv[\rho_i/\beta_i,\pi_i/\gamma_i]$, then define their composition by $\mathbb{S}\mathbb{T}\equiv[\tau_i/\alpha_i,\mathbb{S}(\rho_i)/\beta_i,\mathbb{S}(\pi_i)/\gamma_i]$.
+  Let $\mathbb{S}\equiv[\tau_i/\alpha_i,\sigma_j/\beta_j]$ and $\mathbb{T}\equiv[\rho_j/\beta_j,\pi_k/\gamma_k]$, then define their composition by $\mathbb{S}\mathbb{T}\equiv[\tau_i/\alpha_i,\mathbb{S}(\rho_j)/\beta_j,\mathbb{S}(\pi_k)/\gamma_k]$. Applying the composition of two substitutions has the same effect as applying one, and then the other. That is to say, for all types $\varphi$, $\mathbb{ST}(\varphi)\equiv\mathbb{S}(\mathbb{T}(\varphi))$.
 \end{definition}
 
 \begin{definition}[Instance]
@@ -140,12 +140,12 @@ HM builds on the types in the simply-typed $\lambda$ calculus by introducing \te
   \begin{align*}
     \sigma & \Coloneqq~\forall\alpha\ldotp\sigma~|~\tau
     \tag*{\scriptsize(types)}
-    \\\tau & \Coloneqq~\alpha~|~\iota~|~[\,\tau\,]~|~(\,\pi\,)\to\tau~|~(\,)\to\tau
+    \\\tau & \Coloneqq~\alpha~|~\iota~|~[\,\tau\,]~|~(\,\pi\,)\to\tau
     \tag*{\scriptsize(quantifier-free types)}
     \\\iota & \Coloneqq~\mathbf{num}~|~\mathbf{str}~|~\mathbf{atom}~|~\mathbf{bool}
     \tag*{\scriptsize(base types)}
-    \\\pi & \Coloneqq~\tau~|~\tau,\pi
-    \tag*{\scriptsize(formal parameters)}
+    \\\pi & \Coloneqq~\tau_1,\tau_2,\ldots,\tau_n
+    \tag*{\scriptsize$n\geq 0$\quad(formal parameters)}
     \\\alpha & \Coloneqq~\alpha_1~|~\alpha_2~|~\cdots
     \tag*{\scriptsize(variables)}
   \end{align*}
