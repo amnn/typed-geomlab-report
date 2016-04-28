@@ -267,7 +267,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
 
 Inference for HM is known to be \textsc{DExpTime}--Complete\ \cite{kfoury90mlexptime}, but type assignment for typical programs written by human programmers does not tend to meet this bound. However, \text{na\"ive} implementations --- in which types are represented as strings and all operations are performed eagerly --- can still be greatly improved upon. Oleg Kiselyov's tutorial on the implementation of \textit{OCaml}'s type inference algorithm\ \cite{oleg13ocamltc} suggests changes that, in concert can bring the performance of type assignment, in the typical case, much closer to linear time. We explain the techniques we have employed in our own implementation in the following sections.
 
-\subsubsection{Unification}
+\subsubsection{Unification}\label{sec:unify-impl}
 
 Algorithms $\mathcal{W}$ and $\mathcal{U}$ in Section\ \ref{sec:hm-algorithm} are expressed as pure functions working explicitly with substitutions. Whilst this presentation is useful to show their exact operation, when translated directly into an implementation, they introduce some inefficiencies:
 \begin{enumerate}[(i)]
@@ -281,7 +281,7 @@ Algorithms $\mathcal{W}$ and $\mathcal{U}$ in Section\ \ref{sec:hm-algorithm} ar
 \end{enumerate}
 These issues are addressed by representing types by directed acyclic graphs (DAGs), and modifying types in place instead of returning a unifier. To unify two non-variable types, we checking their outermost constructors match, then pairwise unify their children, and to unify a variable with another type, we replace the variable (in-place) with a forward pointer to the type. Using forward pointers is much cheaper than string substitution, and structural sharing also ensures that we will substitute each variable only once (Figure\ \ref{fig:type-dag}).
 
-Long chains of forward pointers may form when unifying variables together. When a chain is traversed, we replace all the intermediary pointers with a pointer directly to the end of the path (Figure\ \ref{fig:path-compress}). This technique is analagous to \textit{path compression} in disjoint set data structures\ \cite[Ch.~21]{Cormen:2001:IA:580470}.
+Long chains of forward pointers may form when unifying variables together. When a chain is traversed, we replace all the intermediary pointers with a pointer directly to the end of the path (Figure\ \ref{fig:path-compress}). This technique is analagous to \textit{path compression} in disjoint set data structures\ \cite[\S21]{Cormen:2001:IA:580470}.
 
 \begin{figure}[htbp]
   \caption{Representing types as DAGs, to take advantage of structural sharing. The substitution in Equation~\ref{eqn:unify-same-op} now occurs at only one site, where the variable is replaced by a \textit{forward pointer}.}\label{fig:type-dag}
@@ -1074,7 +1074,7 @@ The \text{R\'emy} encoding gives constraints on a type, but we want to display a
 
 \section{Recursive Types}\label{sec:recursive}
 
-In HM, the list was a recursive type that we had built in support for. We lost this support when we stopped treating $\texttt{[]}$ and $\texttt{(:)}$ as special, related constructors. Now, if we try to encode the a list of type \texttt{'a}, we get: \texttt{[] + ('a':'l)} where \texttt{'l} refers back to the type we are defining, yielding an infinite (cyclic) type, which our typechecker balks at. Similarly, an attempt to construct a representation of binary trees using our existing machinery may look something like this:
+In HM, the list was a recursive type that we had built in support for. We lost this support when we stopped treating $\texttt{[]}$ and $\texttt{(:)}$ as special, related constructors. Now, if we try to encode a list of type $\alpha$, we get: $[\,]\cup(\alpha:\lambda)$ where $\lambda$ refers back to the type we are defining, yielding an infinite (cyclic) type, which our typechecker balks at. Similarly, an attempt to construct a representation of binary trees using our existing machinery may look something like this:
 
 ```
 #leaf              { Leaves }
@@ -1088,7 +1088,7 @@ In HM, the list was a recursive type that we had built in support for. We lost t
 But again, \texttt{l} and \texttt{r} have the same type as the branch they are contained in. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
 
 \begin{figure}[htbp]
-  \caption{Using ad-hoc recursive types. Fixed points are introduced by the \texttt{(...)*} operator, and we use de Bruijn indices to represent recursion sites.}\label{fig:rec-type}
+  \caption{Syntax for ad-hoc recursive types. Fixed points are introduced by the \texttt{(...)*} operator, and we use de Bruijn indices to represent recursion sites.}\label{fig:rec-type}
   \begin{Verbatim}
 list 'a ::= ([] + ('a:'0))*
 tree 'a ::= ([#branch, '0, 'a, '0] + #leaf)*
@@ -1097,7 +1097,47 @@ tree 'a ::= ([#branch, '0, 'a, '0] + #leaf)*
 
 \subsection{Circular Unification}
 
-Recursive types can occur even without recursive definitions, this section will show an expression that does this, and the solution, in the form of Huet's circular unification algorithm.
+When we originally implemented unification (Section\ \ref{sec:unify-impl}) we explicitly forbade cyclic types, so, to a first degree approximation, our problem is resolved by removing the \textit{occurs check} and allowing unification to build circular types. In reality, the situation is not quite so simple. Consider the following example, adapted from\ \cite{colmerauer1982prolog}\footnote{For simplicity, we are not representing types by R\'emy encodings.}:
+
+We start with type variables $\alpha, \beta, \gamma, \delta$ and unify $\alpha\sim[\gamma]$ and $\beta\sim[\delta]$:
+\begin{center}
+  \begin{tikzcd}[sep=small]
+           & \alpha\ar[d, dashed] &        &  &  &  &        & \beta\ar[d, dashed] & \\
+           & (:)\ar[ld]\ar[rd]    &        &  &  &  &        & (:)\ar[ld]\ar[rd]   & \\
+    \gamma &                      & {[\,]} &  &  &  & \delta &                     & {[\,]}
+  \end{tikzcd}
+\end{center}
+
+Then we unify $\alpha\sim\delta$ and $\beta\sim\gamma$, creating a circular type.
+\begin{center}
+  \begin{tikzcd}[sep=small]
+                                    &                   & \alpha\ar[ld,dashed] \\
+                                    & (:)\ar[ld]\ar[rd] &                      \\
+    \gamma\ar[rdd,dashed]           &                   & {[\,]}               \\
+                                    &                   & \beta\ar[ld,dashed]  \\
+                                    & (:)\ar[ld]\ar[rd] &                      \\
+    \delta\ar[uuuur,dashed,out=225] &                   & {[\,]}
+  \end{tikzcd}
+\end{center}
+
+Now suppose we try to unify $\alpha\sim\beta$. Chasing forward pointers, this is tantamount to unifying $(\gamma:[\,])\sim(\delta:[\,])$. As this unification is between compound types with the same outermost constructor, we proceed to unify the children $[\,]\sim[\,]$ is a trivial constraint, so we focus on $\gamma\sim\delta$. Another pointer chase shows that this is equivalent to $(\delta:[\,])\sim(\gamma:[\,])$, for which we must unify $\delta\sim\gamma$: Circular types have us going round in circles!
+
+To unify two distinct\footnote{Here, \textit{distinct} refers to point equality: $\tau_1$ is stored at a different location in memory to $\tau_2$.} compound types $\tau_1$ and $\tau_2$ with matching outermost constructor, we unify their children. If, however, after following all forwarding pointers, both types reside at the same memory location (are identical) then we know that we need not do any work. As we have seen, this check alone is not enough to stop unification diverging, but \text{G\'erard Huet} proposes an elegant solution in\ \cite[\S5.7.2]{huet1976resolution}: \textit{Before} unifying the compound types' children replace one type with a forward pointer to the other. This is sound because, after unification, the two types will be identical in structure, and if the two types need to be unified again, the pointer equality check will stop us looping.
+
+When we attempt to unify $\alpha\sim\beta$ with the new algorithm, first we point $\beta$ to $\alpha$ (Left). Then we unify $\gamma\sim\delta$ as children of $\alpha$ and $\beta$ respectively, but noticing that they point to the same type, do nothing --- except compress $\gamma$'s path (Right):
+\begin{equation*}
+  \begin{tikzcd}[sep=small]
+    \beta\ar[d, dashed]             & \delta\ar[d, dashed] & \alpha\ar[ld, dashed] \\
+    \cdot\ar[r, dashed, bend left]  & (:)\ar[ld]\ar[rd]    &                       \\
+    \gamma\ar[u,dashed]             &                      & {[\,]}
+  \end{tikzcd}
+  \hspace{4em}
+  \begin{tikzcd}[sep=small]
+    \beta\ar[d, dashed]             & \delta\ar[d, dashed] & \alpha\ar[ld, dashed] \\
+    \cdot\ar[r, dashed, bend left]  & (:)\ar[ld]\ar[rd]    &                       \\
+    \gamma\ar[ur,dashed, bend left] &                      & {[\,]}
+  \end{tikzcd}
+\end{equation*}
 
 \section{Tagged Variants}\label{sec:tagged-variants}
 
