@@ -33,7 +33,7 @@ Associating constructors with each other is injurious to the precision of our ty
 
 Section\ \ref{sec:bg} introduces the source language, \textit{GeomLab}, and the type checker's internal representation of it. Section\ \ref{sec:hm} then describes an optimised implementation of the Hindley--Milner type system for \textit{GeomLab}.
 
-Sections\ \ref{sec:adhoc-adts},\ \ref{sec:tagged-variants} and\ \ref{sec:recursive} extend the type system to make the structure of types more compositional while losing neither expressivity nor type inference.
+Sections\ \ref{sec:adhoc-adts},\ \ref{sec:recursive} and\ \ref{sec:tagged-variants} extend the type system to make the structure of types more compositional while losing neither expressivity nor type inference.
 
 We finish with Section\ \ref{sec:errors} which discusses producing reasonable error outputs that reference the source code, despite originating from an alternative (desugared) representation of the program.
 
@@ -1068,6 +1068,33 @@ Some types should not rely on the types of others, for example, the types of fun
 
 The \text{R\'emy} encoding gives constraints on a type, but we want to display an actual type, this section shows how to pick a type to show, by minimising or maximising w.r.t. constraints.
 
+\section{Recursive Types}\label{sec:recursive}
+
+In HM, the list was a recursive type that we had built in support for. We lost this support when we stopped treating $\texttt{[]}$ and $\texttt{(:)}$ as special, related constructors. Now, if we try to encode the a list of type \texttt{'a}, we get: \texttt{[] + ('a':'l)} where \texttt{'l} refers back to the type we are defining, yielding an infinite (cyclic) type, which our typechecker balks at. Similarly, an attempt to construct a representation of binary trees using our existing machinery may look something like this:
+
+```
+#leaf              { Leaves }
+
+[#branch, l, x, r] { Branch with datum `x`
+                   , left sub-tree `l`
+                   , and right sub-tree `r`
+                   }
+```
+
+But again, \texttt{l} and \texttt{r} have the same type as the branch they are contained in. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
+
+\begin{figure}[htbp]
+  \caption{Using ad-hoc recursive types. Fixed points are introduced by the \texttt{(...)*} operator, and we use de Bruijn indices to represent recursion sites.}\label{fig:rec-type}
+  \begin{Verbatim}
+list 'a ::= ([] + ('a:'0))*
+tree 'a ::= ([#branch, '0, 'a, '0] + #leaf)*
+  \end{Verbatim}
+\end{figure}
+
+\subsection{Circular Unification}
+
+Recursive types can occur even without recursive definitions, this section will show an expression that does this, and the solution, in the form of Huet's circular unification algorithm.
+
 \section{Tagged Variants}\label{sec:tagged-variants}
 
 In our \texttt{area} example, when we introduced squares, we were lucky that they had a different structure to our representation of rectangles (one number instead of a pair of numbers), but suppose now we wish to introduce circles, represented by their radius; How would we distinguish between circles and squares?
@@ -1101,33 +1128,6 @@ This is clearly not ideal, as the latter function will throw an error at runtime
 \subsection{Wildcard Constructors}\label{sec:wildcard}
 
 A technique to get around the "finite constructor" limitation of the \text{R\'emy} encoding whereby if we have an infinite family of constructors (like multi-arity functions or atoms) we have a constructor for each member of the family, as well as a wildcard constructor to capture our knowledge about the rest of the constructors in the family.
-
-\section{Recursive Types}\label{sec:recursive}
-
-In HM, the list was a recursive type that we had built in support for. We lost this support when we stopped treating $\texttt{[]}$ and $\texttt{(:)}$ as special, related constructors. Now, if we try to encode the a list of type \texttt{'a}, we get: \texttt{[] + ('a':'l)} where \texttt{'l} refers back to the type we are defining, yielding an infinite (cyclic) type, which our typechecker balks at. Similarly, an attempt to construct a representation of binary trees using our existing machinery may look something like this:
-
-```
-#leaf              { Leaves }
-
-[#branch, l, x, r] { Branch with datum `x`
-                   , left sub-tree `l`
-                   , and right sub-tree `r`
-                   }
-```
-
-But again, \texttt{l} and \texttt{r} have the same type as the branch they are contained in. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
-
-\begin{figure}[htbp]
-  \caption{Using ad-hoc recursive types. Fixed points are introduced by the \texttt{(...)*} operator, and we use de Bruijn indices to represent recursion sites.}\label{fig:rec-type}
-  \begin{Verbatim}
-list 'a ::= ([] + ('a:'0))*
-tree 'a ::= ([#branch, '0, 'a, '0] + #leaf)*
-  \end{Verbatim}
-\end{figure}
-
-\subsection{Circular Unification}
-
-Recursive types can occur even without recursive definitions, this section will show an expression that does this, and the solution, in the form of Huet's circular unification algorithm.
 
 \section{Type Errors}\label{sec:errors}
 
