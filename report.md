@@ -1062,11 +1062,15 @@ Indicates that in context $\alpha_0\triangleright c_0,\ldots,\alpha_k\triangleri
 
 \subsection{Decorrelation}
 
+\textcolor{red}{%
 Some types should not rely on the types of others, for example, the types of function parameters should not be correlated with each other, this section describes how to get rid of these unwanted correlations, and how that cana be used to find programming errors.
+}
 
 \subsection{Optimisation}
 
+\textcolor{red}{%
 The \text{R\'emy} encoding gives constraints on a type, but we want to display an actual type, this section shows how to pick a type to show, by minimising or maximising w.r.t. constraints.
+}
 
 \section{Recursive Types}\label{sec:recursive}
 
