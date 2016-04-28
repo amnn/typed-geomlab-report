@@ -152,13 +152,13 @@ HM builds on the types in the simply-typed $\lambda$ calculus by introducing \te
 
 \end{definition}
 
-This type theory is a good starting point for many reasons: It has a reasonably efficient inference algorithm which has been proven sound and complete with respect to the type system, the ability to specify polymorphic types affords a greater degree of flexibility, and given only a term, it is possible to infer its most general (principal) type. The last point is of particular importance to us because our underlying language was originally dynamically typed, so there is no facility in the syntax to provide type annotations.
+This type theory is a good starting point for many reasons: It has a reasonably efficient inference algorithm which has been proven sound and complete w.r.t. the type system, the ability to specify polymorphic types affords a greater degree of flexibility, and given only a term, it is possible to infer its most general (principal) type. The last point is of particular importance to us because our underlying language was originally dynamically typed, so there is no facility in the syntax to provide type annotations.
 
 \subsection{Algorithm}\label{sec:hm-algorithm}
 
 A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, where it is described as operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$, and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typeable).
 
-As in\ \cite{damas1982principal}, we rely on Robinson's unification algorithm and the ability to produce the closure of a type with respect to a context.
+As in\ \cite{damas1982principal}, we rely on Robinson's unification algorithm and the ability to produce the closure of a type w.r.t. a context.
 
 \begin{definition}[Robinson's Unification Algorithm, $\mathcal{U}$]
   Given two types, $\tau$ and $\sigma$, $\mathcal{U}(\tau, \sigma) = \mathbb{U}$ where $\mathbb{U}(\tau)\equiv\mathbb{U}(\sigma)$ and $\forall\mathbb{S}\ldotp\mathbb{S}(\tau)\equiv\mathbb{S}(\sigma)\implies\exists~\mathbb{S}^\prime\ldotp\mathbb{S}\equiv\mathbb{S}^\prime\mathbb{U}$ if and only if such a most general unifier $\mathbb{U}$ exists.
@@ -737,7 +737,7 @@ define area([w, h]) = w * h
 
 with type $([\mathbf{num},\mathbf{num}]\cup\mathbf{num})\to\mathbf{num}$.
 
-\subsection{R\'emy Encoding}
+\subsection{R\'emy Encoding}\label{sec:remy}
 
 It is possible to implement type assignment with discriminative union types just by changing the representation of types. This idea was first expounded \text{in~\cite{cartwright1991soft}} as an adaptation of Didier \text{R\'emy's} encoding of record types \text{in~\cite{Remy/records91}}.
 
@@ -764,10 +764,10 @@ f_x & \in\mathcal{F}\cup\mathcal{V}
 \tag*{Flag parameter for constructor $x\in\mathcal{C}$.}\\
 c^i_x & \in\mathcal{T}\cup\mathcal{V}
 \tag*{$i^{\text{\tiny th}}$ Child type for constructor $x\in\mathcal{C}$.}
-\intertext{An instance of this encoding does not represent just one type, but instead describes a set of feasible types. Suppose $\tau$ is feasible with respect to $\rho$'s constraints, then, for any $x\in\mathcal{C}$,}
+\intertext{An instance of this encoding does not represent just one type, but instead describes a set of feasible types. Suppose $\tau$ is feasible w.r.t. $\rho$'s constraints, then, for any $x\in\mathcal{C}$,}
 f_x = + & \implies x(\gamma^1_x,\ldots,\gamma^{a_x}_x)\subseteq\tau\\
 f_x = - & \implies x(\gamma^1_x,\ldots,\gamma^{a_x}_x)\cap\tau = \varnothing\\
-\gamma^i_x & \text{ is feasible with respect to $c^i_x$'s constraints.}
+\gamma^i_x & \text{ is feasible w.r.t. $c^i_x$'s constraints.}
 \end{align*}
 
 When a flag parameter $f_x$ is a variable, it indicates that $\rho$ does not constrain whether or not $x(\gamma^1_x,\ldots,\gamma^{a_x}_x)$ is in the type. Variables in child types have their usual meaning as type variables.
@@ -993,16 +993,80 @@ This does not obviate the need for exhaustiveness checking: If a case expression
 
 \subsection{Case Types}
 
-Generalising flags in the \text{R\'emy} encoding to trees where internal nodes represent a choice of what the outer-most constructor is in another type, and leaf nodes represent possible values the flag could take.
-Whilst some unions are not discriminative because they contain redundant subtypes --- like $\mathbf{num}\cup\mathbf{num}$ --- and some unions have equivalent discriminative representations --- like $(\alpha:\gamma)\cup(\beta:\gamma)$ --- $(\mathbf{num}:\mathbf{num})\cup(\mathbf{bool}:\mathbf{bool})$ is an example of a type with no discriminative representation.
+Discriminativity offer one model to lift the way terms are differentiated to the type level, but it is somewhat prescriptivist: If two types are structurally different, we must rush to make the difference known at the outermost constructor. Couple this with the fact that we have only finitely many constructors and we can already see that any union can have at most $\abs{\mathcal{C}}$ summands before we lose the ability to discriminate between them.
 
-If it is possible to discriminate between $\mathbf{bool}$ and $\mathbf{num}$, then it should also be possible to distinguish a pair of $\mathbf{bool}$s from a pair of $\mathbf{num}$s, but discriminative types do not accommodate this case.
+When faced with this simple (though contrived) function, Algorithm $\mathcal{W_R}$ runs into trouble, so as motivation, we set ourselves the goal of being able to assign it a type:
+```
+define foo([b])    =  not b
+     | foo([m, n]) = (m + n) > 0;
+
+{ Desugared }
+define foo = function (xs)
+  case xs of
+    (x:y) ->
+    case y of
+      []    -> not x
+      (z:w) ->
+      case w of
+        []  -> x + z
+```
+\texttt{foo} accepts either a singleton list, whose element it treats as a boolean, or a two-element list whose elements it treats as numbers, and in both cases it returns a boolean, so the type we would like to assign is:
+\begin{align*}
+  ([\mathbf{bool}]\cup[\mathbf{num}, \mathbf{num}])\to\mathbf{bool}
+\end{align*}
+Singleton lists and two-element are clearly structurally different, but all discriminativity looks at is the outermost constructor, which in both cases is \textit{cons}. If we attempt to force the situation and make the type discriminative, we may arrive at:
+\begin{align*}
+  (((\mathbf{bool}\cup\mathbf{num})^{\downarrow}:([\,]\cup[\mathbf{num}])^{\downarrow})^{\downarrow}\to\mathbf{bool}^{\uparrow})^{\uparrow}
+\end{align*}
+But the parameter type is over-approximated to also include $[\mathbf{num}]$ and $[\mathbf{bool},\mathbf{num}]$: We have lost the property that the singleton list contains a boolean and the two-element list contains only numbers. In this section, we introduce a generalisation of \text{R\'emy} encoding that can express types with correlations without forgoing a discriminative representation.
+
+Given a term $t :: [\mathbf{bool}]\cup[\mathbf{num},\mathbf{num}]$, we determine which summand it belongs to at runtime by deconstructing it using a case expression. For instance, in the desugaring of \texttt{foo}, when the type checker reaches the expression \texttt{not x} it has already been through two case expressions, so it knows that \texttt{xs} is a cons and \texttt{y} a nil. Similarly, when checking \texttt{x + z} we know that \texttt{xs} is a cons, \texttt{y} is a cons, and \texttt{w} is a nil: The type of \texttt{x} depends on whether \texttt{y} is a nil or a cons. We capture this idea by performing type inference and unification w.r.t. a \textit{case context} (Definition\ \ref{def:case-context}).
+
+\begin{definition}[Case Context]\label{def:case-context}
+  A case context $C$ is a partial mapping from type variables to constructors. Given a case context $C$, type variable $\alpha$ and constructor $c$, we write $C,\alpha\triangleright c$ to denote the map $C$ with its constructor for $\alpha$ overwritten with $c$. We use the uppercase Roman alphabet to refer to them, by convention.
+\end{definition}
+
+If types $\tau_1$ and $\tau_2$ are unified w.r.t. a context $C$, the implication is only that they are consistent with each other in $C$, and its sub-contexts (Definition\ \ref{def:sub-context}). This affords us the flexibility to treat a term as having different types in different contexts.
+
+For example, in \texttt{foo} (desugared), supposing we refer to the types of variables as $\texttt{xs}::\alpha,\texttt{x}::\beta,\texttt{y}::\gamma,\texttt{w}::\varepsilon$, then it is no longer a type error to unify $\beta$ with $\mathbf{bool}$ in context $C\equiv\alpha\triangleright(:),\gamma\triangleright[\,]$ and also unify $\beta$ with $\mathbf{num}$ in context $D\equiv\alpha\triangleright(:),\gamma\triangleright(:),\varepsilon\triangleright[\,]$ because $C$ and $D$ disagree on $\gamma$ so are not sub-contexts of each other.
+
+\begin{definition}[Sub Context]\label{def:sub-context}
+  Given case contexts $C$ and $D$, we say that $D$ is a sub-context of $C$ when $D = C,\alpha_1\triangleright d_1,\ldots,\alpha_k\triangleright d_k$, for constructors $d_1,\ldots,d_k$, and type variables $\alpha_1,\ldots,\alpha_k$ \textit{free in }$C$, $k\geq 0$. This means that the context described by $D$ is nested within that described by $C$.
+\end{definition}
+
+\textcolor{red}{
+In a \text{R\'emy} encoding (Section\ \ref{sec:remy}), flag parameters may be $+$, $-$ or a variable, meaning its associated subtype \textit{must/must not/may be} be part of the type, respectively. These constraints are applied in all contexts, but, by storing flags as \textit{trees} with intermediate nodes labelled by \textit{type variables}, edges labelled by \textit{constructors} and leaves labelled as in Figure\ \ref{fig:flag-leaf}, we may express unification w.r.t. contexts.
+}
+
+\begin{figure}[htbp]
+  \caption{Lattice of leaf flag values. $+$ and $-$ retain their meanings of \textit{must} and \textit{must not}, $\sim$ indicates no constraint (the join $+\sqcup-$), and $\bot$ indicates an inconsistent constraint or a type error (the meet $+\sqcap-$).}\label{fig:flag-leaf}
+  \begin{center}
+    \begin{tikzcd}
+      & \sim \ar[ld, dash]\ar[rd,dash]&\\
+      + \ar[rd, dash]&& - \ar[ld, dash]\\
+      & \bot &
+    \end{tikzcd}
+  \end{center}
+\end{figure}
+
+\textcolor{red}{
+To interpret a flag tree we examine the paths from its root to its leaves. A path:
+\begin{align*}
+  \alpha_0\overset{c_0}{\longrightarrow}
+  \alpha_1\overset{c_1}{\longrightarrow}
+  \cdots  \overset{c_{k-1}}{\longrightarrow}
+  \alpha_k\overset{c_k}{\longrightarrow}l
+\end{align*}
+Indicates that in context $\alpha_0\triangleright c_0,\ldots,\alpha_k\triangleright c_k$, the flag parameter should be $l$.
+}
+
+\subsection{Decorrelation}
+
+Some types should not rely on the types of others, for example, the types of function parameters should not be correlated with each other, this section describes how to get rid of these unwanted correlations, and how that cana be used to find programming errors.
 
 \subsection{Optimisation}
 
-\subsection{Rationalisation}
-
-A discussion on decoding the \text{R\'emy} encoding back into a legible type, described in terms of rational trees.
+The \text{R\'emy} encoding gives constraints on a type, but we want to display an actual type, this section shows how to pick a type to show, by minimising or maximising w.r.t. constraints.
 
 \section{Tagged Variants}\label{sec:tagged-variants}
 
