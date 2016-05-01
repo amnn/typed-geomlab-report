@@ -1191,9 +1191,9 @@ In order to provide type errors with accurate source locations, we label values 
   \input{aux/located.tex}
 \end{figure}
 
-From \textbf{Located Token} streams, the parser builds \textbf{Located Sugar} ASTs. Previously, the parser built abstract syntax trees (ASTs), $t::\mathbf{Sugar}$, by combining subtrees, $s_1,\ldots,s_k::\mathbf{Sugar}$, using a function $f::\mathbf{Sugar}\to\cdots\to\mathbf{Sugar}$, whereas now, we build labelled trees, $\overline{t}::\mathbf{Located~Sugar}$, from labelled subtrees, $\overline{s}_1,\ldots,\overline{s}_k::\mathbf{Located~Sugar}$.
+From \textbf{Located Token} streams, the parser builds \textbf{Located Sugar} ASTs. Previously, the parser built abstract syntax trees (ASTs), $t::\mathbf{Sugar}$, by combining sub-trees, $s_1,\ldots,s_k::\mathbf{Sugar}$, using a function $f::\mathbf{Sugar}\to\cdots\to\mathbf{Sugar}$, whereas now, we build labelled trees, $\overline{t}::\mathbf{Located~Sugar}$, from labelled sub-trees, $\overline{s}_1,\ldots,\overline{s}_k::\mathbf{Located~Sugar}$.
 
-One solution would be to modify all constructing function to accept and return \textbf{Located Sugar} terms, but this leads to repeated logic. A better solution is to alter the notion of \textit{function application} to one where ``applying'' $f$ to labelled subtrees, applies the function to the values --- in the canonical sense --- and uses a sensible operation (Figure\ \ref{fig:span-monoid}) to combine labels also.
+One solution would be to modify all constructing function to accept and return \textbf{Located Sugar} terms, but this leads to repeated logic. A better solution is to alter the notion of \textit{function application} to one where ``applying'' $f$ to labelled sub-trees, applies the function to the values --- in the canonical sense --- and uses a sensible operation (Figure\ \ref{fig:span-monoid}) to combine labels also.
 
 \begin{figure}
   \caption{The combination of spans $s$ and $t$ starts at the lowest line/column/offset in the file of either $s$ or $t$, and ends at the highest offset. We make this operation \textit{monoidal}, by introducing a unit span, \textbf{Floating}, representing a location outside the source file. Combining \textbf{Floating} with any other span $t$, yields $t$.}\label{fig:span-monoid}
@@ -1232,17 +1232,80 @@ PattPrim : {- ... -}
          | '(' Patt ')' { $1 *> $2 <* $3 }
 ```
 
-This rule parses a pattern surrounded by parentheses. In the production, \texttt{\$1} refers to the (located) \texttt{'('} token, \texttt{\$2} refers to the (located) pattern, and \texttt{\$3} refers to the (located) \texttt{')'} token. We wish to indicate that the \textbf{Span} of this pattern covers the parentheses, which is achievable with $\varoast$:
+This rule parses a pattern surrounded by parentheses. In the production, \texttt{\$1} refers to the \texttt{'('} token, \texttt{\$2} refers to the pattern, and \texttt{\$3} refers to the \texttt{')'} token. We wish to indicate that the \textbf{Span} of this pattern covers the parentheses, which is achievable with $\varoast$:
 \begin{align*}
   \mathit{pure}~(\lambda\;\_\;p\;\_ \to p)\varoast\$1\varoast\$2\varoast\$3
 \end{align*}
 
 But, as the function being applied just selects the pattern value, and ignores the token values, $\triangleright$ and $\triangleleft$ convey the intention more clearly.
 
-\subsection{Storing Source Locations}
+\subsection{Unobtrusive Annotations}
 
-The technique used to annotate exceptions with relevant AST locations as they travel back up through the stack.
+\textbf{Located} labels allow the parser to calculate the source span of an AST as it is built, but as soon as it becomes part of some larger tree, we lose this information, and only have the source span of the larger tree.
 
+We may be tempted to systematically update \textbf{Sugar}, replacing sub-trees (\textbf{Sugar}) with labelled sub-trees (\textbf{Located Sugar}). This is undesirable, not just because it spreads responsibility for annotations everywhere, but also, when desugaring an expression whose structure changes, it is unclear which annotations should be preserved.
+
+Instead, we do the following:
+```{.haskell}
+data Sugar = {- ... -} | LocS String (Located Sugar)
+
+reify :: String -> Located Sugar -> Located Sugar
+reify lbl ls@(L s _) = L s (LocS lbl ls)
+```
+When parsing certain AST nodes, we also use \texttt{reify} to embed the source span into the AST, along with a label (the \texttt{String}) describing what the node is.
+```{.haskell}
+data Expr = {- ... -} | LocE String (Located Expr)
+```
+We also add a corresponding node to the desugared AST type. During desugaring, we carry over the embedded labels faithfully.
+```{.haskell}
+typeOf :: MonadInfer m => GloDef (World m) -> Expr -> m (TyRef (World m))
+typeOf gloDefs = check
+  where
+    {- ... -}
+    check (LocE lbl le) =
+      catchError (check (dislocate le)) $ \e -> do
+        throwError $ CtxE lbl (le *> pure e)
+```
+Finally, to ``type check'' an embedded label, we type check its sub-tree (\texttt{check (dislocate le)}), and, in the event of a type error, add the string label and the expressions location to the error's context. For example, desugaring this list comprehension:
+```
+[ x | x <- [1..2 + "3"] when x mod 2 = 0];
+```
+Yields the following expression:
+```
+_mapa( function (x, res)
+         if x mod 2 = 0 then
+           x : res
+         else
+           res
+     , _range(1, 2 + "3")
+     , []
+     );
+```
+The ordering of expressions has been inverted, and constructs have been introduced that were not there before. Despite this, the type checker's output refers to features from the original list comprehension:
+\vbox{\ttfamily\scriptsize%
+
+%TC:ignore
+\vspace{1em}
+\textcolor{purple}{\underline{test/list\_comp.geom:20:1: Error in the expression}}
+
+\qquad Failed to unify types:\\
+\-\qquad\qquad Expected: num\\
+\-\qquad\qquad Actual:\-\qquad str
+
+\qquad Whilst trying to unify:\\
+\-\qquad\qquad Expected: (num, num) -> num\\
+\-\qquad\qquad Actual:\-\qquad(num, str) -> 'i
+
+\textcolor{purple}{test/list\_comp.geom:20:22: In the upperbound of the range}
+
+\qquad[1..\textbf{\emph{\color{blue}2 + "3"}}]
+
+\textcolor{purple}{test/list\_comp.geom:20:18: In the generator of the list comprehension}
+
+
+\qquad[ x | x <- \textbf{\emph{\color{blue}[1..2 + "3"]}} when x mod 2 = 0]
+%TC:endignore
+}
 \section{Related Work}
 
 Aiken and Wimmers work on conditional types (A type $\tau?\sigma$ that is $\tau$ when $\sigma\neq\varnothing$ and is $\varnothing$ itself otherwise).
@@ -1263,13 +1326,13 @@ Everything I didn't have time to fully flesh out:
   \item Impredicative types.
 \end{itemize}
 
-\section{References}
-
-\bibliography{references}
-
 \vbox {
   %TC:ignore
 }
+
+\section{References}
+
+\bibliography{references}
 
 \appendix
 
