@@ -1245,18 +1245,18 @@ But, as the function being applied just selects the pattern value, and ignores t
 
 We may be tempted to systematically update \textbf{Sugar}, replacing sub-trees (\textbf{Sugar}) with labelled sub-trees (\textbf{Located Sugar}). This is undesirable, not just because it spreads responsibility for annotations everywhere, but also, when desugaring an expression whose structure changes, it is unclear which annotations should be preserved.
 
-Instead, we do the following:
+Instead, when parsing certain AST nodes, we use \texttt{reify} to embed source spans into the AST along with a label (a \texttt{String}) describing the node.
 ```{.haskell}
 data Sugar = {- ... -} | LocS String (Located Sugar)
 
 reify :: String -> Located Sugar -> Located Sugar
 reify lbl ls@(L s _) = L s (LocS lbl ls)
 ```
-When parsing certain AST nodes, we also use \texttt{reify} to embed the source span into the AST, along with a label (the \texttt{String}) describing what the node is.
+We also add a corresponding node to the desugared AST type. During desugaring, we carry over the embedded labels faithfully.
 ```{.haskell}
 data Expr = {- ... -} | LocE String (Located Expr)
 ```
-We also add a corresponding node to the desugared AST type. During desugaring, we carry over the embedded labels faithfully.
+Finally, to ``type check'' such a label, we type check its sub-tree (\texttt{check (dislocate le)}), and, in the event of a type error, add the string label and the expression's location to the error's context.
 ```{.haskell}
 typeOf :: MonadInfer m => GloDef (World m) -> Expr -> m (TyRef (World m))
 typeOf gloDefs = check
@@ -1266,11 +1266,11 @@ typeOf gloDefs = check
       catchError (check (dislocate le)) $ \e -> do
         throwError $ CtxE lbl (le *> pure e)
 ```
-Finally, to ``type check'' an embedded label, we type check its sub-tree (\texttt{check (dislocate le)}), and, in the event of a type error, add the string label and the expressions location to the error's context. For example, desugaring this list comprehension:
+For example, desugaring this list comprehension:
 ```
 [ x | x <- [1..2 + "3"] when x mod 2 = 0];
 ```
-Yields the following expression:
+Yields an expression in which some parts have been moved, and other parts have been introduced:
 ```
 _mapa( function (x, res)
          if x mod 2 = 0 then
@@ -1281,8 +1281,9 @@ _mapa( function (x, res)
      , []
      );
 ```
-The ordering of expressions has been inverted, and constructs have been introduced that were not there before. Despite this, the type checker's output refers to features from the original list comprehension:
-\vbox{\ttfamily\scriptsize%
+But the type checker's output refers to features from the original expression:
+
+\vbox{\ttfamily\footnotesize%
 
 %TC:ignore
 \vspace{1em}
