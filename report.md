@@ -46,11 +46,11 @@ In this project we use a subset of \textit{GeomLab} as our source language. This
 \subsection{Parsing}
 
 \begin{figure}[htbp]
-  \caption{\textit{Geomlab} Abstract Syntax Tree. The structure of literals are shared between that of patterns and of expressions, and so has been factored out.}\label{fig:sugar_adt}
+  \caption{\textit{GeomLab} Abstract Syntax Tree. The structure of literals are shared between that of patterns and of expressions, and so has been factored out.}\label{fig:sugar_adt}
   \input{aux/sugar.tex}
 \end{figure}
 
-We parse programs into abstract syntax trees of the $\mathbf{Sugar}$ type (Figure\ \ref{fig:sugar_adt}) which is ideal for parsing due to its similarity in structure to \textit{Geomlab}'s syntax. But, many of the nodes in $\mathbf{Sugar}$ --- corresponding to syntactic sugar --- are, in a sense, "redundant" from a typechecker's perspective. These nodes are mechanically derivable from the composition of others in $\mathbf{Sugar}$, and so in turn, the definition of the typechecker at these "sugary" nodes is derivable from its definition at other nodes. We avoid repeating this logic by \textit{desugaring} the input.
+We parse programs into abstract syntax trees of the $\mathbf{Sugar}$ type (Figure\ \ref{fig:sugar_adt}) which is ideal for parsing due to its similarity in structure to \textit{GeomLab}'s syntax. But, many of the nodes in $\mathbf{Sugar}$ --- corresponding to syntactic sugar --- are, in a sense, "redundant" from a typechecker's perspective. These nodes are mechanically derivable from the composition of others in $\mathbf{Sugar}$, and so in turn, the definition of the typechecker at these "sugary" nodes is derivable from its definition at other nodes. We avoid repeating this logic by \textit{desugaring} the input.
 
 A potential cost of this operation is that errors may be hard to relate to the source text. In \text{Section~\ref{sec:errors}} we explore ways of maintaining contextual information (such as source location annotations) after desugaring to alleviate this issue.
 
@@ -65,10 +65,10 @@ Desugaring involves replacing sugar with extensionally equivalent expressions fr
 
 List comprehensions, ranges and operator sections have been removed, and case expressions have been decoupled from function definitions into their own node (and the related \texttt{FailE} and \texttt{FallThroughE}). We also lift the restriction that only identifiers may be applied as functions. Finally, whilst in the source language patterns could be nested arbitrarily deep, in $\mathbf{Expr}$, each case expression only matches one layer (to reclaim the previous functionality, case expressions themselves are nested).
 
-The procedure $\textit{desugar} : \mathbf{Sugar} \to \mathbf{Expr}$ treats operator sections, ranges and list comprehensions as in \textit{Geomlab}'s compiler\ \cite{Geomlab}, by converting to applications of helper functions provided by the runtime (Figure\ \ref{fig:standard-defs}), whilst the algorithm for desugaring case expressions draws inspiration from Lennart Augustsson's paper\ \cite{Augustsson:1985:CPM:5280.5303} on the techniques used to compile pattern matching in \textit{LML}, a lazy variant of \textit{ML}.
+The procedure $\textit{desugar} : \mathbf{Sugar} \to \mathbf{Expr}$ treats operator sections, ranges and list comprehensions as in \textit{GeomLab}'s compiler\ \cite{Geomlab}, by converting to applications of helper functions provided by the runtime (Figure\ \ref{fig:standard-defs}), whilst the algorithm for desugaring case expressions draws inspiration from Lennart Augustsson's paper\ \cite{Augustsson:1985:CPM:5280.5303} on the techniques used to compile pattern matching in \textit{LML}, a lazy variant of \textit{ML}.
 
 \begin{figure}
-  \caption{Helper functions, as found in \textit{Geomlab}'s compiler.}\label{fig:standard-defs}
+  \caption{Helper functions, as found in \textit{GeomLab}'s compiler.}\label{fig:standard-defs}
   \input{aux/standard_defs.tex}
 \end{figure}
 
@@ -326,7 +326,7 @@ Long chains of forward pointers may form when unifying variables together. When 
 
 A sub-routine of Robinson's unification algorithm is the \textit{occurs check}: Before substituting a type for a variable, we check that the variable does not occur anywhere in the type that is replacing it. This step prevents us from creating cyclic types, but by throwing caution to the wind and not doing it, we can improve performance, as it is such a common operation.
 
-For the most part, type inference is run on correct programs\footnote{Even in undergraduate functional programming courses.}, and further, most type errors are not due to cyclic types, so we expect the number of occurs check failures we will miss to be low. Nevertheless, we should make up for not performing the occurs check by detecting cyclic types in other parts of the program. We detect these lazily in functions that recurse over the structure of types by leaving breadcrumbs at every node we enter, and removing them before we leave. If we find a crumb at a node we have just entered, we know we have doubled back on ourselves (finding a cycle), so we throw an error.
+For the most part, type inference is run on correct programs\footnote{Even in undergraduate functional programming courses.}, and furthermore, most type errors are not due to cyclic types, so we expect the number of occurs check failures we will miss to be low. Nevertheless, we should make up for not performing the occurs check by detecting cyclic types in other parts of the program. We detect these lazily in functions that recurse over the structure of types by leaving breadcrumbs at every node we enter, and removing them before we leave. If we find a crumb at a node we have just entered, we know we have doubled back on ourselves (finding a cycle), so we throw an error.
 
 \subsubsection{Generalisation}\label{sec:gen}
 
@@ -364,7 +364,7 @@ Our final consideration is not one of performance, but of formatting. Types as r
 
 \subsection{Examples}
 
-We now look at the action of our desugarer and typechecker on some small \textit{Geomlab} programs.
+We now look at the action of our desugarer and typechecker on some small \textit{GeomLab} programs.
 
 \subsubsection{\cmark~Basic Type Inference}
 
@@ -383,7 +383,7 @@ We provide these as part of the context in which every expression is typed, as t
 
 \ShortHMExample{\texttt{"foo"+"bar";}}{\input{aux/string_add_err.tex}}
 
-\textit{Geomlab} has separate operators for the addition of numbers (\texttt{+}) and the concatenation of strings (\texttt{\^}). The assumption made by the programmer here is that \texttt{+} is overloaded to deal with both, which the typechecker catches as a unification error (in this case, between \texttt{num} and \texttt{str}, which are not unifiable because they are distinct base types).
+\textit{GeomLab} has separate operators for the addition of numbers (\texttt{+}) and the concatenation of strings (\texttt{\^}). The assumption made by the programmer here is that \texttt{+} is overloaded to deal with both, which the typechecker catches as a unification error (in this case, between \texttt{num} and \texttt{str}, which are not unifiable because they are distinct base types).
 
 Without further context finding the source of the error is quite difficult. To help, we also provide the outermost types that were being unified at the time of the error, as these are usually what correspond to expressions in the source language. In this case, these are ${\texttt{(num, num) -> num}}$ --- the type of \texttt{+} --- and ${\texttt{(str, str) -> 'a}}$ --- a constraint on the type the programmer expected of \texttt{+}.
 
@@ -391,7 +391,7 @@ Without further context finding the source of the error is quite difficult. To h
 
 \ShortHMExample{\texttt{let k(x, y) = x in k(1);}}{\input{aux/arity_mismatch_err.tex}}
 
-Unlike \textit{Haskell}, Multi-arity functions in \textit{Geomlab} are not curried by default, and as a result, they cannot be partially applied. The type system captures this constraint as a unification error.
+Unlike \textit{Haskell}, Multi-arity functions in \textit{GeomLab} are not curried by default, and as a result, they cannot be partially applied. The type system captures this constraint as a unification error.
 
 \subsubsection{\xmark~Branch Unification}
 
@@ -436,7 +436,7 @@ Patterns used in case expressions are also used by the inference algorithm in co
   \texttt{f(function (x) x);}%
 }{\input{aux/lambda_poly_err.tex}}
 
-This valid \textit{Geomlab} program is untypeable in HM. As suggested by the type error, the issue is in the definition of \texttt{f}: Its parameter, \texttt{j}, is applied to both a \texttt{bool} and to a \texttt{num}, which causes a unification error. The trouble is that whilst types may be polymorphic, within the body of a function its parameters may only be instantiated once.
+This valid \textit{GeomLab} program is untypeable in HM. As suggested by the type error, the issue is in the definition of \texttt{f}: Its parameter, \texttt{j}, is applied to both a \texttt{bool} and to a \texttt{num}, which causes a unification error. The trouble is that whilst types may be polymorphic, within the body of a function its parameters may only be instantiated once.
 
 This restriction on the number of instantiations is equivalent to the restriction that types must be in \textit{prenex} form (with all the universal quantifications outermost). With this restriction lifted, it is possible to assign a type to \texttt{f}: ${\forall\pi\ldotp(\forall\alpha\ldotp\alpha\to\alpha)\to((\mathbf{bool},\mathbf{num})\to\pi)\to\pi}$.
 
@@ -466,7 +466,7 @@ The implementation detects these cycles, and terminates, printing the types. Whe
 
 \section{Ad-hoc Algebraic Data-types}\label{sec:adhoc-adts}
 
-Often it is useful to "couple" data together. In many existing statically typed functional programming languages this is achieved by defining a new named data type, but a common technique in \textit{Geomlab} is to use \textit{lists}. For instance, to fully describe a rectangle requires two numbers:
+Often it is useful to "couple" data together. In many existing statically typed functional programming languages this is achieved by defining a new named data type, but a common technique in \textit{GeomLab} is to use \textit{lists}. For instance, to fully describe a rectangle requires two numbers:
 
 ```
 define area([width, height]) = width * height;
@@ -577,29 +577,8 @@ Having split the list type apart, we now need a way to reconstitute it. Our firs
 
 Intrinsic to subsumption is the subtyping relation between types.
 
-\begin{definition}[Subtyping relation ($\prec$)]\label{def:subtyping}~\\
-  \begin{minipage}[t]{.33\textwidth}
-    \begin{prooftree}
-      \AXC{\phantom{$\tau\sigma\prec\rho$}}
-      \RightLabel{\scriptsize(refl)}
-      \UIC{$\tau\prec\tau$}
-    \end{prooftree}
-  \end{minipage}
-  \begin{minipage}[t]{.33\textwidth}
-    \begin{prooftree}
-      \AXC{$\tau\prec\sigma$}
-      \AXC{$\sigma\prec\rho$}
-      \RightLabel{\scriptsize(trans)}
-      \BIC{$\tau\prec\rho$}
-    \end{prooftree}
-  \end{minipage}
-  \begin{minipage}[t]{.33\textwidth}
-    \begin{prooftree}
-      \AXC{\phantom{$\tau\sigma\prec\rho$}}
-      \RightLabel{\scriptsize(inst)}
-      \UIC{$(\forall\alpha\ldotp\tau)\prec\tau[\sigma/\alpha]$}
-    \end{prooftree}
-  \end{minipage}
+\begin{definition}[Subtyping relation ($\prec$)]\label{def:subtyping}
+  $\cup$ is an associative, commutative, idempotent binary operator and $\prec$ is a reflexive, transitive relation, with the following interesting cases:\\
   \begin{minipage}[t]{.4\textwidth}
     \vspace{1em}
     \begin{prooftree}
@@ -620,7 +599,7 @@ Intrinsic to subsumption is the subtyping relation between types.
       \QIC{$(\tau_1,\ldots,\tau_k)\to\rho~\prec~(\sigma_1,\ldots,\sigma_k)\to\pi$}
     \end{prooftree}
   \end{minipage}
-  \begin{minipage}[t]{.5\textwidth}
+  \begin{minipage}[t]{.33\textwidth}
     \vspace{1em}
     \begin{prooftree}
       \AXC{$\tau\prec\rho$}
@@ -629,7 +608,7 @@ Intrinsic to subsumption is the subtyping relation between types.
       \BIC{$(\tau\cup\sigma)\prec\rho$}
     \end{prooftree}
   \end{minipage}
-  \begin{minipage}[t]{.5\textwidth}
+  \begin{minipage}[t]{.33\textwidth}
     \vspace{1em}
     \begin{prooftree}
       \AXC{$\tau\prec\sigma$}
@@ -637,9 +616,17 @@ Intrinsic to subsumption is the subtyping relation between types.
       \UIC{$\tau\prec(\sigma\cup\rho)$}
     \end{prooftree}
   \end{minipage}
+  \begin{minipage}[t]{.33\textwidth}
+    \vspace{1em}
+    \begin{prooftree}
+      \AXC{\phantom{$\tau\prec\sigma$}}
+      \RightLabel{\scriptsize(inst)}
+      \UIC{$(\forall\alpha\ldotp\tau)\prec\tau[\sigma/\alpha]$}
+    \end{prooftree}
+  \end{minipage}
 \end{definition}
 
-These additions are sound, and highlight some interesting interactions between existing features of the type system, and subtyping. For instance, note how subtyping for function types is contravariant in parameter types, and covariant in the return type, this fits our intuition: It is safe to treat ${(\mathbf{num}\cup\mathbf{bool})\to\mathbf{num}}$ as though it were ${\mathbf{num}\to(\mathbf{num}\cup\mathbf{bool})}$, because, in words, we are promising to feed only numbers to a function that accepts numbers and booleans, and we are prepared to receive numbers (which it produces) and bools (which it does not) from it.
+These additions highlight some interesting interactions between existing features of the type system and subtyping. For instance, subtyping for function types is contravariant in parameter types, and covariant in the return type, this fits our intuition: It is safe to treat ${(\mathbf{num}\cup\mathbf{bool})\to\mathbf{num}}$ as though it were ${\mathbf{num}\to(\mathbf{num}\cup\mathbf{bool})}$, because, in words, we are promising to feed only numbers to a function that accepts numbers and booleans, and we are prepared to receive numbers (which it produces) and bools (which it does not) from it.
 
 Also interesting (and encouraging) is the fact that HM's instantiation is a special case of subsumption:
 \begin{align*}
@@ -659,7 +646,7 @@ Also interesting (and encouraging) is the fact that HM's instantiation is a spec
   \end{mathprooftree}
 \end{align*}
 
-However, consider the types $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ and $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$. Intuitively, they are equivalent so it should hold that they are subtypes of each other, but while it is possible to prove that:
+But, consider the types $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ and $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$. Intuitively, they are equivalent so it should hold that they are subtypes of each other, but while it is possible to prove that:
 \begin{align*}
   (\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})\prec(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}
 \end{align*}
@@ -677,58 +664,13 @@ The converse is not. To see why, let us have a look at an attempted proof (other
   \UIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$}
 \end{prooftree}
 
-This example highlights a limitation of the $\cup$-right rule. It is treating unions as \textit{disjoint}, meaning that if a term inhabits a union type, it either inhabits its left summand or its right, but not both. This is a convenient assumption to make for our implementation, but as we have seen, does not necessarily hold.
-
-\subsubsection{Disjoint Unions}
-
-As subtyping has received a great deal of attention in the literature, there are already a wealth of solutions to this problem. A popular approach is to enforce disjointness: In \textit{Haskell} this comes in the form of the \textbf{Either} type:
-
-```{.haskell}
-data Either a b = Left a | Right b
-```
-
-The idea being that, at the term level, when constructing an instance of the union type, we tag it with which summand of the union it belongs to (\textbf{Left}, or \textbf{Right}). With this extra information, type assignment can see that ${\mathbf{Left}~1::\mathbf{Either}~\mathbf{Int}~\beta}$\footnote{Haskell's type inference will actually infer the even more general type of ${\mathbf{Num}~\alpha\,\Rightarrow\,\mathbf{Either}~\alpha~\beta}$, but we will avoid muddying the waters by introducing type classes in this discussion.}.
-
-Translating the types that incited these worries in us into \textit{Haskell}, they are (approximately):
-
-```{.haskell}
-type X = (Either Int Bool, String)
-type Y = Either (Int, String) (Bool, String)
-
-xToY :: X -> Y
-xToY (Left  n, s) = Left  (n, s)
-xToY (Right b, s) = Right (b, s)
-
-yToX :: Y -> X
-yToX (Left  (n, s)) = (Left  n, s)
-yToX (Right (b, s)) = (Right b, s)
-```
-
-The two types are isomorphic, but converting between them comes at a runtime cost, and must be done explicitly. This is rarely an issue in \textit{Haskell} programs, in which having named types ensures that all functions operating on the same data will be operating on the same (and not an isomorphic) representation of it. This does not carry over to \textit{GeomLab} which lacks the syntax for named types and type annotations.
-
-\subsubsection{Type Inclusion Constraints}
-
-Aiken and Wimmers generalised HM in\ \cite{aiken1993type} by replacing equality constraints --- $\tau_1 = \tau_2$ --- which are resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation.
-
-Aiken and Wimmers' type system has several interesting properties, including having principle types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
-
-```
-define twice(f, x) = f(f(x));
-```
-
-which we are used to seeing with the type $\forall\alpha\ldotp(\alpha\to\alpha)\to\alpha\to\alpha$, is given the more general type $\forall\alpha,\beta,\gamma\ldotp((\alpha\to\beta)\cap(\beta\to\gamma))\to\alpha\to\gamma$.
-
-We choose not to build upon this type system because compared to HM, there is less literature on its efficient implementation. Furthermore, in the spirit of \textit{GeomLab} being a teaching language, we wish to avoid introducing concepts like type intersection and negation whose benefits are perhaps not as great as product and union types for the programmer.
-
-\subsubsection{Discriminative Types}
-
-Our approach will be to relax disjointness to \textit{discriminativity}, as seen \text{in~\cite{mishra1985declaration}} \text{(Definition~\ref{def:discrim})}. The intuition here is that, if terms already look different, then there is no need to tag them as distinct. If we are given a term with type $\mathbf{num}\cup\mathbf{bool}$, then we can tell which summand of the union it will belong to by inspecting its representation. If, however we are given a term of type $\mathbf{num}\cup\mathbf{num}$, we cannot, so we must tag them: $\mathit{kilometres}(\mathbf{num})\cup\mathit{miles}(\mathbf{num})$.
+This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration}, \cite{cartwright1991soft}.
 
 \begin{definition}[Discriminative Union]\label{def:discrim}
-  A union type is considered discriminative when each of its inhabitting terms may be projected into one of the union's summands by looking only at its outermost constructor. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary constructors and $[\,]$ can be considered a nullary constructor.
+  A union type is considered discriminative when none of its summands are type variables and each of its inhabitting terms may be injected into one of the union's summands by looking only at its outermost data constructor's type. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary data constructors and $[\,]$ can be considered a nullary data constructor.
 \end{definition}
 
-Returning to our earlier example $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$ is not discriminative because both summands have a $(:)$ constructor outermost, but $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ is! As only one of these types is well-formed, we avoid our original problem. Moreover, many useful terms have discriminative types, such as the more complicated \texttt{area} function:
+$(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$ is not discriminative because both summands have a $(:)$ constructor outermost, but $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ is. In general, because we can no longer have two summands in a union with a $(:)$ constructor outermost, factoring is no longer a problem. Moreover, many useful terms have discriminative types, such as \texttt{area}:
 
 ```
 define area([w, h]) = w * h
@@ -739,7 +681,7 @@ with type $([\mathbf{num},\mathbf{num}]\cup\mathbf{num})\to\mathbf{num}$.
 
 \subsection{R\'emy Encoding}\label{sec:remy}
 
-It is possible to implement type assignment with discriminative union types just by changing the representation of types. This idea was first expounded \text{in~\cite{cartwright1991soft}} as an adaptation of Didier \text{R\'emy's} encoding of record types \text{in~\cite{Remy/records91}}.
+It is possible to implement type assignment with discriminative union types just by changing the type representation. This idea was first expounded \text{in~\cite{cartwright1991soft}} as an adaptation of Didier \text{R\'emy's} encoding of record types \text{in~\cite{Remy/records91}}.
 
 The encoding assumes that we have a finite number of constructors and this is not true in \textit{GeomLab}, in which functions of differing arities are considered to have different constructors. In \text{Section~\ref{sec:wildcard}} we will fix this limitation, but for now, we will restrict ourselves to functions with one parameter.
 \begin{align*}
@@ -993,7 +935,7 @@ This does not obviate the need for exhaustiveness checking: If a case expression
 
 \subsection{Case Types}
 
-Discriminativity offer one model to lift the way terms are differentiated to the type level, but it is somewhat prescriptivist: If two types are structurally different, we must rush to make the difference known at the outermost constructor. Couple this with the fact that we have only finitely many constructors and we can already see that any union can have at most $\abs{\mathcal{C}}$ summands before we lose the ability to discriminate between them.
+Discriminativity can be seen as a model by which the way terms are differentiated is lifted to the type level, but it is somewhat prescriptivist: If two types are structurally different, we must rush to make the difference known at the outermost constructor. Couple this with the fact that we have only finitely many constructors and we can already see that any union can have at most $\abs{\mathcal{C}}$ summands before we lose the ability to discriminate between them.
 
 When faced with this simple (though contrived) function, Algorithm $\mathcal{W_R}$ runs into trouble, so as motivation, we set ourselves the goal of being able to assign it a type:
 ```
@@ -1014,7 +956,7 @@ define foo = function (xs)
 \begin{align*}
   ([\mathbf{bool}]\cup[\mathbf{num}, \mathbf{num}])\to\mathbf{bool}
 \end{align*}
-Singleton lists and two-element are clearly structurally different, but all discriminativity looks at is the outermost constructor, which in both cases is \textit{cons}. If we attempt to force the situation and make the type discriminative, we may arrive at:
+Singleton lists and two-element are clearly structurally different, but all discriminativity looks at is the outermost constructor, which in both cases is $(:)$. If we attempt to force the situation and make the type discriminative, we may arrive at:
 \begin{align*}
   (((\mathbf{bool}\cup\mathbf{num})^{\downarrow}:([\,]\cup[\mathbf{num}])^{\downarrow})^{\downarrow}\to\mathbf{bool}^{\uparrow})^{\uparrow}
 \end{align*}
@@ -1143,7 +1085,7 @@ When we attempt to unify $\alpha\sim\beta$ with the new algorithm, first we poin
 
 In our \texttt{area} example, when we introduced squares, we were lucky that they had a different structure to our representation of rectangles (one number instead of a pair of numbers), but suppose now we wish to introduce circles, represented by their radius; How would we distinguish between circles and squares?
 
-A common technique is to tag each kind of shape with a unique identifier, and check for these when matching patterns. For this we use \textit{Geomlab}'s atoms as their representation is legible to programmers, and their implementation yields fast equality checks:
+A common technique is to tag each kind of shape with a unique identifier, and check for these when matching patterns. For this we use \textit{GeomLab}'s atoms as their representation is legible to programmers, and their implementation yields fast equality checks:
 
 ```
 define area([#rect, w, h]) = w * h
@@ -1317,6 +1259,47 @@ Marlow and Wadler's work on a similar type system for Erlang (no higher-order fu
 
 W Swierstra's Data-types a la carte which builds a similar type system, using Haskell's type class machinery.
 
+\subsubsection{Disjoint Unions}
+
+As subtyping has received a great deal of attention in the literature, there are already a wealth of solutions to this problem. A popular approach is to enforce disjointness: In \textit{Haskell} this comes in the form of the \textbf{Either} type:
+
+```{.haskell}
+data Either a b = Left a | Right b
+```
+
+The idea being that, at the term level, when constructing an instance of the union type, we tag it with which summand of the union it belongs to (\textbf{Left}, or \textbf{Right}). With this extra information, type assignment can see that ${\mathbf{Left}~1::\mathbf{Either}~\mathbf{Int}~\beta}$\footnote{Haskell's type inference will actually infer the even more general type of ${\mathbf{Num}~\alpha\,\Rightarrow\,\mathbf{Either}~\alpha~\beta}$, but we will avoid muddying the waters by introducing type classes in this discussion.}.
+
+Translating the types that incited these worries in us into \textit{Haskell}, they are (approximately):
+
+```{.haskell}
+type X = (Either Int Bool, String)
+type Y = Either (Int, String) (Bool, String)
+
+xToY :: X -> Y
+xToY (Left  n, s) = Left  (n, s)
+xToY (Right b, s) = Right (b, s)
+
+yToX :: Y -> X
+yToX (Left  (n, s)) = (Left  n, s)
+yToX (Right (b, s)) = (Right b, s)
+```
+
+The two types are isomorphic, but converting between them comes at a runtime cost, and must be done explicitly. This is rarely an issue in \textit{Haskell} programs, in which having named types ensures that all functions operating on the same data will be operating on the same (and not an isomorphic) representation of it. This does not carry over to \textit{GeomLab} which lacks the syntax for named types and type annotations.
+
+\subsubsection{Type Inclusion Constraints}
+
+Aiken and Wimmers generalised HM in\ \cite{aiken1993type} by replacing equality constraints --- $\tau_1 = \tau_2$ --- which are resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation.
+
+Aiken and Wimmers' type system has several interesting properties, including having principle types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
+
+```
+define twice(f, x) = f(f(x));
+```
+
+which we are used to seeing with the type $\forall\alpha\ldotp(\alpha\to\alpha)\to\alpha\to\alpha$, is given the more general type $\forall\alpha,\beta,\gamma\ldotp((\alpha\to\beta)\cap(\beta\to\gamma))\to\alpha\to\gamma$.
+
+We choose not to build upon this type system because compared to HM, there is less literature on its efficient implementation. Furthermore, in the spirit of \textit{GeomLab} being a teaching language, we wish to avoid introducing concepts like type intersection and negation whose benefits are perhaps not as great as product and union types for the programmer.
+
 \section{Future Work}
 Everything I didn't have time to fully flesh out:
 \begin{itemize}
@@ -1359,7 +1342,7 @@ Everything I didn't have time to fully flesh out:
 
   \item[nil] A distinguished value used to represent ``nothing'', denoted by $[]$, commonly used as the terminator for singly linked lists.
 
-  \item[cons cells] Pairs of values $a$ and $b$, denoted by $a:b$. These form the building blocks for compound data structures. In statically typed functional programming languages, they tend to only be used to construct singly linked-lists, but in dynamically typed languages (including \textit{Geomlab}) they are used in the construction of all product types.
+  \item[cons cells] Pairs of values $a$ and $b$, denoted by $a:b$. These form the building blocks for compound data structures. In statically typed functional programming languages, they tend to only be used to construct singly linked-lists, but in dynamically typed languages (including \textit{GeomLab}) they are used in the construction of all product types.
 
   \item[booleans] True/false values.
 
@@ -1374,7 +1357,7 @@ define n     = 1;
 define id(x) = x;
 id(n);
 ```
-The top level of a Geomlab program is a sequence of statements, each terminated by a semicolon. A statement is either a definition or an expression to be evaluated. All statements may refer to names bound by themselves (in the case of definitions, thus facilitating recursion) and all previous statements.
+The top level of a \textit{GeomLab} program is a sequence of statements, each terminated by a semicolon. A statement is either a definition or an expression to be evaluated. All statements may refer to names bound by themselves (in the case of definitions, thus facilitating recursion) and all previous statements.
 
 Syntactic sugar exists to define functions in this way, whereby the formal parameters to the function may appear to the left of the \texttt{=} and the body of the function to the right.
 
