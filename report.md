@@ -1276,7 +1276,18 @@ Nominally, the two types are isomorphic, but converting between them comes at a 
 
 Wouter Swierstra makes impressive use of \textit{Haskell's} type class machinery to model unions and subsumption\ \cite{swierstra2008data}. Unfortunately, the resulting framework, while compositional, was not amenable to type inference, and required the creation of ``smart constructors'' --- functions that were aware of a subsumption type class --- as well as a data declaration for every non-composite type. This paper stands as a testament to the expressiveness of \textit{Haskell's} type system, and introduces many useful techniques for writing modular \textit{Haskell} programs, but its examples take these ideas to an impractical extreme.
 
-Aiken and Wimmers generalised HM\ \cite{aiken1993type} by replacing equality constraints --- $\tau_1 = \tau_2$ --- which are resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation. These extra constructs furnish the type system with principle types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
+As early as 1985, Mishra and Reddy explored type inference in the absence of annotations in their Declaration--Free type system\ \cite{mishra1985declaration} (henceforth MR). Their language --- a typed $\lambda$ calculus with \textit{let} bindings, \textit{case} expressions, and data built from tagged arbitrary length tuples --- bears a resemblance to our desugaring of \textit{GeomLab}, and we may draw several comparisons between their techniques and our's.
+
+Most notably, both systems rely on \textit{discriminative types} (Definition\ \ref{def:discrim}), although, MR is less encumbered by the restriction:
+\begin{align*}
+ & \text{Where we write: } & [\#\mathit{square}, \mathbf{num}] &  & \text{and} &  & [\#\mathit{rect}, \mathbf{num}, \mathbf{num}] \\
+ & \text{MR uses: }        & \#\mathit{square}[\mathbf{num}]   &  & \text{and} &  & \#\mathit{rect}[\mathbf{num}, \mathbf{num}]
+\end{align*}
+The union of our representations is not discriminative, but in MR they are because the outermost constructors are $\#\mathit{square}$ and $\#\mathit{rect}$.
+
+Similarly, by describing tuples as composed of $(:)$ and $[\,]$, we could not describe discriminative unions of different sized tuples, whilst in MR, the issue is dispensed with by making tuples an indivisible construct, with a distinct ``tuple constructor'' for each size. Multi-arity functions are modelled by functions accepting tuples, in turn.
+
+Types in MR are represented by a system of inequalities, fed to a constraint solver. Aiken and Wimmers extend this idea by generalising HM\ \cite{aiken1993type}, replacing equality constraints --- $\tau_1 = \tau_2$ --- resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation. These extra constructs furnish it with principle types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
 
 ```
 define twice(f, x) = f(f(x));
@@ -1286,7 +1297,11 @@ which we are used to seeing with the type $\forall\alpha\ldotp(\alpha\to\alpha)\
 
 Aiken, Wimmers and Lakshman go on to extend this work\ \cite{aiken1994soft} to include \textit{conditional types}, aiming to fill the same need as \textit{case types} (Section\ \ref{sec:case-types}). A conditional type $\tau?\sigma$ is semantically equivalent to the empty type when $\sigma$ is the empty type, and is equivalent to $\tau$ otherwise.
 
-We choose not to build upon this type system because compared to HM, there is less literature on its efficient implementation. Furthermore, in the spirit of \textit{GeomLab} being a teaching language, we wish to avoid introducing concepts like type intersection and negation whose benefits are perhaps not as great as product and union types for the programmer.
+We chose not to build upon this type system because compared to HM, there is less literature on its efficient implementation. Furthermore, in the spirit of \textit{GeomLab} being a teaching language, we wish to avoid introducing concepts like type intersection and negation whose benefits are perhaps not as great as product and union types for the programmer.
+
+An attempt to build a type system for \textit{Erlang}\ \cite{marlow1997practical} builds on and simplifies the idea of inferring types by solving systems of constraints \cite{mishra1985declaration,aiken1993type,aiken1994soft}. In \textit{Erlang}, product types have a tagged tuple representation that resembles \textit{GeomLab's}, with the tag in the tuple's first slot. The proposed type system avoids the discriminativity problem pragmatically by treating those tagged tuples specially.
+
+Finally, Cartwright and Fagan extend HM\ \cite{cartwright1991soft} to model constraints over types in a manner solveable by unification. Their techniques proved to be intuitive, easily extensible, and invaluable for our work.
 
 \section{Future Work}
 Everything I didn't have time to fully flesh out:
