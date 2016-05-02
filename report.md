@@ -667,7 +667,7 @@ The converse is not. To see why, let us have a look at an attempted proof (other
 This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration}, \cite{cartwright1991soft}.
 
 \begin{definition}[Discriminative Union]\label{def:discrim}
-  A union type is considered discriminative when none of its summands are type variables and each of its inhabitting terms may be injected into one of the union's summands by looking only at its outermost data constructor's type. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary data constructors and $[\,]$ can be considered a nullary data constructor.
+  A union type is considered discriminative when none of its summands are type variables and each of its inhabitting terms may be projected into one of the union's summands by looking only at its outermost data constructor's type. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary data constructors and $[\,]$ can be considered a nullary data constructor.
 \end{definition}
 
 $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$ is not discriminative because both summands have a $(:)$ constructor outermost, but $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ is. In general, because we can no longer have two summands in a union with a $(:)$ constructor outermost, factoring is no longer a problem. Moreover, many useful terms have discriminative types, such as \texttt{area}:
@@ -681,7 +681,7 @@ with type $([\mathbf{num},\mathbf{num}]\cup\mathbf{num})\to\mathbf{num}$.
 
 \subsection{R\'emy Encoding}\label{sec:remy}
 
-It is possible to implement type assignment with discriminative union types just by changing the type representation. This idea was first expounded \text{in~\cite{cartwright1991soft}} as an adaptation of Didier \text{R\'emy's} encoding of record types \text{in~\cite{Remy/records91}}.
+It is possible to implement type assignment with discriminative union types just by changing the type representation. This idea was first expounded \text{in~\cite{cartwright1991soft}} as an adaptation of Didier \text{R\'emy's} encoding of record types\ \cite{Remy/records91}.
 
 The encoding assumes that we have a finite number of constructors and this is not true in \textit{GeomLab}, in which functions of differing arities are considered to have different constructors. In \text{Section~\ref{sec:wildcard}} we will fix this limitation, but for now, we will restrict ourselves to functions with one parameter.
 \begin{align*}
@@ -933,7 +933,7 @@ It is assigned the \text{R\'emy} encoding $\forall\alpha,\beta\ldotp((\alpha:\be
 
 This does not obviate the need for exhaustiveness checking: If a case expression contains a numeric literal pattern (matching a single number), it still purports to support all numeric values because $\mathbf{num}$ is the smallest type that covers a numeric literal. But functions which are intended to work on only a part of a larger type (like \texttt{head}) are no longer considered partial.
 
-\subsection{Case Types}
+\subsection{Case Types}\label{sec:case-types}
 
 Discriminativity can be seen as a model by which the way terms are differentiated is lifted to the type level, but it is somewhat prescriptivist: If two types are structurally different, we must rush to make the difference known at the outermost constructor. Couple this with the fact that we have only finitely many constructors and we can already see that any union can have at most $\abs{\mathcal{C}}$ summands before we lose the ability to discriminate between them.
 
@@ -1064,7 +1064,7 @@ Then we unify $\alpha\sim\delta$ and $\beta\sim\gamma$, creating a circular type
 
 Now suppose we try to unify $\alpha\sim\beta$. Chasing forward pointers, this is tantamount to unifying $(\gamma:[\,])\sim(\delta:[\,])$. As this unification is between compound types with the same outermost constructor, we proceed to unify the children. $[\,]\sim[\,]$ is a trivial constraint, so we focus on $\gamma\sim\delta$. Another pointer chase shows that this is equivalent to $(\delta:[\,])\sim(\gamma:[\,])$, for which we must unify $\delta\sim\gamma$: Circular types have us going round in circles!
 
-To unify two distinct\footnote{\textit{Distinct} refers to pointer equality: $\tau_1$ is stored at a different location in memory to $\tau_2$.} compound types $\tau_1$ and $\tau_2$ with matching outermost constructor, we unify their children. If, however, after following all forwarding pointers, both types reside at the same memory location (are identical) then we know that we need not do any work. As we have seen, this check alone is not enough to stop unification diverging, but \text{G\'erard Huet} proposes an elegant solution in\ \cite[\S5.7.2]{huet1976resolution}: \textit{Before} unifying the compound types' children replace one type with a forward pointer to the other. This is sound because, after unification, the two types will be identical in structure, and if the two types need to be unified again, the pointer equality check will stop us looping.
+To unify two distinct\footnote{\textit{Distinct} refers to pointer equality: $\tau_1$ is stored at a different location in memory to $\tau_2$.} compound types $\tau_1$ and $\tau_2$ with matching outermost constructor, we unify their children. If, however, after following all forwarding pointers, both types reside at the same memory location (are identical) then we know that we need not do any work. As we have seen, this check alone is not enough to stop unification diverging, but \text{G\'erard Huet} proposes an elegant solution\ \cite[\S5.7.2]{huet1976resolution}: \textit{Before} unifying the compound types' children replace one type with a forward pointer to the other. This is sound because, after unification, the two types will be identical in structure, and if the two types need to be unified again, the pointer equality check will stop us looping.
 
 When we attempt to unify $\alpha\sim\beta$ with the new algorithm, first we point $\beta$ to $\alpha$ (Left). Then we unify $\gamma\sim\delta$ as children of $\alpha$ and $\beta$ respectively, but noticing that they point to the same type, do nothing --- except compress $\gamma$'s path (Right):
 \begin{equation*}
@@ -1251,25 +1251,13 @@ But the type checker's output refers to features from the original expression:
 }
 \section{Related Work}
 
-Aiken and Wimmers work on conditional types (A type $\tau?\sigma$ that is $\tau$ when $\sigma\neq\varnothing$ and is $\varnothing$ itself otherwise).
+Compositionality is a fundamental concern of type systems, mirroring the programs they specify. Being such a crucial facet to the design of a type system, it has received a great deal of attention both in practice and in the literature.
 
-Mishra and Reddy's work on Declaration-free Typing (using discriminative unions).
-
-Marlow and Wadler's work on a similar type system for Erlang (no higher-order functions).
-
-W Swierstra's Data-types a la carte which builds a similar type system, using Haskell's type class machinery.
-
-\subsubsection{Disjoint Unions}
-
-As subtyping has received a great deal of attention in the literature, there are already a wealth of solutions to this problem. A popular approach is to enforce disjointness: In \textit{Haskell} this comes in the form of the \textbf{Either} type:
-
+\textit{Haskell} has been built from the ground up with types in mind, with a \textit{nominative} --- as opposed to \textit{structural} --- type system. Types in \textit{Haskell} are equated by name, not by structure, consequently, some forms of composition do not come naturally. For example, (disjoint) unions are represented by \textbf{Either}:
 ```{.haskell}
 data Either a b = Left a | Right b
 ```
-
-The idea being that, at the term level, when constructing an instance of the union type, we tag it with which summand of the union it belongs to (\textbf{Left}, or \textbf{Right}). With this extra information, type assignment can see that ${\mathbf{Left}~1::\mathbf{Either}~\mathbf{Int}~\beta}$\footnote{Haskell's type inference will actually infer the even more general type of ${\mathbf{Num}~\alpha\,\Rightarrow\,\mathbf{Either}~\alpha~\beta}$, but we will avoid muddying the waters by introducing type classes in this discussion.}.
-
-Translating the types that incited these worries in us into \textit{Haskell}, they are (approximately):
+At the term level, when constructing an instance of a union, we tag it with which summand of the union it belongs to (\textbf{Left}, or \textbf{Right}). In \textit{Haskell}, $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ and $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$ are (approximately):
 
 ```{.haskell}
 type X = (Either Int Bool, String)
@@ -1284,19 +1272,19 @@ yToX (Left  (n, s)) = (Left  n, s)
 yToX (Right (b, s)) = (Right b, s)
 ```
 
-The two types are isomorphic, but converting between them comes at a runtime cost, and must be done explicitly. This is rarely an issue in \textit{Haskell} programs, in which having named types ensures that all functions operating on the same data will be operating on the same (and not an isomorphic) representation of it. This does not carry over to \textit{GeomLab} which lacks the syntax for named types and type annotations.
+Nominally, the two types are isomorphic, but converting between them comes at a runtime cost, must be done explicitly, and is purely boilerplate: only the tags move! But, this problem is rare in \textit{Haskell} programs. Having named types ensures that one of the isomorphic representations is chosen when a type is defined. What we cannot do is define (total) functions on part of a named type, which we have seen is useful at times.
 
-\subsubsection{Type Inclusion Constraints}
+Wouter Swierstra makes impressive use of \textit{Haskell's} type class machinery to model unions and subsumption\ \cite{swierstra2008data}. Unfortunately, the resulting framework, while compositional, was not amenable to type inference, and required the creation of ``smart constructors'' --- functions that were aware of a subsumption type class --- as well as a data declaration for every non-composite type. This paper stands as a testament to the expressiveness of \textit{Haskell's} type system, and introduces many useful techniques for writing modular \textit{Haskell} programs, but its examples take these ideas to an impractical extreme.
 
-Aiken and Wimmers generalised HM in\ \cite{aiken1993type} by replacing equality constraints --- $\tau_1 = \tau_2$ --- which are resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation.
-
-Aiken and Wimmers' type system has several interesting properties, including having principle types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
+Aiken and Wimmers generalised HM\ \cite{aiken1993type} by replacing equality constraints --- $\tau_1 = \tau_2$ --- which are resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation. These extra constructs furnish the type system with principle types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
 
 ```
 define twice(f, x) = f(f(x));
 ```
 
 which we are used to seeing with the type $\forall\alpha\ldotp(\alpha\to\alpha)\to\alpha\to\alpha$, is given the more general type $\forall\alpha,\beta,\gamma\ldotp((\alpha\to\beta)\cap(\beta\to\gamma))\to\alpha\to\gamma$.
+
+Aiken, Wimmers and Lakshman go on to extend this work\ \cite{aiken1994soft} to include \textit{conditional types}, aiming to fill the same need as \textit{case types} (Section\ \ref{sec:case-types}). A conditional type $\tau?\sigma$ is semantically equivalent to the empty type when $\sigma$ is the empty type, and is equivalent to $\tau$ otherwise.
 
 We choose not to build upon this type system because compared to HM, there is less literature on its efficient implementation. Furthermore, in the spirit of \textit{GeomLab} being a teaching language, we wish to avoid introducing concepts like type intersection and negation whose benefits are perhaps not as great as product and union types for the programmer.
 
