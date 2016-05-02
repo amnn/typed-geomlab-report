@@ -1010,9 +1010,15 @@ Some types should not rely on the types of others, for example, the types of fun
 
 \subsection{Optimisation}
 
-\textcolor{red}{%
-The \text{R\'emy} encoding gives constraints on a type, but we want to display an actual type, this section shows how to pick a type to show, by minimising or maximising w.r.t. constraints.
-}
+Before being presented to the user, a \text{R\'emy} type --- representing a set of feasible types --- is condensed into one type. Typically this is achieved through \textit{minimising substitution}\ \cite{cartwright1991soft}, but this is not always possible. For example:
+```
+define twice(f) = function (x) f(f(x));
+```
+Is assigned $((\alpha\to\alpha)^{\downarrow}\to(\alpha\to\alpha)^{\uparrow})^{\uparrow}$. Consequently, when applied to some $f$ constrained by $((\mathbf{num}\cup\mathbf{bool})^{\downarrow}\to\mathbf{num}^{\uparrow})^{\uparrow}$ unification yields constraints that are satisfied by both $(\mathbf{num}\cup\mathbf{bool})\to(\mathbf{num}\cup\mathbf{bool})$ and $\mathbf{num}\to\mathbf{num}$, which are incomparable. We have lost the ability to assign a principal type to every typable term, because the principal (most general) system of constraints can capture incomparable types.
+
+\textit{Minimisation} and \textit{maximisation} are defined mutually recursively. Minimisation does nothing to variables, but to a \text{R\'emy} type, it minimises the flag parameters (in a sense that is made clear later), then minimises both children of $(:)$, maximises the left child of $(\to)$, and minimises its right child. The definition of maximisation is dual.
+
+When a flag parameter was just $+$, $-$ or a variable, minimisation amounted to assigning $-$ to any that were variables. Now that our flag parameters are trees, we must elaborate this algorithm: If the parameter is a variable, it is replaced with a leaf containing $-$, if it is a tree, every $\sim$ leaf is replaced with a $-$ leaf. Once again, maximisation of flag parameters is a dual process.
 
 \section{Recursive Types}\label{sec:recursive}
 
