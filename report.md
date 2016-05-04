@@ -557,7 +557,7 @@ Now, when the type checker sees either \texttt{[]} or \texttt{(:)}, it makes no 
 define area([width, height]) = width * height;
 ```
 
-It will happily assign it the type $(\mathbf{num}:(\mathbf{num}:[\,]))\to\mathbf{num}$, or, by lifting list literals to the type-level \texttt{[num, num] -> num}.
+It will happily assign it the type $(\mathbf{num}:(\mathbf{num}:[\,]))\to\mathbf{num}$, or, by lifting list literals to the type-level $[\mathbf{num}, \mathbf{num}]\to\mathbf{num}$.
 
 Unfortunately, we have lost the ability to typecheck lists, for two reasons. Firstly, now that nil and cons inhabit distinct types, any case expression with both nil and cons patterns causes a unification error, because we enforce the rule that patterns of case expressions be unifiable. Secondly, if we define a recursive function over lists (e.g. \texttt{length}), it will cause the tail of the list to be unified with the list itself, creating a cyclic type; something else HM prohibits. The first of these issues is addressed immediately --- in \text{Section~\ref{sec:unions}} --- below, and the second will be dealt with in \text{Section~\ref{sec:recursive}}.
 
@@ -654,17 +654,17 @@ The converse is not. To see why, let us have a look at an attempted proof (other
 
 \begin{prooftree}
   \AXC{$\vdots$}
-  \UIC{$(\mathbf{num}\cup\mathbf{bool})\prec\mathbf{bool}$}
+  \UIC{$(\mathbf{num}\cup\mathbf{bool})\prec\mathbf{num}$}
   \AXC{}
   \RightLabel{\scriptsize(refl)}
   \UIC{$\mathbf{str}\prec\mathbf{str}$}
   \RightLabel{\scriptsize(cons)}
-  \BIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec\mathbf{bool}:\mathbf{str}$}
+  \BIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec\mathbf{num}:\mathbf{str}$}
   \RightLabel{\scriptsize($\cup$-right)}
   \UIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$}
 \end{prooftree}
 
-This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration}, \cite{cartwright1991soft}.
+This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration,cartwright1991soft}.
 
 \begin{definition}[Discriminative Union]\label{def:discrim}
   A union type is considered discriminative when none of its summands are type variables and each of its inhabitting terms may be projected into one of the union's summands by looking only at its outermost data constructor's type. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary data constructors and $[\,]$ can be considered a nullary data constructor.
@@ -762,7 +762,7 @@ Always dealing with \text{R\'emy} encodings in the form given in Equation\ \ref{
 
 Suppose we have \textit{pairwise distinct} constructors $\{x_1,\ldots,x_k\}=\mathcal{X}\subseteq\mathcal{C}$ and \text{R\'emy} encodings $\gamma_1^1,\ldots,\gamma_1^{a_{x_1}},\ldots,\gamma_k^{a_{x_k}}\in\mathcal{T}\cup\mathcal{V}$.
 
-\begin{definition}[Supertype encoding]
+\begin{definition}[Supertype encoding]\label{def:super-encode}
   \begin{flalign*}
   \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\uparrow} & = \rho\in\mathcal{T}&&
   \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
@@ -779,7 +779,7 @@ Suppose we have \textit{pairwise distinct} constructors $\{x_1,\ldots,x_k\}=\mat
   \end{flalign*}
 \end{definition}
 
-\begin{definition}[Subtype encoding]
+\begin{definition}[Subtype encoding]\label{def:sub-encode}
   \begin{flalign*}
   \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\downarrow} & = \rho\in\mathcal{T}&&
   \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
@@ -818,7 +818,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
   \item
     \begin{enumerate}[(a)]
       \item $t$ a number, string, boolean, atom or nil literal\hfill{\scriptsize(literals)}
-        \\[.5em] $\mathbb{S}\equiv\varnothing$ and $\tau\equiv\mathbf{num}^{\uparrow},\mathbf{str}^{\uparrow},\mathbf{bool}^{\uparrow},\mathbf{atom}^{\uparrow},[\,]^{\uparrow}$ respectively.
+        \\[.5em] $\mathbb{S}\equiv\varnothing$ and \colorbox{lightgray}{$\tau\equiv\mathbf{num}^{\uparrow},\mathbf{str}^{\uparrow},\mathbf{bool}^{\uparrow},\mathbf{atom}^{\uparrow},[\,]^{\uparrow}$} respectively.
       \item $t\equiv(a:b)$\hfill{\scriptsize(cons cells)}
         \\[.5em] \begin{math}
           \arraycolsep=1.5pt
@@ -827,7 +827,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
             \\ & (\mathbb{S}_2,\tau^\prime_2) & \gets & \mathcal{W_R}(\mathbb{S}_1(\Gamma)\vdash b)
           \end{array}
         \end{math}
-    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_2\mathbb{S}_1$ and $\tau\equiv(\mathbb{S}_2(\tau^{\prime}_1):\tau^{\prime}_2)^{\uparrow}$.
+    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_2\mathbb{S}_1$ and \colorbox{lightgray}{$\tau\equiv(\mathbb{S}_2(\tau^{\prime}_1):\tau^{\prime}_2)^{\uparrow}$}.
     \end{enumerate}
   \item $t\equiv \texttt{function}\;(x)~e$\hfill{\scriptsize(abstractions)}
     \\[.5em] \begin{math}
@@ -836,14 +836,14 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
         \text{let} & (\mathbb{S}_1,\tau^\prime_1) & \gets & \mathcal{W}(\Gamma,x:\alpha\vdash e) \text{ ($\alpha$ fresh)}
       \end{array}
     \end{math}
-    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_1$ and $\tau\equiv(\mathbb{S}_1(\alpha)\to\tau^{\prime}_1)^{\uparrow}$.
+    \\[.5em] $\mathbb{S}\equiv\mathbb{S}_1$ and \colorbox{lightgray}{$\tau\equiv(\mathbb{S}_1(\alpha)\to\tau^{\prime}_1)^{\uparrow}$}.
   \item $t\equiv f(e)$\hfill{\scriptsize(function applications)}
     \\[.5em] \begin{math}
       \arraycolsep=1.5pt
       \begin{array}{llll}
         \text{let} & (\mathbb{S}_0,\tau^\prime_0) & \gets & \mathcal{W_R}(\Gamma\vdash f)
         \\ & (\mathbb{S}_1,\tau^\prime_1) & \gets & \mathcal{W_R}(\mathbb{S}_{0}(\Gamma)\vdash e)
-        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_1(\tau^\prime_0),~(\tau^\prime_1\to\beta)^{\downarrow}) \text{ ($\beta$ fresh)}
+        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}_1(\tau^\prime_0),~\colorbox{lightgray}{$(\tau^\prime_1\to\beta)^{\downarrow}$}) \text{ ($\beta$ fresh)}
       \end{array}
     \end{math}
     \\[.5em] $\mathbb{S}\equiv\mathbb{U}\mathbb{S}_1\mathbb{S}_0$ and $\tau\equiv\mathbb{U}(\beta)$.
@@ -853,13 +853,13 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
     \\[.5em] \begin{math}
     \arraycolsep=1.5pt
     \begin{array}{llll}
-      \text{let} & \phantom{(}\tau_0 & \gets & \star
+      \text{let} & \phantom{(}\tau_0 & \gets & \colorbox{lightgray}{$\star$}
       \\ & (\mathbb{S}_0,\tau^{\prime}) & \gets & \mathcal{W_R}(\Gamma\vdash c)
-      \\ & (\mathbb{S}_i,\tau_i) & \gets & \mathcal{A}(pat_i,e_i)
+      \\ & (\mathbb{S}_i,\tau_i) & \gets & \colorbox{lightgray}{$\mathcal{A}(pat_i,e_i)$}
       \\ & \phantom{(}\rho_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_1(\tau^{\prime})
       \\ & \phantom{(}\Delta_i & \gets & \mathbb{S}_{i-1}\ldots\mathbb{S}_0(\Gamma)
-      \\ & \phantom{(}\gamma & \gets & \mathcal{C}(\{pat_1,\ldots,pat_k\})
-      \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\rho_k,\gamma)
+      \\ & \phantom{(}\gamma & \gets & \colorbox{lightgray}{$\mathcal{C}(\{pat_1,\ldots,pat_k\})$}
+      \\ & \phantom{(}\mathbb{U} & \gets & \colorbox{lightgray}{$\mathcal{U}(\rho_k,\gamma)$}
     \end{array}
     \end{math}
 
@@ -891,7 +891,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
       \\[.2em] \begin{math}
         \arraycolsep=1.5pt
         \begin{array}{llll}
-          \text{let} & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W_R}(\Delta_i,h:\gamma^1_i, t:\gamma^{\prime}_i \vdash e_i) \text{ ($\gamma^1_i,\gamma^2_i$ fresh)}
+          \text{let} & (\mathbb{S}^\prime,\tau^\prime) & \gets & \mathcal{W_R}(\Delta_i,h:\gamma^1_i, t:\gamma^2_i \vdash e_i) \text{ ($\gamma^1_i,\gamma^2_i$ fresh)}
           \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}^\prime(\tau_{i-1}), \tau^\prime)
         \end{array}
       \end{math}
@@ -976,37 +976,125 @@ For example, in \texttt{foo} (desugared), supposing we refer to the types of var
   Given case contexts $C$ and $D$, we say that $D$ is a sub-context of $C$ when $D = C,\alpha_1\triangleright d_1,\ldots,\alpha_k\triangleright d_k$, for constructors $d_1,\ldots,d_k$, and type variables $\alpha_1,\ldots,\alpha_k$ \textit{free in }$C$, $k\geq 0$. This means that the context described by $D$ is nested within that described by $C$.
 \end{definition}
 
-\textcolor{red}{
-In a \text{R\'emy} encoding (Section\ \ref{sec:remy}), flag parameters may be $+$, $-$ or a variable, meaning its associated subtype \textit{must/must not/may be} be part of the type, respectively. These constraints are applied in all contexts, but, by storing flags as \textit{trees} with intermediate nodes labelled by \textit{type variables}, edges labelled by \textit{constructors} and leaves labelled as in Figure\ \ref{fig:flag-leaf}, we may express unification w.r.t. contexts.
-}
+We extend Algorithm $\mathcal{W_R}$ (Section\ \ref{sec:adapt-hm}) with case contexts to make $\mathcal{W_{RC}}$. The first modification introducing case contexts as a parameter to type assignment $\mathcal{W_{RC}}(\Gamma;C\vdash t)$. In most cases, this parameter is passed on to recursive calls unchanged. The exception to this rule is in the definition of $\mathcal{A}(pat_i,e_i)$ (concerned with the type checking the arms of a case expression):
+
+\begin{enumerate}[(a)]
+  \item $pat_i$ a numeric, string, bool, atom or nil pattern\hfill{\scriptsize(literal pattern)}
+    \\[.2em] \begin{math}
+      \arraycolsep=1.5pt
+      \begin{array}{llll}
+        \text{let} & (\mathbb{S}^\prime,\tau^\prime) & \gets & \colorbox{lightgray}{$\mathcal{W_{RC}}(\Delta_i;C,\rho_i\triangleright\mathbf{num}\vdash e_i)$ (\textbf{str}, \textbf{bool}, \textbf{atom}, $[\,]$ respectively)}
+        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}^\prime(\tau_{i-1}), \tau^\prime)
+      \end{array}
+    \end{math}
+    \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}\mathbb{S}^\prime$ and $\tau_i\equiv\mathbb{U}(\tau^\prime)$
+
+  \item $pat_i\equiv v$\hfill{\scriptsize(variable pattern)}
+    \\[.2em] \begin{math}
+      \arraycolsep=1.5pt
+      \begin{array}{llll}
+        \text{let} & (\mathbb{S}^\prime,\tau^\prime) & \gets & \colorbox{lightgray}{$\mathcal{W_{RC}}(\Delta_i,v : \rho_i; C\vdash e_i)$}
+        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}^\prime(\tau_{i-1}), \tau^\prime)
+      \end{array}
+    \end{math}
+    \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}\mathbb{S}^\prime$ and $\tau_i\equiv\mathbb{U}(\tau^\prime)$
+
+  \item $pat_i\equiv(h : t)$ \hfill{\scriptsize(cons pattern)}
+    \\[.2em] \begin{math}
+      \arraycolsep=1.5pt
+      \begin{array}{llll}
+        \text{let} & (\mathbb{S}^\prime,\tau^\prime) & \gets & \colorbox{lightgray}{$\mathcal{W_{RC}}(\Delta_i,h:\gamma^1_i, t:\gamma^2_i; C,\rho_i\triangleright(:) \vdash e_i)$}\text{ ($\gamma^1_i,\gamma^2_i$ fresh)}
+        \\ & \phantom{(}\mathbb{U} & \gets & \mathcal{U}(\mathbb{S}^\prime(\tau_{i-1}), \tau^\prime)
+      \end{array}
+    \end{math}
+    \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}\mathbb{S}^\prime$ and $\tau_i\equiv\mathbb{U}(\tau^\prime)$
+\end{enumerate}
+
+In order to leverage the case contexts we have threaded through the algorithm, we must change the flag parameter representation (Definition\ \ref{def:flag-tree}) to allow us to represent the results of unification w.r.t. a context.
+
+\begin{definition}[Flag Tree]\label{def:flag-tree}
+  A represention of constraints in multiple contexts as a tree. Leaves are labelled as in Figure\ \ref{fig:flag-leaf} --- an extension of $\mathcal{F}$, whilst intermediate nodes are labelled by type variables and possess an edge for every constructor $c\in\mathcal{C}$. We use $\llbracket n\rrbracket$ to refer to a node's label and $\mathbb{E}(n, c)$ to refer to the target of the outgoing edge from intermediate node $n$ labelled by constructor $c$.
+\end{definition}
 
 \begin{figure}[htbp]
-  \caption{Lattice of leaf flag values. $+$ and $-$ retain their meanings of \textit{must} and \textit{must not}, $\sim$ indicates no constraint (the join $+\sqcup-$), and $\bot$ indicates an inconsistent constraint or a type error (the meet $+\sqcap-$).}\label{fig:flag-leaf}
+  \caption{Lattice of leaf flag values, (our new $\mathcal{F}$). $+$ and $-$ retain their meanings of \textit{must} and \textit{must not}, $\sim$ indicates no constraint (the join $+\sqcup-$), and $\bot$ indicates an inconsistent constraint or a type error (the meet $+\sqcap-$).}\label{fig:flag-leaf}
   \begin{center}
     \begin{tikzcd}
-      & \sim \ar[ld, dash]\ar[rd,dash]&\\
+      & \sim \ar[ld, dash]\ar[rd, dash]&\\
       + \ar[rd, dash]&& - \ar[ld, dash]\\
       & \bot &
     \end{tikzcd}
   \end{center}
 \end{figure}
 
-\textcolor{red}{
-To interpret a flag tree we examine the paths from its root to its leaves. A path:
+\begin{definition}[Interpretation]\label{def:flag-tree-interp}
+flag trees are interpreted as flag values $I(f)\in\mathcal{F}$, by joining the labels of their leaves:
 \begin{align*}
-  \alpha_0\overset{c_0}{\longrightarrow}
-  \alpha_1\overset{c_1}{\longrightarrow}
-  \cdots  \overset{c_{k-1}}{\longrightarrow}
-  \alpha_k\overset{c_k}{\longrightarrow}l
+  I(f) & =
+  \begin{cases}
+    \llbracket f\rrbracket & \text{ if $f$ is a leaf}\\
+    \displaystyle\bigsqcup_{c\in\mathcal{C}} I(\mathbb{E}(f,c)) & \text{ otherwise}
+  \end{cases}
 \end{align*}
-Indicates that in context $\alpha_0\triangleright c_0,\ldots,\alpha_k\triangleright c_k$, the flag parameter should be $l$.
-}
+\end{definition}
 
-\subsection{Decorrelation}
+\begin{definition}[Specialisation]\label{def:flag-tree-spec}
+  A flag tree $f$ is specialised w.r.t. a context $C$:
+\begin{align*}
+  f\rvert_{C} & =
+  \begin{cases}
+  f & \text{ if $f$ is a leaf }\\
+  \mathbb{E}(f, c)\rvert_C & \text{ if $\llbracket f\rrbracket\triangleright c\in C$}\\
+  f^{\prime} & \text{ otherwise, where $\llbracket f^{\prime}\rrbracket\triangleq\llbracket f\rrbracket$ and $\mathbb{E}(f^{\prime}, c)\triangleq\mathbb{E}(f,c)\rvert_C$.}
+  \end{cases}
+\end{align*}
+\end{definition}
 
-\textcolor{red}{%
+Unification can no longer treat flag parameters like types. When unifying two non-variable flag parameters we \textit{merge} them (Definition\ \ref{def:flag-tree-merge}).
+
+\begin{definition}[Merge]\label{def:flag-tree-merge}
+  Merging flag trees $t_1$ and $t_2$ --- denoted $t_1\boxplus t_2$ --- produces a new tree $t_m$ that combines the information held in both. We make this precise by saying, for any context $C$, $I(t_m\rvert_C) = I(t_1\rvert_C)\sqcap I(t_2\rvert_C)$, and realise it in the definition:
+\begin{enumerate}[(i)]
+  \item If $t_1, t_2$ are leaves, then $t_m$ is a leaf s.t. $\llbracket t_m\rrbracket\triangleq\llbracket t_1\rrbracket\sqcap\llbracket t_2\rrbracket$.
+  \item If w.l.o.g. $t_1$ is an intermediate node, then $t_m$ is an intermediate node s.t.
+    \begin{align*}
+      \llbracket t_m\rrbracket & \triangleq \llbracket t_1\rrbracket \\
+      \mathbb{E}(t_m, c)       & \triangleq \mathbb{E}(t_1, c)\boxplus t_2\rvert_{\llbracket t_1\rrbracket\triangleright c}
+    \end{align*}
+\end{enumerate}
+\end{definition}
+
+Finally, introduced types must pay attention to context. For example, previously a numeric literal's type was constrained to be a supertype of \textbf{num}, now, it is a supertype of \textbf{num} w.r.t. $C$, the context it is being checked in. As all types are introduced using either the super- or sub-type encoding (Definitions\ \ref{def:super-encode},\ \ref{def:sub-encode}), we will alter them to incorporate a context. As the change is similar, we will only show the new supertype encoding (Definition\ \ref{def:ctx-super-encode}).
+\begin{definition}[Context-aware Supertype Encoding]\label{def:ctx-super-encode}
+  \begin{flalign*}
+  \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\uparrow}_{\colorbox{lightgray}{$C$}} & = \rho\in\mathcal{T}&&
+  \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
+  f_x & =
+  \begin{cases}
+    \colorbox{lightgray}{$t_0$} & \text{ if } x\in\mathcal{X}\\
+    \star & \text{ otherwise}
+  \end{cases}&&\\
+  c^j_x & =
+  \begin{cases}
+    \gamma_i^j & \text{ if } x = x_i\in\mathcal{X}\\
+    \star & \text{ otherwise}
+  \end{cases}&&\\
+  \intertext{Suppose we impose an arbitrary ordering on the case context,}
+  C & = \alpha_0\triangleright c_1,\ldots,\alpha_{k-1}\triangleright c_{k-1}\\
+  \intertext{Then, we define our flag tree by}
+  \llbracket t_i\rrbracket & = \alpha_i \tag*{$0\leq i < k$}\\
+  \llbracket t_k\rrbracket & = +\\
+  \mathbb{E}(t_i, c) & =
+  \begin{cases}
+    t_{i+1} & \text{ if $0\leq i < k$ and $c = c_i$}\\
+    l      & \text{ if $0\leq i < k$ where $\llbracket l\rrbracket =\;\sim$}
+  \end{cases}
+  \end{flalign*}
+\end{definition}
+
+\subsection{WIP: Decorrelation}
+
 Some types should not rely on the types of others, for example, the types of function parameters should not be correlated with each other, this section describes how to get rid of these unwanted correlations, and how that cana be used to find programming errors.
-}
 
 \subsection{Optimisation}
 
@@ -1014,11 +1102,11 @@ Before being presented to the user, a \text{R\'emy} type --- representing a set 
 ```
 define twice(f) = function (x) f(f(x));
 ```
-Is assigned $((\alpha\to\alpha)^{\downarrow}\to(\alpha\to\alpha)^{\uparrow})^{\uparrow}$. Consequently, when applied to some $f$ constrained by $((\mathbf{num}\cup\mathbf{bool})^{\downarrow}\to\mathbf{num}^{\uparrow})^{\uparrow}$ unification yields constraints that are satisfied by both $(\mathbf{num}\cup\mathbf{bool})\to(\mathbf{num}\cup\mathbf{bool})$ and $\mathbf{num}\to\mathbf{num}$, which are incomparable. We have lost the ability to assign a principal type to every typable term, because the principal (most general) system of constraints can capture incomparable types.
+Is assigned $((\alpha\to\alpha)^{\downarrow}\to(\alpha\to\alpha)^{\uparrow})^{\uparrow}$. Consequently, when applied to some $f$ constrained by $((\mathbf{num}\cup\mathbf{bool})^{\downarrow}\to\mathbf{num}^{\uparrow})^{\uparrow}$ unification yields constraints that are satisfied by both $(\mathbf{num}\cup\mathbf{bool})\to(\mathbf{num}\cup\mathbf{bool})$ and $\mathbf{num}\to\mathbf{num}$, which are incomparable. We have lost the ability to assign a principal type to every typable term, because the principal (most general) system of constraints of a typable term can include incomparable types.
 
-\textit{Minimisation} and \textit{maximisation} are defined mutually recursively. Minimisation does nothing to variables, but to a \text{R\'emy} type, it minimises the flag parameters (in a sense that is made clear later), then minimises both children of $(:)$, maximises the left child of $(\to)$, and minimises its right child. The definition of maximisation is dual.
+\textit{Minimisation} and \textit{maximisation} are defined mutually recursively. Minimisation does nothing to variables, but to a \text{R\'emy} type, it minimises the flag parameters (in a sense that is made clear later), then minimises both children of $(:)$, maximises the left child of $(\to)$, and minimises its right child. The definition of maximisation is dual. Note, these processes can only produce optimal types when such optima exist, in practise, this has not been a considerable issue.
 
-When a flag parameter was just $+$, $-$ or a variable, minimisation amounted to assigning $-$ to any that were variables. Now that our flag parameters are trees, we must elaborate this algorithm: If the parameter is a variable, it is replaced with a leaf containing $-$, if it is a tree, every $\sim$ leaf is replaced with a $-$ leaf. Once again, maximisation of flag parameters is a dual process.
+When flag parameters were just $+$, $-$ or variables, their minimisation amounted to replacing variables with $-$. Now they are trees, we must elaborate this algorithm: If the parameter is a variable, it is replaced with a leaf containing $-$, if it is a tree, every $\sim$ leaf is replaced with a $-$ leaf. Once again, maximisation of flag parameters is a dual process.
 
 \section{Recursive Types}\label{sec:recursive}
 
@@ -1117,7 +1205,7 @@ define area([#rect, w, h]) = w * h
 
 This is clearly not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type \texttt{[\#square, num]}, and circles \texttt{[\#circle, num]} (Figure\ \ref{fig:shape-tagged}).
 
-\subsection{Wildcard Constructors}\label{sec:wildcard}
+\subsection{WIP: Wildcard Constructors}\label{sec:wildcard}
 
 A technique to get around the "finite constructor" limitation of the \text{R\'emy} encoding whereby if we have an infinite family of constructors (like multi-arity functions or atoms) we have a constructor for each member of the family, as well as a wildcard constructor to capture our knowledge about the rest of the constructors in the family.
 
@@ -1309,7 +1397,7 @@ An attempt to build a type system for \textit{Erlang}\ \cite{marlow1997practical
 
 Finally, Cartwright and Fagan extend HM\ \cite{cartwright1991soft} to model constraints over types in a manner solveable by unification. Their techniques proved to be intuitive, easily extensible, and invaluable for our work.
 
-\section{Future Work}
+\section{WIP: Future Work}
 Everything I didn't have time to fully flesh out:
 \begin{itemize}
   \item Useful errors.
