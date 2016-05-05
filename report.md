@@ -33,9 +33,9 @@ Associating constructors with each other is injurious to the precision of our ty
 
 Section\ \ref{sec:bg} introduces the source language, \textit{GeomLab}, and the type checker's internal representation of it. Section\ \ref{sec:hm} then describes an optimised implementation of the Hindley--Milner type system for \textit{GeomLab}.
 
-Sections\ \ref{sec:adhoc-adts},\ \ref{sec:recursive} and\ \ref{sec:tagged-variants} extend the type system to make the structure of types more compositional while losing neither expressivity nor type inference.
+Section\ \ref{sec:errors} covers techniques for producing errors that reference the source code, despite originating from an alternative (desugared) representation of the program.
 
-We finish with Section\ \ref{sec:errors} which discusses producing reasonable error outputs that reference the source code, despite originating from an alternative (desugared) representation of the program.
+Finally, Sections\ \ref{sec:adhoc-adts},\ \ref{sec:recursive} and\ \ref{sec:tagged-variants} extend the type system to make the structure of types more compositional while losing neither expressivity nor type inference.
 
 The resulting framework allows us to capture and infer the specifications programmers are used to maintaining themselves when programming in dynamic languages and enforce them statically.
 
@@ -463,6 +463,141 @@ The fact that the latter program is typeable and the former is not is of particu
 
 All these programs yield infinite types, which in our implementation are represented by cyclic data structures.
 The implementation detects these cycles, and terminates, printing the types. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is printed as the special variable \texttt{'*}.
+
+\section{Type Errors}\label{sec:errors}
+
+In Section\ \ref{sec:bg} we chose to \textit{desugar} the source language. This simplifies type assignment, but now we deal with the consequences as they pertain to type errors. By annotating the abstract syntax tree with source locations, and preserving them during desugaring, we can point to the part of the \textit{source} program from which a type error originates, even though the error was detected in the \textit{desugared} representation.
+
+\subsection{Calculating Source Locations}
+
+In order to provide type errors with accurate source locations, we label values with where they originated from in the source. The process starts at the lexer which labels each token it outputs (Figures\ \ref{fig:span},\ \ref{fig:located}).
+
+\begin{figure}
+  \caption{The \textbf{Span} type stores the source location as a line and column index (A \textbf{Point}), as well as a byte offset and width. In the event of an error the \textbf{Point} is presented to the user so they know where to look in the file, and the byte offset and width are used to slice the relevant part of the source out so that they know what to look for.}\label{fig:span}
+  \input{aux/span.tex}
+\end{figure}
+
+\begin{figure}
+  \caption{A $\mathbf{Located}~\alpha$ is an $\alpha$ labelled with a \textbf{Span}. It can be considered a container of $\alpha$'s, which we signify by implementing the \textbf{Foldable}, \textbf{Functor} and \textbf{Traversable} type classes. The lexer returns a \textbf{Located Token} stream.}\label{fig:located}
+  \input{aux/located.tex}
+\end{figure}
+
+From \textbf{Located Token} streams, the parser builds \textbf{Located Sugar} ASTs. Previously, the parser built abstract syntax trees (ASTs), $t::\mathbf{Sugar}$, by combining sub-trees, $s_1,\ldots,s_k::\mathbf{Sugar}$, using a function $f::\mathbf{Sugar}\to\cdots\to\mathbf{Sugar}$, whereas now, we build labelled trees, $\overline{t}::\mathbf{Located~Sugar}$, from labelled sub-trees, $\overline{s}_1,\ldots,\overline{s}_k::\mathbf{Located~Sugar}$.
+
+One solution would be to modify all constructing function to accept and return \textbf{Located Sugar} terms, but this leads to repeated logic. A better solution is to alter the notion of \textit{function application} to one where ``applying'' $f$ to labelled sub-trees, applies the function to the values --- in the canonical sense --- and uses a sensible operation (Figure\ \ref{fig:span-monoid}) to combine labels also.
+
+\begin{figure}
+  \caption{The combination of spans $s$ and $t$ starts at the lowest line/column/offset in the file of either $s$ or $t$, and ends at the highest offset. We make this operation \textit{monoidal}, by introducing a unit span, \textbf{Floating}, representing a location outside the source file. Combining \textbf{Floating} with any other span $t$, yields $t$.}\label{fig:span-monoid}
+  \input{aux/span_monoid.tex}
+\end{figure}
+
+\begin{figure}
+  \caption{An \textbf{Applicative} instance for the \textbf{Located} type constructor. \textit{pure} embeds an $\alpha$ without a label in $\mathbf{Located}~\alpha$, using the \textbf{Floating} span to signify the non-presence of a location. $\varoast$ (\texttt{<*>}), defines our meaning of function application, which also combines labels using the \texttt{<>} operator, a synonym of \texttt{mappend} (Figure~\ref{fig:span-monoid}).}\label{fig:located-ap}
+  \input{aux/located_ap.tex}
+\end{figure}
+
+The \textit{Applicative Functor}\ \cite{mcbride2008functional} is an abstraction that allows us to change the meaning of function application (Figure\ \ref{fig:located-ap}), by making it explicit in the $\varoast$ operator (Figure\ \ref{fig:applicative}).
+\begin{figure}[htbp]
+  \caption{Applying a pure function $f$ to values $s_1,\ldots,s_k$ before and after they have been wrapped in a label, using \textit{pure} to embed the function into the labelled type.}\label{fig:applicative}
+  \begin{equation*}
+    \arraycolsep=2pt
+    \begin{array}{rlllllll}
+                    & C &          & s_1            &          & \cdots &          & s_k \\
+      \mathit{pure} & C & \varoast & \overline{s}_1 & \varoast & \cdots & \varoast & \overline{s}_k
+    \end{array}
+  \end{equation*}
+\end{figure}
+In addition to \textit{pure} and $\varoast$, instances of the \textbf{Applicative} class, also have operators:
+\begin{equation*}
+  \arraycolsep=2pt
+  \begin{array}{lll}
+    \triangleright & :: & \mathbf{Applicative}~\phi\Rightarrow \phi~\alpha\to\phi~\beta\to\phi~\beta\\
+    \triangleleft  & :: & \mathbf{Applicative}~\phi\Rightarrow \phi~\alpha\to\phi~\beta\to\phi~\alpha
+  \end{array}
+\end{equation*}
+$x\triangleright y$ combines the labels (in general, the effects) of both $x$ and $y$, but returns only $y$'s value, $x\triangleleft y$ acts complementarily. These are spelt \texttt{*>} and \texttt{<*} in \textit{Haskell's} Applicative Functor library. A good example of their use in the context of labelled ASTs is:
+
+```{.haskell}
+PattPrim ::             { Located Patt }
+PattPrim : {- ... -}
+         | '(' Patt ')' { $1 *> $2 <* $3 }
+```
+
+This rule parses a pattern surrounded by parentheses. In the production, \texttt{\$1} refers to the \texttt{'('} token, \texttt{\$2} refers to the pattern, and \texttt{\$3} refers to the \texttt{')'} token. We wish to indicate that the \textbf{Span} of this pattern covers the parentheses, which is achievable with $\varoast$:
+\begin{align*}
+  \mathit{pure}~(\lambda\;\_\;p\;\_ \to p)\varoast\$1\varoast\$2\varoast\$3
+\end{align*}
+
+But, as the function being applied just selects the pattern value, and ignores the token values, $\triangleright$ and $\triangleleft$ convey the intention more clearly.
+
+\subsection{Unobtrusive Annotations}
+
+\textbf{Located} labels allow the parser to calculate the source span of an AST as it is built, but as soon as it becomes part of some larger tree, we lose this information, and only have the source span of the larger tree.
+
+We may be tempted to systematically update \textbf{Sugar}, replacing sub-trees (\textbf{Sugar}) with labelled sub-trees (\textbf{Located Sugar}). This is undesirable, not just because it spreads responsibility for annotations everywhere, but also, when desugaring an expression whose structure changes, it is unclear which annotations should be preserved.
+
+Instead, when parsing certain AST nodes, we use \texttt{reify} to embed source spans into the AST along with a label (a \texttt{String}) describing the node.
+```{.haskell}
+data Sugar = {- ... -} | LocS String (Located Sugar)
+
+reify :: String -> Located Sugar -> Located Sugar
+reify lbl ls@(L s _) = L s (LocS lbl ls)
+```
+We also add a corresponding node to the desugared AST type. During desugaring, we carry over the embedded labels faithfully.
+```{.haskell}
+data Expr = {- ... -} | LocE String (Located Expr)
+```
+Finally, to ``type check'' such a label, we type check its sub-tree (\texttt{check (dislocate le)}), and, in the event of a type error, add the string label and the expression's location to the error's context.
+```{.haskell}
+typeOf :: MonadInfer m => GloDef (World m) -> Expr -> m (TyRef (World m))
+typeOf gloDefs = check
+  where
+    {- ... -}
+    check (LocE lbl le) =
+      catchError (check (dislocate le)) $ \e -> do
+        throwError $ CtxE lbl (le *> pure e)
+```
+For example, desugaring this list comprehension:
+```
+[ x | x <- [1..2 + "3"] when x mod 2 = 0];
+```
+Yields an expression in which some parts have been moved, and other parts have been introduced\footnote{\texttt{\_mapa} and \texttt{\_range} defined in Figure~\ref{fig:standard-defs}.}:
+```
+_mapa( function (x, res)
+         if x mod 2 = 0 then
+           x : res
+         else
+           res
+     , _range(1, 2 + "3")
+     , []
+     );
+```
+But the type checker's output refers to features from the original expression:
+
+\vbox{\ttfamily\footnotesize%
+
+%TC:ignore
+\vspace{1em}
+\textcolor{purple}{\underline{test/list\_comp.geom:20:1: Error in the expression}}
+
+\qquad Failed to unify types:\\
+\-\qquad\qquad Expected: num\\
+\-\qquad\qquad Actual:\-\qquad str
+
+\qquad Whilst trying to unify:\\
+\-\qquad\qquad Expected: (num, num) -> num\\
+\-\qquad\qquad Actual:\-\qquad(num, str) -> 'i
+
+\textcolor{purple}{test/list\_comp.geom:20:22: In the upperbound of the range}
+
+\qquad[1..\textbf{\emph{\color{blue}2 + "3"}}]
+
+\textcolor{purple}{test/list\_comp.geom:20:18: In the generator of the list comprehension}
+
+
+\qquad[ x | x <- \textbf{\emph{\color{blue}[1..2 + "3"]}} when x mod 2 = 0]
+%TC:endignore
+}
 
 \section{Ad-hoc Algebraic Data-types}\label{sec:adhoc-adts}
 
@@ -1064,7 +1199,7 @@ Unification can no longer treat flag parameters like types. When unifying two no
 \end{enumerate}
 \end{definition}
 
-Finally, introduced types must pay attention to context. For example, previously a numeric literal's type was constrained to be a supertype of \textbf{num}, now, it is a supertype of \textbf{num} w.r.t. $C$, the context it is being checked in. As all types are introduced using either the super- or sub-type encoding (Definitions\ \ref{def:super-encode},\ \ref{def:sub-encode}), we will alter them to incorporate a context. As the change is similar, we will only show the new supertype encoding (Definition\ \ref{def:ctx-super-encode}).
+Finally, introduced types must pay attention to context. For example, previously a numeric literal's type was constrained to be a supertype of \textbf{num}, now, it is a supertype of \textbf{num} w.r.t. $C$, the context it is being checked in. As all types are introduced using either the super- or sub-type encoding (Definitions\ \ref{def:super-encode},\ \ref{def:sub-encode}), we will alter them to incorporate a context. As the change is similar in both, we only show the new supertype encoding (Definition\ \ref{def:ctx-super-encode}).
 \begin{definition}[Context-aware Supertype Encoding]\label{def:ctx-super-encode}
   \begin{flalign*}
   \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\uparrow}_{\colorbox{lightgray}{$C$}} & = \rho\in\mathcal{T}&&
@@ -1227,140 +1362,6 @@ This is clearly not ideal, as the latter function will throw an error at runtime
 
 A technique to get around the "finite constructor" limitation of the \text{R\'emy} encoding whereby if we have an infinite family of constructors (like multi-arity functions or atoms) we have a constructor for each member of the family, as well as a wildcard constructor to capture our knowledge about the rest of the constructors in the family.
 
-\section{Type Errors}\label{sec:errors}
-
-In Section\ \ref{sec:bg} we chose to \textit{desugar} the source language. This simplifies the job of type assignment, but now we deal with the consequences as they pertain to type errors. By annotating the abstract syntax tree with source locations, and preserving them during desugaring, we can point to the part of the \textit{source} program from which a type error originates, even though the error was detected in the \textit{desugared} representation.
-
-\subsection{Calculating Source Locations}
-
-In order to provide type errors with accurate source locations, we label values with where they originated from in the source. The process starts at the lexer which labels each token it outputs (Figures\ \ref{fig:span},\ \ref{fig:located}).
-
-\begin{figure}
-  \caption{The \textbf{Span} type stores the source location as a line and column index (A \textbf{Point}), as well as a byte offset and width. In the event of an error the \textbf{Point} is presented to the user so they know where to look in the file, and the byte offset and width are used to slice the relevant part of the source out so that they know what to look for.}\label{fig:span}
-  \input{aux/span.tex}
-\end{figure}
-
-\begin{figure}
-  \caption{A $\mathbf{Located}~\alpha$ is an $\alpha$ labelled with a \textbf{Span}. It can be considered a container of $\alpha$'s, which we signify by implementing the \textbf{Foldable}, \textbf{Functor} and \textbf{Traversable} type classes. The lexer returns a \textbf{Located Token} stream.}\label{fig:located}
-  \input{aux/located.tex}
-\end{figure}
-
-From \textbf{Located Token} streams, the parser builds \textbf{Located Sugar} ASTs. Previously, the parser built abstract syntax trees (ASTs), $t::\mathbf{Sugar}$, by combining sub-trees, $s_1,\ldots,s_k::\mathbf{Sugar}$, using a function $f::\mathbf{Sugar}\to\cdots\to\mathbf{Sugar}$, whereas now, we build labelled trees, $\overline{t}::\mathbf{Located~Sugar}$, from labelled sub-trees, $\overline{s}_1,\ldots,\overline{s}_k::\mathbf{Located~Sugar}$.
-
-One solution would be to modify all constructing function to accept and return \textbf{Located Sugar} terms, but this leads to repeated logic. A better solution is to alter the notion of \textit{function application} to one where ``applying'' $f$ to labelled sub-trees, applies the function to the values --- in the canonical sense --- and uses a sensible operation (Figure\ \ref{fig:span-monoid}) to combine labels also.
-
-\begin{figure}
-  \caption{The combination of spans $s$ and $t$ starts at the lowest line/column/offset in the file of either $s$ or $t$, and ends at the highest offset. We make this operation \textit{monoidal}, by introducing a unit span, \textbf{Floating}, representing a location outside the source file. Combining \textbf{Floating} with any other span $t$, yields $t$.}\label{fig:span-monoid}
-  \input{aux/span_monoid.tex}
-\end{figure}
-
-\begin{figure}
-  \caption{An \textbf{Applicative} instance for the \textbf{Located} type constructor. \textit{pure} embeds an $\alpha$ without a label in $\mathbf{Located}~\alpha$, using the \textbf{Floating} span to signify the non-presence of a location. $\varoast$ (\texttt{<*>}), defines our meaning of function application, which also combines labels using the \texttt{<>} operator, a synonym of \texttt{mappend} (Figure~\ref{fig:span-monoid}).}\label{fig:located-ap}
-  \input{aux/located_ap.tex}
-\end{figure}
-
-The \textit{Applicative Functor}\ \cite{mcbride2008functional} is an abstraction that allows us to change the meaning of function application (Figure\ \ref{fig:located-ap}), by making it explicit in the $\varoast$ operator (Figure\ \ref{fig:applicative}).
-\begin{figure}[htbp]
-  \caption{Applying a pure function $f$ to values $s_1,\ldots,s_k$ before and after they have been wrapped in a label, using \textit{pure} to embed the function into the labelled type.}\label{fig:applicative}
-  \begin{equation*}
-    \arraycolsep=2pt
-    \begin{array}{rlllllll}
-                    & C &          & s_1            &          & \cdots &          & s_k \\
-      \mathit{pure} & C & \varoast & \overline{s}_1 & \varoast & \cdots & \varoast & \overline{s}_k
-    \end{array}
-  \end{equation*}
-\end{figure}
-In addition to \textit{pure} and $\varoast$, instances of the \textbf{Applicative} class, also have operators:
-\begin{equation*}
-  \arraycolsep=2pt
-  \begin{array}{lll}
-    \triangleright & :: & \mathbf{Applicative}~\phi\Rightarrow \phi~\alpha\to\phi~\beta\to\phi~\beta\\
-    \triangleleft  & :: & \mathbf{Applicative}~\phi\Rightarrow \phi~\alpha\to\phi~\beta\to\phi~\alpha
-  \end{array}
-\end{equation*}
-$x\triangleright y$ combines the labels (in general, the effects) of both $x$ and $y$, but returns only $y$'s value, $x\triangleleft y$ acts complementarily. These are spelt \texttt{*>} and \texttt{<*} in \textit{Haskell's} Applicative Functor library. A good example of their use in the context of labelled ASTs is:
-
-```{.haskell}
-PattPrim ::             { Located Patt }
-PattPrim : {- ... -}
-         | '(' Patt ')' { $1 *> $2 <* $3 }
-```
-
-This rule parses a pattern surrounded by parentheses. In the production, \texttt{\$1} refers to the \texttt{'('} token, \texttt{\$2} refers to the pattern, and \texttt{\$3} refers to the \texttt{')'} token. We wish to indicate that the \textbf{Span} of this pattern covers the parentheses, which is achievable with $\varoast$:
-\begin{align*}
-  \mathit{pure}~(\lambda\;\_\;p\;\_ \to p)\varoast\$1\varoast\$2\varoast\$3
-\end{align*}
-
-But, as the function being applied just selects the pattern value, and ignores the token values, $\triangleright$ and $\triangleleft$ convey the intention more clearly.
-
-\subsection{Unobtrusive Annotations}
-
-\textbf{Located} labels allow the parser to calculate the source span of an AST as it is built, but as soon as it becomes part of some larger tree, we lose this information, and only have the source span of the larger tree.
-
-We may be tempted to systematically update \textbf{Sugar}, replacing sub-trees (\textbf{Sugar}) with labelled sub-trees (\textbf{Located Sugar}). This is undesirable, not just because it spreads responsibility for annotations everywhere, but also, when desugaring an expression whose structure changes, it is unclear which annotations should be preserved.
-
-Instead, when parsing certain AST nodes, we use \texttt{reify} to embed source spans into the AST along with a label (a \texttt{String}) describing the node.
-```{.haskell}
-data Sugar = {- ... -} | LocS String (Located Sugar)
-
-reify :: String -> Located Sugar -> Located Sugar
-reify lbl ls@(L s _) = L s (LocS lbl ls)
-```
-We also add a corresponding node to the desugared AST type. During desugaring, we carry over the embedded labels faithfully.
-```{.haskell}
-data Expr = {- ... -} | LocE String (Located Expr)
-```
-Finally, to ``type check'' such a label, we type check its sub-tree (\texttt{check (dislocate le)}), and, in the event of a type error, add the string label and the expression's location to the error's context.
-```{.haskell}
-typeOf :: MonadInfer m => GloDef (World m) -> Expr -> m (TyRef (World m))
-typeOf gloDefs = check
-  where
-    {- ... -}
-    check (LocE lbl le) =
-      catchError (check (dislocate le)) $ \e -> do
-        throwError $ CtxE lbl (le *> pure e)
-```
-For example, desugaring this list comprehension:
-```
-[ x | x <- [1..2 + "3"] when x mod 2 = 0];
-```
-Yields an expression in which some parts have been moved, and other parts have been introduced:
-```
-_mapa( function (x, res)
-         if x mod 2 = 0 then
-           x : res
-         else
-           res
-     , _range(1, 2 + "3")
-     , []
-     );
-```
-But the type checker's output refers to features from the original expression:
-
-\vbox{\ttfamily\footnotesize%
-
-%TC:ignore
-\vspace{1em}
-\textcolor{purple}{\underline{test/list\_comp.geom:20:1: Error in the expression}}
-
-\qquad Failed to unify types:\\
-\-\qquad\qquad Expected: num\\
-\-\qquad\qquad Actual:\-\qquad str
-
-\qquad Whilst trying to unify:\\
-\-\qquad\qquad Expected: (num, num) -> num\\
-\-\qquad\qquad Actual:\-\qquad(num, str) -> 'i
-
-\textcolor{purple}{test/list\_comp.geom:20:22: In the upperbound of the range}
-
-\qquad[1..\textbf{\emph{\color{blue}2 + "3"}}]
-
-\textcolor{purple}{test/list\_comp.geom:20:18: In the generator of the list comprehension}
-
-
-\qquad[ x | x <- \textbf{\emph{\color{blue}[1..2 + "3"]}} when x mod 2 = 0]
-%TC:endignore
-}
 \section{Related Work}
 
 Compositionality is a fundamental concern of type systems, mirroring the programs they specify. Being such a crucial facet to the design of a type system, it has received a great deal of attention both in practice and in the literature.
