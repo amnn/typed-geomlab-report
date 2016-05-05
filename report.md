@@ -1098,7 +1098,7 @@ Some types should not rely on the types of others, for example, the types of fun
 
 \subsection{Optimisation}
 
-Before being presented to the user, a \text{R\'emy} type --- representing a set of feasible types --- is condensed into one type. Typically this is achieved through \textit{minimising substitution}\ \cite{cartwright1991soft}, but this is not always possible. For example:
+\text{R\'emy} encodings represent constraints over types, not single types. Conversion to the latter is achieved through \textit{minimising substitution}\ \cite{cartwright1991soft}, but this is not always possible. For example:
 ```
 define twice(f) = function (x) f(f(x));
 ```
@@ -1107,6 +1107,24 @@ Is assigned $((\alpha\to\alpha)^{\downarrow}\to(\alpha\to\alpha)^{\uparrow})^{\u
 \textit{Minimisation} and \textit{maximisation} are defined mutually recursively. Minimisation does nothing to variables, but to a \text{R\'emy} type, it minimises the flag parameters (in a sense that is made clear later), then minimises both children of $(:)$, maximises the left child of $(\to)$, and minimises its right child. The definition of maximisation is dual. Note, these processes can only produce optimal types when such optima exist, in practise, this has not been a considerable issue.
 
 When flag parameters were just $+$, $-$ or variables, their minimisation amounted to replacing variables with $-$. Now they are trees, we must elaborate this algorithm: If the parameter is a variable, it is replaced with a leaf containing $-$, if it is a tree, every $\sim$ leaf is replaced with a $-$ leaf. Once again, maximisation of flag parameters is a dual process.
+
+\subsection{Detecting Type Errors}
+
+Suppose we have a flag parameter $f$ --- a tree --- and a context $C$ s.t. $I(f\rvert_C) = \bot$. We can infer that the subtype associated with $f$ is constrained inconsistently in context $C$. But this is not enough to suggest that there is a type error: it is possible that we may never find ourselves in context $C$. For example, consider the type-safe expression:
+```
+foo([true]);
+```
+Where \texttt{foo} is defined as in Section\ \ref{sec:case-types}. Before checking the application, the types appear as follows\footnote{Redundant contexts (such as $\alpha\triangleright(:)$) have been omitted from $\beta$ and $\gamma$ for brevity, and we take $\sim$ to be a unification operator.}:
+\begin{align*}
+  [\mathit{true}] & :: [\mathbf{bool}^{\uparrow}]^{\uparrow} \\
+  \mathit{foo}    & :: (\alpha\to\mathbf{bool}^{\uparrow})^{\uparrow} \\
+  \alpha          & = (\beta:\gamma)^{\downarrow} \\
+  \beta           & = \mathbf{bool}^{\downarrow}_{\gamma\triangleright[\,]}\sim\mathbf{num}^{\downarrow}_{\gamma\triangleright(:)} \\
+  \gamma          & = ([\,]\cup[\mathbf{num}^{\downarrow}])^{\downarrow}
+\end{align*}
+Unifying the actual and formal parameters' types: $\alpha$ is constrained to be precisely $(\beta:\gamma)$ and $\gamma$ is constrained from below by $[\,]$ and above by $[\,]\cup[\mathbf{num}]$. Turning our attentions to $\beta$ --- unified with $\mathbf{bool}^{\uparrow}$ --- when $\gamma\triangleright[\,]$, $\beta$ is precisely $\mathbf{bool}$, but when $\gamma\triangleright(:)$, $\beta$ is lowerbounded by $\mathbf{bool}$ and upperbounded by $\mathbf{num}$. $f\rvert_{\gamma\triangleright(:)} = \bot$ where $f$ is the flag parameter associated with $\mathbf{bool}$ in $\beta$.
+
+Type errors can no longer be discovered locally, but \textit{potential} type errors can. During unification, we make a note of any flag parameters whose trees contain inconsistent leaves. After we are done gathering constraints and optimising, we check whether any context resulting in an inconsistent constraint is realisable. In our example, after optimisation, $\gamma$ is precisely $[\,]$, so $\gamma\triangleright(:)$ is not realisable, meaning we are safe to ignore the inconsistency in $\beta$'s constraints as unreachable.
 
 \section{Recursive Types}\label{sec:recursive}
 
