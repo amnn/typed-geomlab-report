@@ -1072,7 +1072,7 @@ This does not obviate the need for exhaustiveness checking: If a case expression
 
 Discriminativity can be seen as a model by which the way terms are differentiated is lifted to the type level, but it is somewhat prescriptivist: If two types are structurally different, we must rush to make the difference known at the outermost constructor. Couple this with the fact that we have only finitely many constructors and we can already see that any union can have at most $\abs{\mathcal{C}}$ summands before we lose the ability to discriminate between them.
 
-When faced with this simple (though contrived) function, Algorithm $\mathcal{W_R}$ runs into trouble, so as motivation, we set ourselves the goal of being able to assign it a type:
+When faced with this simple (though contrived) function, Algorithm $\mathcal{W_R}$ runs into trouble:
 ```
 define foo([b])    =  not b
      | foo([m, n]) = (m + n) > 0;
@@ -1227,9 +1227,57 @@ Finally, introduced types must pay attention to context. For example, previously
   \end{flalign*}
 \end{definition}
 
-\subsection{WIP: Decorrelation}
+\subsection{Decorrelation}
 
-Some types should not rely on the types of others, for example, the types of function parameters should not be correlated with each other, this section describes how to get rid of these unwanted correlations, and how that cana be used to find programming errors.
+In some instances, correlations between types are undesirable. For example\footnote{\texttt{eq} uses features such as multi-arity functions (Section~\ref{sec:wildcard}) and recursive types (Section~\ref{sec:recursive}) which we have not properly covered yet. They are not immediately relevant to the discussion at hand.} (adapted from\ \cite{mishra1985declaration}):
+```
+define eq([],    [])    = true
+     | eq([]:xs, []:ys) = eq(xs, ys);
+```
+Given two lists of nils, \texttt{eq} is supposed to return \texttt{true} if they are the same length and \texttt{false} otherwise. The definition we gave may appear to match this specification, but it is incomplete: It does not deal with the case where the two lists are of unequal length. A better definition might be\footnote{%
+In a typical statically typed functional programming language, we may have written:
+\begin{Verbatim}
+define eq([], [])       = true
+     | eq([]:xs, []:ys) = eq(xs, ys)
+     | eq(_,     _)     = false;
+\end{Verbatim}
+But our type system says that this function accepts values of \textit{any} two types, and returns a boolean. This is technically true: The wildcard patterns will match terms of any type, but this generality hides the intent of the function. We restrict it by being more specific in our patterns.
+}:
+```
+define eq([],    [])    = true
+     | eq([]:_,  [])    = false
+     | eq([],    []:_)  = false
+     | eq([]:xs, []:ys) = eq(xs, ys);
+```
+In the first definition, the types that the second parameter (by convention) can inhabit rely upon those of the first parameter: The second parameter can only be $[\,]$ if the first parameter is, and likewise for the cons case. In the correct definition, this relationship is no longer present. Often, when parameter types are correlated, it is by accident.
+
+It is also undesirable for a function's type to rely upon its parameters' types in recursive definitions. It is possible to write a function that is called recursively with different arities or return types in different contexts, but they are usually written in error, and we would rather catch these errors than say that the differences are permissible because they occur in different contexts.
+
+To remove any relationships between types $\alpha$ and $\beta$, we \textit{decorrelate} (Definition\ \ref{def:decorrelation}) every flag parameter in $\alpha$'s encoding w.r.t. $\beta$ \textit{and any type reachable from $\beta$} and vice versa.
+
+\begin{definition}[Decorrelation]\label{def:decorrelation}
+  Given a flag tree $t$, and a type variable $\alpha$, the decorrelation of $t$ w.r.t. $\alpha$ --- $D(t,\alpha)$ --- is:
+  \begin{align*}
+    D(t,\alpha) & =
+    \begin{cases}
+      t
+      & \text{ if $t$ is a leaf}\\
+      \bigboxplus_{c\in\mathcal{C}}D(\mathbb{E}(t,c),\alpha)
+      & \text{ if $t$ is a node and $\llbracket t \rrbracket=\alpha$}\\
+      t^{\prime}
+      & \text{ o/w, where $\llbracket t^{\prime}\rrbracket\triangleq\llbracket t\rrbracket$; $\mathbb{E}(t^{\prime}, c)\triangleq D(\mathbb{E}(t, c),\alpha)$}
+    \end{cases}
+  \end{align*}
+  We stop the interpretation of $t$ from depending on $\alpha$ by replacing any node in the tree that conditions on $\alpha$'s constructors by the merge of all its children. The coherence condition met by this operation is that for any context $A$, $I(D(t,\alpha)\rvert_A) = \bigsqcap_{c\in\mathcal{C}}I(t\rvert_{A,\alpha\triangleright c})$.
+\end{definition}
+
+Algorithm $\mathcal{W_{RC}}$ employs decorrelation after assigning types to:
+\begin{enumerate}[(i)]
+\item Abstractions, to remove relationships between parameter types.
+\item Recursive definitions, to prevent the definition's type relying on any type reachable from it. In this case, we do not decorrelate symmetrically as it is okay for a reachable type to rely on the definition's type.
+\end{enumerate}
+
+In the first definition of \texttt{eq}, the type of the second parameter was a subtype of $[\,]$ when the first parameter was $[\,]$, and a subtype of $(:)$ when the first parameter was $(:)$. After decorrelation, the second parameter type is constrained to be \textit{empty}. We do not treat empty types as errors, but an empty parameter type is suspicious: As there are no terms that inhabit this type, it is impossible to call the function!
 
 \subsection{Optimisation}
 

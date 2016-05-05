@@ -9,8 +9,10 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{array}
+\usepackage{bigfoot}
 \usepackage{booktabs}
 \usepackage{bussproofs}
+\usepackage{calc}
 \usepackage{datetime}
 \usepackage{dsfont}
 \usepackage{enumerate}
@@ -69,6 +71,19 @@
 \newenvironment{bprooftree}
   {\leavevmode\hbox\bgroup}
   {\DisplayProof\egroup}
+
+\makeatletter
+\DeclareRobustCommand{\bigboxplus}{%
+  \mathop{\vphantom{\sum}\mathpalette\bigboxplus@\relax}\slimits@
+}
+
+\newcommand{\bigboxplus@}[2]{%
+  \vcenter{%
+    \sbox\z@{\(#1\sum\)}%
+    \hbox{\resizebox{.9\dimexpr\ht\z@+\dp\z@}{!}{\(\m@th\boxplus\)}}%
+  }%
+}
+\makeatother
 
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
