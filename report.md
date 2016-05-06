@@ -97,7 +97,7 @@ This notation has several advantages:
 
 Below are some basic definitions used when discussing type systems and their associated theory.
 
-By convention, the lowercase roman alphabet denotes terms, $r,s,t,\ldots$ (and variables $x,y,z,\ldots$), the lowercase greek alphabet denotes types, $\rho,\sigma,\tau,\ldots$ (and type variables, $\alpha,\beta,\gamma,\ldots$), and the uppercase greek alphabet denotes type contexts, $\Gamma,\Delta,\ldots$
+By convention, the lowercase Roman alphabet denotes terms, $r,s,t,\ldots$ (and variables $x,y,z,\ldots$), the lowercase Greek alphabet denotes types, $\rho,\sigma,\tau,\ldots$ (and type variables, $\alpha,\beta,\gamma,\ldots$), and the uppercase Greek alphabet denotes type contexts, $\Gamma,\Delta,\ldots$
 
 \begin{definition}[Type Context]
   A context $\Gamma$ is a partial map from variables to types. Given a context $\Gamma$, variable $x$, and a type $\sigma$, we will write $\Gamma,x : \sigma$ to denote the map $\Gamma$ with its type for $x$ overwritten with $\sigma$.
@@ -1299,8 +1299,8 @@ foo([true]);
 ```
 Where \texttt{foo} is defined as in Section\ \ref{sec:case-types}. Before checking the application, the types appear as follows\footnote{Redundant contexts (such as $\alpha\triangleright(:)$) have been omitted from $\beta$ and $\gamma$ for brevity, and we take $\sim$ to be a unification operator.}:
 \begin{align*}
-  [\mathit{true}] & :: [\mathbf{bool}^{\uparrow}]^{\uparrow} \\
-  \mathit{foo}    & :: (\alpha\to\mathbf{bool}^{\uparrow})^{\uparrow} \\
+  \texttt{[true]} & :: [\mathbf{bool}^{\uparrow}]^{\uparrow} \\
+  \texttt{foo}    & :: (\alpha\to\mathbf{bool}^{\uparrow})^{\uparrow} \\
   \alpha          & = (\beta:\gamma)^{\downarrow} \\
   \beta           & = \mathbf{bool}^{\downarrow}_{\gamma\triangleright[\,]}\sim\mathbf{num}^{\downarrow}_{\gamma\triangleright(:)} \\
   \gamma          & = ([\,]\cup[\mathbf{num}^{\downarrow}])^{\downarrow}
@@ -1462,17 +1462,56 @@ We chose not to build upon this type system because compared to HM, there is les
 
 An attempt to build a type system for \textit{Erlang}\ \cite{marlow1997practical} builds on and simplifies the idea of inferring types by solving systems of constraints \cite{mishra1985declaration,aiken1993type,aiken1994soft}. In \textit{Erlang}, product types have a tagged tuple representation that resembles \textit{GeomLab's}, with the tag in the tuple's first slot. The proposed type system avoids the discriminativity problem pragmatically by treating those tagged tuples specially.
 
-Finally, Cartwright and Fagan extend HM\ \cite{cartwright1991soft} to model constraints over types in a manner solveable by unification. Their techniques proved to be intuitive, easily extensible, and invaluable for our work.
+Finally, Cartwright and Fagan extend HM\ \cite{cartwright1991soft} to model constraints over types in a manner solvable by unification. Their goal was to create a \textit{soft} type system that introduces runtime checks when unification fails instead of rejecting programs. However, their techniques proved to be intuitive and easily extensible when applied to a traditional ``hard'' type system and were invaluable for our work.
 
-\section{WIP: Future Work}
-Everything I didn't have time to fully flesh out:
-\begin{itemize}
-  \item Useful errors.
-  \item Type level booleans.
-  \item Type Aliasing
-  \item Generative types (for encapsulation).
-  \item Impredicative types.
-\end{itemize}
+\section{Future Work}
+
+In this dissertation we extended Hindley and Milner's type system to statically capture the specifications programmers are used to maintaining in dynamic programming languages. We focused on the types of data structures. Noticing that they are usually built up from a small suite of base constructors, we sought to express their types as similarly compositional.
+
+To this end, we presented a type assignment algorithm capable of inferring many common data structures, by inspecting how they are pattern matched on, using ``case types'' (Section\ \ref{sec:case-types}), a solution we have not been able to find replicated in the literature. However, the work presented thus far only develops core ideas. There are many avenues that must be explored in order to build a fully-fledged type system, a few of which we detail below.
+
+\subsection{Errors}
+
+Our solution for producing useful error messages (Section\ \ref{sec:errors}) from Algorithm $\mathcal{W}$ needs to be developed further for $\mathcal{W_{RC}}$, for two reasons.
+
+Firstly, errors are detected after all the constraints for a particular definition have been captured. We can only detect \textit{possible} type errors locally. When we verify that they are true errors, we will no lnoger know the precise source locations they originated from. Previously, as soon as a unification error was found, we could throw an error, and as the stack unwound, add source locations to it for context. Work on the \textit{Helium}, \textit{Haskell} compiler\ \cite{heeren2003helium} addresses similar issues.
+
+Secondly, errors occur w.r.t. a specific context. It is not immediately obvious how to convey this information to the programmer. We could relate the context to parts of the source program (namely case expressions and their arms), to the types they condition upon, or a combinition of the two.
+
+\subsection{Annotations}
+
+We chose to avoid \textit{type annotations} so that we could focus on inferring the types of programs as typically written in \textit{GeomLab}. But, they are a useful form of statically verified documentation, and in some cases, they are necessary. For instance:
+```
+define rect(w, h) = [#rect, w, h];
+```
+Will be assigned $\texttt{rect}::\forall\alpha,\beta\ldotp\,((\alpha,\beta)\to[\#\mathit{rect},\alpha,\beta]^{\uparrow})^{\uparrow}$, because, looking at this definition in isolation, we cannot restrict its parameters. However, the programmer knows this constructor should only accept numbers, so could annotate it: $\texttt{rect}::(\mathbf{num},\mathbf{num})\to[\#\mathit{rect},\mathbf{num},\mathbf{num}]$.
+
+\subsection{Aliases}
+\textit{Type aliases} could also be introduced, to name commonly used structures, in annotations:
+\begin{align*}
+  \mathbf{shape} \Coloneqq &~[\#\mathit{rect},\mathbf{num}, \mathbf{num}]
+  \\ \cup &~[\#\mathit{square}, \mathbf{num}]
+  \\ \cup &~[\#\mathit{circle}, \mathbf{num}] \\
+  \mathbf{tree}(\alpha) \Coloneqq &~[\#\mathit{leaf}, \alpha]
+  \\ \cup &~[\#\mathit{branch},\mathbf{tree}(\alpha),\alpha,\mathbf{tree}(\alpha)]
+\end{align*}
+
+When the checker prints a type, we may also wish to replace a structure with its alias. But, because our types are represented as directed graphs, this problem is NP--Hard, by a reduction from \textsc{Sub-graph Isomorphism}. By associating tags with the type aliases they are mentioned in (and only allowing a tag to be used in at most one alias), we may simplify this task, in effect, building \textit{Haskell}'s algebraic data type system on top of our own. This comes with its own set of limitations (many of which we were trying to avoid to begin with).
+
+\textit{Generative types} --- aliases that generate new types --- offer a way to encapsulate representations. For instance, if we had a function with a \textbf{shape} parameter, it would be a type error to apply it to a $[\#\mathit{square},\mathbf{num}]$ term if the \textbf{shape} alias were generative. To support these, we would need to differentiate terms of the generative type from terms with just the same shape. Tagging would be insufficient because it does not hide representations.
+
+
+\subsection{Ascription}
+
+\textit{Type ascription patterns} --- $t :: \tau$ --- which match when the expression bound to $t$ has type $\tau$, would also improve expressivity. With ascriptions, the \texttt{rect} constructor, could be written:
+```
+define rect(w :: num, h :: num) = [#rect, w, h];
+```
+This feature also supersedes primitive type predicates such as $\texttt{numeric}::\forall\alpha\ldotp\,\alpha\to\mathbf{bool}$, which could now be user-defined:
+```
+define numeric(_ :: num)  = true
+     | numeric(_)         = false;
+```
 
 \vbox {
   %TC:ignore
