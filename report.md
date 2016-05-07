@@ -395,7 +395,7 @@ Unlike \textit{Haskell}, Multi-arity functions in \textit{GeomLab} are not curri
 
 \ShortHMExample{\texttt{if true then 1 else "foo";}}{\input{aux/branch_unify_err.tex}}
 
-In order to assign a type to a conditional, we require that the \textit{then} and \textit{else} expression types are unifiable, but this is not \textit{necessary}. In this example, the condition is constantly \texttt{true}, so we know that we could safely assign the entire expression the type \texttt{num}. Unfortunately, we cannot take advantage of such "degenerate" cases in general, because checking whether the condition is constant is not decidable (the proof of this follows by a reduction from the halting problem).
+In order to assign a type to a conditional, we require that the \textit{then} and \textit{else} expression types are unifiable, but this is not \textit{necessary}. In this example, the condition is constantly \texttt{true}, so we know that we could safely assign the entire expression the type \texttt{num}. Unfortunately, we cannot take advantage of "degenerate" cases in general, because checking whether the condition is constant is not decidable (by a reduction from the halting problem).
 
 Another possibility is that the types are not unifiable, but we condition on the resulting type at runtime:
 
@@ -404,25 +404,17 @@ define a = if c then 0 else [];
 define b = if numeric(a) then a + 1 else length(a) + 1;
 ```
 
-HM has no way of describing such ad-hoc "unions" between types, so there is no way to specify the type of \texttt{a}. When we extend our system we will explore ways to remedy this.
-
-\subsubsection{\cmark~Polymorphism}
-
-\ShortHMExample{\texttt{define id(x) = x;}}{\texttt{id :: 'b -> 'b}}
-
-\texttt{id} is a minimal example of an expression with a polymorphic type: Its type indicates that it may be applied to values of any type, to receive a value of the same type. This ability to abstract over parts of the structure of a type is very compelling and is something that we find in the theory of HM but not in the simply typed $\lambda$-calculus.
+HM has no way of describing ad-hoc type "unions", so there is no way to specify the type of \texttt{a}.
 
 \subsubsection{\cmark~Higher-Order Functions}
 
-\ShortHMExample{\texttt{define . (f, g) = function (x) f(g(x));}}{\texttt{. :: ('e -> 'f, 'd -> 'e) -> 'd -> 'f}}
+\ShortHMExample{\texttt{define . (f, g) = function (x) f(g(x));}}{\texttt{. :: ('a -> 'b, 'c -> 'a) -> 'c -> 'b}}
 
-Function composition is also polymorphic, but inspite of this generality, we may constrain types in terms of each other. Here, the two parameters must be functions, and the domain of the first must coincide with the co-domain of the second.
-
-This interaction between generality and unification is borne out of our use of the \textit{most general} unifier, which represents the minimal set of constraints required for the types to be correct.
+Function composition is both polymorphic and higher-order: It will accept any two 1-ary functions where the domain of the first coincides with the co-domain of the second.
 
 \subsubsection{\cmark~Patterns}
 
-\HMExample{\input{aux/folds.tex}}{\input{aux/folds_ast.tex}}{\texttt{length :: ['d] -> num}}
+\HMExample{\input{aux/folds.tex}}{\input{aux/folds_ast.tex}}{\texttt{length :: ['a] -> num}}
 
 Patterns used in case expressions are also used by the inference algorithm in constraining the types of formal parameters. Here, they are the only indication that \texttt{length} takes list parameters.
 
@@ -434,9 +426,9 @@ Patterns used in case expressions are also used by the inference algorithm in co
   \texttt{f(function (x) x);}%
 }{\input{aux/lambda_poly_err.tex}}
 
-This valid \textit{GeomLab} program is untypeable in HM. As suggested by the type error, the issue is in the definition of \texttt{f}: Its parameter, \texttt{j}, is applied to both a \texttt{bool} and to a \texttt{num}, which causes a unification error. The trouble is that whilst types may be polymorphic, within the body of a function its parameters may only be instantiated once.
+This valid \textit{GeomLab} program is untypeable in HM. The issue is in the definition of \texttt{f}: Its parameter, \texttt{j}, is applied to both a \texttt{bool} and to a \texttt{num}, which causes a unification error. Whilst types may be polymorphic, within the body of a function its parameters may only be instantiated once.
 
-This restriction on the number of instantiations is equivalent to the restriction that types must be in \textit{prenex} form (with all the universal quantifications outermost). With this restriction lifted, it is possible to assign a type to \texttt{f}: ${\forall\pi\ldotp(\forall\alpha\ldotp\alpha\to\alpha)\to((\mathbf{bool},\mathbf{num})\to\pi)\to\pi}$.
+Restricting the number of instantiations is equivalent to types being in \textit{prenex} form (all the universal quantifications outermost). With this restriction lifted, it is possible to assign a type to \texttt{f}: ${\forall\pi\ldotp(\forall\alpha\ldotp\alpha\to\alpha)\to((\mathbf{bool},\mathbf{num})\to\pi)\to\pi}$.
 
 The theory supporting such types is referred to as \textit{System F}, and as can be seen, it is more expressive than HM. The downside to this expressivity is that inferring a most general type in \textit{System F} is undecidable\ \cite{wells1999typability}.
 
@@ -445,7 +437,7 @@ The theory supporting such types is referred to as \textit{System F}, and as can
 \ShortHMExample{%
   \texttt{let j(x) = x in p(j(true), j(1));}\newline
   \textit{NB.} \texttt{p} \textit{defined as above.}%
-}{\texttt{((bool, num) -> 'e) -> 'e}}
+}{\texttt{((bool, num) -> 'a) -> 'a}}
 
 This program stands in contrast to the above, as whilst it evaluates to the same value as the previous program, it \textit{is} typeable. The reason for this is that polymorphic types bound to variables introduced by let-expressions \textit{can} be instantiated multiple times.
 
@@ -1408,7 +1400,7 @@ This is not ideal, as the latter function will throw an error at runtime if appl
 
 Lifting atoms to the type level creates an infinite family of constructors, which cannot be used in \text{R\'emy} encodings. However, we observe that any given program only mentions finitely many atoms. Consequently, we adopt an encoding whereby a type splits infinite families into "constructors it has been exposed to" each with their own flag parameter and children, and "all other constructors" captured by a single \textit{wildcard} flag parameter.
 
-When a type, $\tau$, is exposed to a new constructor from an infinite family (for example, through unification with another type), we update its flag parameter in $\tau$ by copying the appropriate wildcard and initialise its children in $\tau$ with fresh types. Didier \text{R\'emy} employed this trick to cope with arbitrary record field names\ \cite{Remy/records91}, but it was not adopted by Cartwright and Fagan\ \cite{cartwright1991soft} like his simple (finite) encoding.
+When a type, $\tau$, is exposed to a new constructor from an infinite family (for example, through unification with another type), we update its flag parameter in $\tau$ by copying the appropriate wildcard and initialise its children in $\tau$ with fresh types (Figure\ \ref{fig:wildcard-unify}). Didier \text{R\'emy} employed this trick to cope with arbitrary record field names\ \cite{Remy/records91}, but it was not adopted by Cartwright and Fagan\ \cite{cartwright1991soft} like his simple (finite) encoding.
 
 We have been implicitly dealing with a wildcard for \textbf{num}, \textbf{str}, \textbf{bool}, \textbf{atom}, $[\,]$, and $(:)$ until now. A number of details become neater in explicitly naming it: \textbf{any}.
 
@@ -1416,35 +1408,37 @@ Firstly, we have been overloading type variables, as both "any" types and pointe
 
 Secondly, we can add constructors for each function arity with \textbf{any} as their wildcard, to restore support for multi-arity functions. On a similar vein, we can have a constructor for every atom, sharing the \textbf{atom} constructor's flag parameter as their wildcard, to support tagged variants.
 
-As an example, suppose we try and unify:
-\begin{center}
-  \begin{math}
-    \arraycolsep=1.5pt
-    \begin{array}{rll}
-      \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{foo}}:+) \\
-      \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:-)
-    \end{array}
-  \end{math}
-\end{center}
-First, we expose the types to each others' constructors:
-\begin{center}
-  \begin{math}
-    \arraycolsep=1.5pt
-    \begin{array}{rlll}
-      \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:\,\sim, & f_{\#\mathit{foo}}:+) \\
-      \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:-, & f_{\#\mathit{foo}}:\,\sim) \\
-    \end{array}
-  \end{math}
-\end{center}
-And then perform the unification:
-\begin{center}
-  \begin{math}
-    \arraycolsep=1.5pt
-    \begin{array}{rlll}
-      \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:-, & f_{\#\mathit{foo}}:+) \\
-    \end{array}
-  \end{math}
-\end{center}
+\begin{figure}
+  \caption{Exposing R\'emy types to new constructors in order to unify them.}\label{fig:wildcard-unify}
+  \begin{center}
+    \begin{math}
+      \arraycolsep=1.5pt
+      \begin{array}{rll}
+        \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{foo}}:+) \\
+        \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:-)
+      \end{array}
+    \end{math}
+  \end{center}
+  First, we expose the types to each others' constructors:
+  \begin{center}
+    \begin{math}
+      \arraycolsep=1.5pt
+      \begin{array}{rlll}
+        \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:\,\sim, & f_{\#\mathit{foo}}:+) \\
+        \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:-, & f_{\#\mathit{foo}}:\,\sim) \\
+      \end{array}
+    \end{math}
+  \end{center}
+  And then perform the unification:
+  \begin{center}
+    \begin{math}
+      \arraycolsep=1.5pt
+      \begin{array}{rlll}
+        \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:-, & f_{\#\mathit{foo}}:+) \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{figure}
 
 \section{Related Work}
 
@@ -1653,6 +1647,9 @@ $n+k$ patterns match numbers $m\geq k$, and bind $n\triangleq m-k$. These have a
 
 \subsubsection{Reference cells and Hash Tables}
 Whilst there are tried and tested methods by which HM may be extended to maintain soundness in languages with mutable state, we have removed all sources of it from our subset in an effort to maintain focus.
+
+\subsubsection{Sequencing}
+Without any side-effectful operations, we have no need for sequential composition
 
 \section{Listings}
 
