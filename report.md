@@ -1404,11 +1404,49 @@ define area([#rect, w, h]) = w * h
   \end{Verbatim}
 \end{wrapfigure}
 
-This is clearly not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type \texttt{[\#square, num]}, and circles \texttt{[\#circle, num]} (Figure\ \ref{fig:shape-tagged}).
+This is not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type \texttt{[\#square, num]}, and circles \texttt{[\#circle, num]} (Figure\ \ref{fig:shape-tagged}).
 
-\subsection{WIP: Wildcard Constructors}\label{sec:wildcard}
+\subsection{Wildcard Constructors}\label{sec:wildcard}
 
-A technique to get around the "finite constructor" limitation of the \text{R\'emy} encoding whereby if we have an infinite family of constructors (like multi-arity functions or atoms) we have a constructor for each member of the family, as well as a wildcard constructor to capture our knowledge about the rest of the constructors in the family.
+Lifting atoms to the type level creates an infinite family of constructors, which cannot be used in \text{R\'emy} encodings. However, we observe that any given program only mentions finitely many atoms. Consequently, we adopt an encoding whereby a type splits infinite families into "constructors it has been exposed to" each with their own flag parameter and children, and "all other constructors" captured by a single \textit{wildcard} flag parameter.
+
+When a type, $\tau$, is exposed to a new constructor from an infinite family (for example, through unification with another type), we update its flag parameter in $\tau$ by copying the appropriate wildcard and initialise its children in $\tau$ with fresh types. Didier \text{R\'emy} employed this trick to cope with arbitrary record field names\ \cite{Remy/records91}, but it was not adopted by Cartwright and Fagan\ \cite{cartwright1991soft} like his simple (finite) encoding.
+
+We have been implicitly dealing with a wildcard for \textbf{num}, \textbf{str}, \textbf{bool}, \textbf{atom}, $[\,]$, and $(:)$ until now. A number of details become neater in explicitly naming it: \textbf{any}.
+
+Firstly, we have been overloading type variables, as both "any" types and pointers to types (to break up long or circular definitions, or in case contexts). The \textbf{any} constructor assumes the first role, leaving only the second for variables: A fresh type, is a new variable pointing to a \text{R\'emy} type containing only a leaf flag parameter labelled with $\sim$ for \textbf{any}.
+
+Secondly, we can add constructors for each function arity with \textbf{any} as their wildcard, to restore support for multi-arity functions. On a similar vein, we can have a constructor for every atom, sharing the \textbf{atom} constructor's flag parameter as their wildcard, to support tagged variants.
+
+As an example, suppose we try and unify:
+\begin{center}
+  \begin{math}
+    \arraycolsep=1.5pt
+    \begin{array}{rll}
+      \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{foo}}:+) \\
+      \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:-)
+    \end{array}
+  \end{math}
+\end{center}
+First, we expose the types to each others' constructors:
+\begin{center}
+  \begin{math}
+    \arraycolsep=1.5pt
+    \begin{array}{rlll}
+      \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:\,\sim, & f_{\#\mathit{foo}}:+) \\
+      \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:-, & f_{\#\mathit{foo}}:\,\sim) \\
+    \end{array}
+  \end{math}
+\end{center}
+And then perform the unification:
+\begin{center}
+  \begin{math}
+    \arraycolsep=1.5pt
+    \begin{array}{rlll}
+      \mathcal{R}( & f_{\mathbf{atom}}:\,\sim, & f_{\#\mathit{bar}}:-, & f_{\#\mathit{foo}}:+) \\
+    \end{array}
+  \end{math}
+\end{center}
 
 \section{Related Work}
 
