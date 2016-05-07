@@ -4,6 +4,7 @@ type Id = String
 
 data LitB a   = NumB Double
               | StrB String
+              | BoolB Bool
               | NilB
               | AtomB Id
               | ConsB a a

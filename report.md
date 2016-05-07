@@ -63,7 +63,7 @@ Desugaring involves replacing sugar with extensionally equivalent expressions fr
   \input{aux/expr.tex}
 \end{figure}
 
-List comprehensions, ranges and operator sections have been removed, and case expressions have been decoupled from function definitions into their own node (and the related \texttt{FailE} and \texttt{FallThroughE}). We also lift the restriction that only identifiers may be applied as functions. Finally, whilst in the source language patterns could be nested arbitrarily deep, in $\mathbf{Expr}$, each case expression only matches one layer (to reclaim the previous functionality, case expressions themselves are nested).
+List comprehensions, ranges and operator sections are removed, if expressions and pattern matching function definitions both become case expressions. We also lift the restriction that only identifiers may be applied as functions. Finally, whilst in the source language patterns could be nested arbitrarily deep, in $\mathbf{Expr}$, each case expression only matches one layer (to reclaim the previous functionality, case expressions themselves are nested).
 
 The procedure $\textit{desugar} : \mathbf{Sugar} \to \mathbf{Expr}$ treats operator sections, ranges and list comprehensions as in \textit{GeomLab}'s compiler\ \cite{Geomlab}, by converting to applications of helper functions provided by the runtime (Figure\ \ref{fig:standard-defs}), whilst the algorithm for desugaring case expressions draws inspiration from Lennart Augustsson's paper\ \cite{Augustsson:1985:CPM:5280.5303} on the techniques used to compile pattern matching in \textit{LML}, a lazy variant of \textit{ML}.
 
