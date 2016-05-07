@@ -41,7 +41,7 @@ The resulting framework allows us to capture and infer the specifications progra
 
 \section{Background}\label{sec:bg}
 
-In this project we use a subset of \textit{GeomLab} as our source language. This subset is a strict, dynamically typed, functional language offering a rich set of features such as higher-order functions, pattern matching with guards, operator sectioning, list comprehensions and ranges. We choose this language as it represents a compelling middle-ground between the $\lambda$ calculus, and most popular functional languages in use today, the implication being that if our techniques are applicable in this setting, with minimal effort we may move in either direction to serve both theory and practise. A full exposition of the syntax is available in Appendix\ \ref{app:lang}.
+In this project we use a subset of \textit{GeomLab} as our source language. A strict, dynamically typed, functional language offering a rich set of features such as higher-order functions, pattern matching with guards, operator sectioning, list comprehensions and ranges. We chose it as a compelling middle-ground between the $\lambda$ calculus, and most popular functional languages in use today, the implication being that if our techniques are applicable in this setting, with minimal effort we may move in either direction to serve both theory and practise. A full exposition of the syntax is available in Appendix\ \ref{app:lang}.
 
 \subsection{Parsing}
 
@@ -50,7 +50,7 @@ In this project we use a subset of \textit{GeomLab} as our source language. This
   \input{aux/sugar.tex}
 \end{figure}
 
-We parse programs into abstract syntax trees of the $\mathbf{Sugar}$ type (Figure\ \ref{fig:sugar_adt}) which is ideal for parsing due to its similarity in structure to \textit{GeomLab}'s syntax. But, many of the nodes in $\mathbf{Sugar}$ --- corresponding to syntactic sugar --- are, in a sense, "redundant" from a typechecker's perspective. These nodes are mechanically derivable from the composition of others in $\mathbf{Sugar}$, and so in turn, the definition of the typechecker at these "sugary" nodes is derivable from its definition at other nodes. We avoid repeating this logic by \textit{desugaring} the input.
+We parse programs into abstract syntax trees of the $\mathbf{Sugar}$ type (Figure\ \ref{fig:sugar_adt}). But, many of the nodes in $\mathbf{Sugar}$ --- corresponding to syntactic sugar --- are, in a sense, "redundant" from a typechecker's perspective. These nodes are mechanically derivable from the composition of others in $\mathbf{Sugar}$, and so in turn, the definition of the typechecker at these "sugary" nodes is derivable from its definition at other nodes. We avoid repeating this logic by \textit{desugaring} the input.
 
 A potential cost of this operation is that errors may be hard to relate to the source text. In \text{Section~\ref{sec:errors}} we explore ways of maintaining contextual information (such as source location annotations) after desugaring to alleviate this issue.
 
@@ -74,7 +74,7 @@ The procedure $\textit{desugar} : \mathbf{Sugar} \to \mathbf{Expr}$ treats opera
 
 \subsection{de Bruijn Indices}
 
-$\mathbf{Expr}$ also alters the way local variables are introduced and denoted, using a notation referred to as \textit{de Bruijn} indices. $\mathbf{Expr}$ AST nodes that introduce new variables (like function definitions, let and case expressions) do not declare variable names, but instead simply declare how many local variables they introduce (functions introduce one for each formal parameter, let expressions always introduce one, and case expressions introduce one for every hole in the pattern). Then a reference to a local variable is denoted by the number of scopes between the reference and the scope introducing it (Figure\ \ref{fig:de_bruijn}).
+$\mathbf{Expr}$ also denotes local variables with \textit{de Bruijn} indices. AST nodes that introduce new variables (function definitions, let and case expressions) do not declare variable names, but declare how many variables they introduce (functions introduce one for each formal parameter, let expressions always introduce one, and case expressions introduce one for every hole in the pattern). References to local variables are denoted by the number of scopes between the reference and the scope introducing it (Figure\ \ref{fig:de_bruijn}).
 
 \begin{figure}[htbp]
   \caption{Desugaring local variables to de Bruijn indices.}\label{fig:de_bruijn}
@@ -84,9 +84,7 @@ $\mathbf{Expr}$ also alters the way local variables are introduced and denoted, 
 This notation has several advantages:
 
 \begin{itemize}
-  \item It tackles the issue of name shadowing (from variables inserted by the desugarer) without resorting to generating unique symbols, which requires side effectful operations.
-
-  \item As a corollary to the first point, this makes \textit{desugar} a pure, deterministic function, which is better for testing.
+  \item It avoid name shadowing (from variables inserted by the desugarer) without generating unique symbols, which requires side effects. This makes \textit{desugar} a pure, deterministic function, which is better for testing.
 
   \item As the typechecker traverses the AST, it must create fresh \textit{type} variables for each local variable it encounters. These type variables can be stored in a stack, from which they can be efficiently retrieved using the local variable's de Bruijn index.
 
