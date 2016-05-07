@@ -379,21 +379,64 @@ We provide these as part of the context in which every expression is typed, as t
 
 \subsubsection{\xmark~Basic Type Error}
 
-\ShortHMExample{\texttt{"foo"+"bar";}}{\input{aux/string_add_err.tex}}
+\ShortHMExample{\texttt{"foo"+"bar";}}{\ttfamily\footnotesize%
 
-\textit{GeomLab} has separate operators for the addition of numbers (\texttt{+}) and the concatenation of strings (\texttt{\^}). The assumption made by the programmer here is that \texttt{+} is overloaded to deal with both, which the typechecker catches as a unification error (in this case, between \texttt{num} and \texttt{str}, which are not unifiable because they are distinct base types).
+%TC:ignore
+\textcolor{purple}{\underline{test/hm\_examples.geom:7:1: Error in the expression}}\newline
+
+\qquad Failed to unify types:\newline
+\-\qquad\qquad Expected: num\newline
+\-\qquad\qquad Actual: \-\quad str\newline
+
+\qquad Whilst trying to unify: \newline
+\-\qquad\qquad\qquad\quad~(num, num) -> num \newline
+\-\qquad\qquad with: (str, str) -> `a\newline
+
+\textcolor{purple}{test/hm\_examples.geom:7:1: In the function application}\newline
+
+\qquad ``foo''+``bar''
+%TC:endignore
+}
+
+\textit{GeomLab} has separate operators for the numeric addition (\texttt{+}) and the string concatenation (\texttt{\^}). The assumption made by the programmer was that \texttt{+} is overloaded to deal with both, which the typechecker catches as a unification error (between \texttt{num} and \texttt{str}, which are not unifiable because they are distinct base types).
 
 Without further context finding the source of the error is quite difficult. To help, we also provide the outermost types that were being unified at the time of the error, as these are usually what correspond to expressions in the source language. In this case, these are ${\texttt{(num, num) -> num}}$ --- the type of \texttt{+} --- and ${\texttt{(str, str) -> 'a}}$ --- a constraint on the type the programmer expected of \texttt{+}.
 
 \subsubsection{\xmark~Arity Mismatch}
 
-\ShortHMExample{\texttt{let k(x, y) = x in k(1);}}{\input{aux/arity_mismatch_err.tex}}
+\ShortHMExample{\texttt{let k(x, y) = x in k(1);}}{\ttfamily\footnotesize%
+
+%TC:ignore
+\textcolor{purple}{\underline{test/hm\_examples.geom:11:1: Error in the expression}}\newline
+
+\qquad Failed to unify types:\newline
+\-\qquad\qquad Expected: ('d, 'e) -> 'd\newline
+\-\qquad\qquad Actual: \-\quad num -> 'f\newline
+
+\textcolor{purple}{test/hm\_examples.geom:11:20: In the body of the let expression}\newline
+
+\qquad let k(x, y) = x in \textbf{\emph{\color{blue}k(1)}}
+%TC:endignore
+}
 
 Unlike \textit{Haskell}, Multi-arity functions in \textit{GeomLab} are not curried by default, and as a result, they cannot be partially applied. The type system captures this constraint as a unification error.
 
 \subsubsection{\xmark~Branch Unification}
 
-\ShortHMExample{\texttt{if true then 1 else "foo";}}{\input{aux/branch_unify_err.tex}}
+\ShortHMExample{\texttt{if true then 1 else "foo";}}{\ttfamily\footnotesize%
+
+%TC:ignore
+\textcolor{purple}{\underline{test/hm\_examples.geom:9:1: Error in the expression}}\newline
+
+\qquad Failed to unify types:\newline
+\-\qquad\qquad Expected: num\newline
+\-\qquad\qquad Actual: \-\quad str\newline
+
+\textcolor{purple}{test/hm\_examples.geom:9:1: In the if expression}\newline
+
+\qquad if true then 1 else "foo"
+%TC:endignore
+}
 
 In order to assign a type to a conditional, we require that the \textit{then} and \textit{else} expression types are unifiable, but this is not \textit{necessary}. In this example, the condition is constantly \texttt{true}, so we know that we could safely assign the entire expression the type \texttt{num}. Unfortunately, we cannot take advantage of "degenerate" cases in general, because checking whether the condition is constant is not decidable (by a reduction from the halting problem).
 
@@ -424,7 +467,28 @@ Patterns used in case expressions are also used by the inference algorithm in co
   \texttt{define p(a, b) = function (c) c(a, b)}\newline
   \texttt{define f(j) = p(j(true), j(1));}\newline
   \texttt{f(function (x) x);}%
-}{\input{aux/lambda_poly_err.tex}}
+}{\ttfamily\footnotesize%
+
+%TC:ignore
+\textcolor{purple}{\underline{test/hm\_examples.geom:25:8: Error in the definition of 'f'}}\newline
+
+\qquad Failed to unify types:\newline
+\-\qquad\qquad Expected: bool\newline
+\-\qquad\qquad Actual: \-\quad num\newline
+
+\qquad Whilst trying to unify:\newline
+\-\qquad\qquad\qquad\quad~bool -> 'f\newline
+\-\qquad\qquad with: num -> 'g\newline
+
+\textcolor{purple}{test/hm\_examples.geom:25:26: In the 2nd argument of the function application}\newline
+
+\qquad p(j(true), \textbf{\emph{\color{blue}j(1)}})\newline
+
+\textcolor{purple}{test/hm\_examples.geom:25:15: In the body of 'f'}\newline
+
+\qquad p(j(true), j(1))
+%TC:endignore
+}
 
 This valid \textit{GeomLab} program is untypeable in HM. The issue is in the definition of \texttt{f}: Its parameter, \texttt{j}, is applied to both a \texttt{bool} and to a \texttt{num}, which causes a unification error. Whilst types may be polymorphic, within the body of a function its parameters may only be instantiated once.
 
@@ -449,7 +513,27 @@ The fact that the latter program is typeable and the former is not is of particu
 \texttt{define f(x) = f;}\newline
 \texttt{define g(x) = g(g);}\newline
 \texttt{define h(x) = p(h, h);}%
-}{\input{aux/infinite_err.tex}}
+}{\ttfamily\footnotesize%
+
+%TC:ignore
+\textcolor{purple}{\underline{test/hm\_examples.geom:31:8: Error in the definition of 'f'}}\newline
+
+\qquad Attempted to construct an infinite type!\newline
+\-\qquad\qquad 'b -> '*\newline
+
+
+\textcolor{purple}{\underline{test/hm\_examples.geom:32:8: Error in the definition of 'g'}}\newline
+
+\qquad Attempted to construct an infinite type!\newline
+\-\qquad\qquad '* -> 'c\newline
+
+
+\textcolor{purple}{\underline{test/hm\_examples.geom:33:8: Error in the definition of 'h'}}\newline
+
+\qquad Attempted to construct an infinite type!\newline
+\-\qquad\qquad 'b -> (('*, '*) -> 'e) -> 'e
+%TC:endignore
+}
 
 All these programs yield infinite types, which in our implementation are represented by cyclic data structures.
 The implementation detects these cycles, and terminates, printing the types. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is printed as the special variable \texttt{'*}.
@@ -583,7 +667,6 @@ But the type checker's output refers to features from the original expression:
 \qquad[1..\textbf{\emph{\color{blue}2 + "3"}}]
 
 \textcolor{purple}{test/list\_comp.geom:20:18: In the generator of the list comprehension}
-
 
 \qquad[ x | x <- \textbf{\emph{\color{blue}[1..2 + "3"]}} when x mod 2 = 0]
 %TC:endignore

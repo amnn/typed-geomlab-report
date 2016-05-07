@@ -1,8 +1,6 @@
 PARAMS =
 LISTINGS = sugar.md expr.md de_bruijn.md standard_defs.md section_ast.md	\
-	string_add_err.md branch_unify_err.md arity_mismatch_err.md folds.md	\
-	folds_ast.md lambda_poly_err.md infinite_err.md span.md span_monoid.md	\
-	located.md located_ap.md
+	folds.md folds_ast.md span.md span_monoid.md located.md located_ap.md
 
 
 DIAGRAMS =
