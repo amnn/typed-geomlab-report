@@ -356,13 +356,11 @@ When we wish to generalise the type $\tau$ of a definition at level $l$, we find
 \end{align*}
 and perform the adjustments on these. We do this because $\tau$ could share a variable with such a $\sigma$, and in performing the adjustment on $\sigma$, the level of that variable will drop below $l$, stopping it from being generalised.
 
-\subsubsection{Type Syntax}
-
-Our final consideration is not one of performance, but of formatting. Types as returned by our typechecker will use identifiers prefixed by an apostrophe to denote type variables, all of which are implicitly universally quantified. Additionally, when there is only one parameter to a function, the parenthesese are omitted for brevity, so $\forall\alpha\ldotp(\alpha)\to\alpha$ becomes ${\texttt{'a -> 'a}}$.
-
 \subsection{Examples}
 
 We now look at the action of our desugarer and typechecker on some small \textit{GeomLab} programs.
+
+\vspace{10em}
 
 \subsubsection{\cmark~Basic Type Inference}
 
@@ -1711,6 +1709,31 @@ List comprehensions provide a domain-specific language for the combination of ma
 (+10);
 ```
 A shorthand for \texttt{function (x) x + 10}.
+
+\subsection{Types}
+
+Types returned by the typechecker will use identifiers prefixed by an apostrophe to denote type variables, all of which are implicitly universally quantified. Additionally, when there is only one parameter to a function, the parenthesese are omitted if the result is unambiguous, so $\forall\alpha\ldotp(\alpha)\to\alpha$ becomes ${\texttt{'a -> 'a}}$.
+
+\subsection{Type Unions}
+```
+define area([w, h]) = w * h
+     | area(s)    = s * s;
+
+```
+Unions between types are denoted using the binary operator, \texttt{+}:
+```
+area :: ([num, num] + num) -> num
+```
+
+\subsection{Recursive Types}
+Recursive types are introduced by \texttt{(...)*} (Surrounded by parentheses, and suffixed by $\ast$). Within a recursive type, the recursive part of the type is accessed using de Bruijn indices, which take the form of a type variable with a numeric identifier: \texttt{'0} refers to the recursive type the variable is immediately nested, \texttt{'1} is the recursive type 1 scope higher, and so on\dots The type of binary trees takes the form:
+```
+([] + ['0,'a,'0])*
+```
+Lists and list-like structures receive special treatment:
+```
+['a,...,'z]* = ([] + ('a:...('z:'0)...))*
+```
 
 \subsection{Omitted Features}
 
