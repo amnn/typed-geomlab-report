@@ -694,7 +694,7 @@ define area([w, h]) = w * h
 \begin{wrapfigure}{r}{0.3\textwidth}
   \caption{A union type for shapes.}\label{fig:shape-union}
   \begin{center}
-    \texttt{[num, num] + num}
+    $[\mathbf{num},\mathbf{num}]\cup\mathbf{num}$
   \end{center}
 \end{wrapfigure}
 
@@ -1387,22 +1387,22 @@ Type errors can no longer be discovered locally, but \textit{potential} type err
 In HM, the list was a recursive type that we had built in support for. We lost this support when we stopped treating $\texttt{[]}$ and $\texttt{(:)}$ as special, related constructors. Now, if we try to encode a list of type $\alpha$, we get: $[\,]\cup(\alpha:\lambda)$ where $\lambda$ refers back to the type we are defining, yielding an infinite (cyclic) type, which our typechecker balks at. Similarly, an attempt to construct a representation of binary trees using our existing machinery may look something like this:
 
 ```
-#leaf              { Leaves }
+[]        { Leaves }
 
-[#branch, l, x, r] { Branch with datum `x`
-                   , left sub-tree `l`
-                   , and right sub-tree `r`
-                   }
+[l, x, r] { Branch with datum `x`
+          , left sub-tree `l`
+          , and right sub-tree `r`
+          }
 ```
 
 But again, \texttt{l} and \texttt{r} have the same type as the branch they are contained in. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
 
 \begin{figure}[htbp]
-  \caption{Syntax for ad-hoc recursive types. Fixed points are introduced by the \texttt{(...)*} operator, and we use de Bruijn indices to represent recursion sites.}\label{fig:rec-type}
-  \begin{Verbatim}
-list 'a ::= ([] + ('a:'0))*
-tree 'a ::= ([#branch, '0, 'a, '0] + #leaf)*
-  \end{Verbatim}
+  \caption{Types for lists and binary trees. $\mu$ introduces a recursive type such that $\mu x\ldotp\phi = \phi[(\mu x\,\ldotp\phi)/x]$.}\label{fig:rec-type}
+  \begin{align*}
+    \mu l & \ldotp[\,]\cup(\alpha:l) \\
+    \mu t & \ldotp[\,]\cup[t,\alpha,t]
+  \end{align*}
 \end{figure}
 
 \subsection{Circular Unification}
@@ -1461,7 +1461,7 @@ define area([#rect, w, h]) = w * h
      | area([#circle, r])  = PI * r * r;
 ```
 
-The issue with this is \texttt{[\#square, s]} and \texttt{[\#circle, r]} both have a type of ${\texttt{[atom, num]}}$: Whilst squares and circles are distinguishable by their tags at the value level, they are not at the type level, so the function defined above would have the same type as this one:
+The issue with this is \texttt{[\#square, s]} and \texttt{[\#circle, r]} both have a type of ${[\mathbf{atom}, \mathbf{num}]}$: Whilst squares and circles are distinguishable by their tags at the value level, they are not at the type level, so the function defined above would have the same type as this one:
 
 ```
 define area([#rect, w, h]) = w * h
@@ -1470,14 +1470,14 @@ define area([#rect, w, h]) = w * h
 
 \begin{wrapfigure}[9]{l}{0.32\textwidth}
   \caption{Tagged union type for shapes.}\label{fig:shape-tagged}
-  \begin{Verbatim}
-  [#rect, num, num]
-+ [#square, num]
-+ [#circle, num]
-  \end{Verbatim}
+  \begin{align*}
+         & [\#\mathit{rect}, \mathbf{num}, \mathbf{num}] \\
+    \cup & [\#\mathit{square}, \mathbf{num}] \\
+    \cup & [\#\mathit{circle}, \mathbf{num}]
+  \end{align*}
 \end{wrapfigure}
 
-This is not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type \texttt{[\#square, num]}, and circles \texttt{[\#circle, num]} (Figure\ \ref{fig:shape-tagged}).
+This is not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type $[\#\mathit{square}, \mathbf{num}]$, and circles $[\#\mathit{circle}, \mathbf{num}]$ (Figure\ \ref{fig:shape-tagged}).
 
 \subsection{Wildcard Constructors}\label{sec:wildcard}
 
