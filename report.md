@@ -389,8 +389,8 @@ We provide these as part of the context in which every expression is typed, as t
 \-\qquad\qquad Actual: \-\quad str\newline
 
 \qquad Whilst trying to unify: \newline
-\-\qquad\qquad\qquad\quad~(num, num) -> num \newline
-\-\qquad\qquad with: (str, str) -> `a\newline
+\-\qquad\qquad\qquad\qquad\quad~(num, num) -> num \newline
+\-\qquad\qquad\qquad with: (str, str) -> `a\newline
 
 \textcolor{purple}{test/hm\_examples.geom:7:1: In the function application}\newline
 
@@ -477,8 +477,8 @@ Patterns used in case expressions are also used by the inference algorithm in co
 \-\qquad\qquad Actual: \-\quad num\newline
 
 \qquad Whilst trying to unify:\newline
-\-\qquad\qquad\qquad\quad~bool -> 'f\newline
-\-\qquad\qquad with: num -> 'g\newline
+\-\qquad\qquad\qquad\qquad\quad~bool -> 'f\newline
+\-\qquad\qquad\qquad with: num -> 'g\newline
 
 \textcolor{purple}{test/hm\_examples.geom:25:26: In the 2nd argument of the function application}\newline
 
