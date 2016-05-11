@@ -79,11 +79,11 @@ $\mathbf{Expr}$ also denotes local variables with \textit{de Bruijn} indices. AS
 This notation has several advantages:
 
 \begin{itemize}
-  \item It avoid name shadowing (from variables inserted by the desugarer) without generating unique symbols, which requires side effects. This makes \textit{desugar} a pure, deterministic function, which is better for testing.
+  \item It avoid name shadowing (from variables inserted by the desugar er) without generating unique symbols, which requires side effects. This makes \textit{desugar} a pure, deterministic function, which is better for testing.
 
   \item As the typechecker traverses the AST, it must create fresh \textit{type} variables for each local variable it encounters. These type variables can be stored in a stack, from which they can be efficiently retrieved using the local variable's de Bruijn index.
 
-  \item When debugging output from the desugarer, free variables and bound variables are easily distinguishable in the AST.
+  \item When debugging output from the desugar er, free variables and bound variables are easily distinguishable in the AST.
 \end{itemize}
 
 \subsection{Definitions}
@@ -270,7 +270,7 @@ Algorithms $\mathcal{W}$ and $\mathcal{U}$ in Section\ \ref{sec:hm-algorithm} ar
 \end{enumerate}
 These issues are addressed by representing types by directed acyclic graphs (DAGs), and modifying types in place instead of returning a unifier. To unify two non-variable types, we checking their outermost constructors match, then pairwise unify their children, and to unify a variable with another type, we replace the variable (in-place) with a forward pointer to the type. Using forward pointers is much cheaper than string substitution, and structural sharing also ensures that we will substitute each variable only once (Figure\ \ref{fig:type-dag}).
 
-Long chains of forward pointers may form when unifying variables together. When a chain is traversed, we replace all the intermediary pointers with a pointer directly to the end of the path (Figure\ \ref{fig:path-compress}). This technique is analagous to \textit{path compression} in disjoint set data structures\ \cite[\S21]{Cormen:2001:IA:580470}.
+Long chains of forward pointers may form when unifying variables together. When a chain is traversed, we replace all the intermediary pointers with a pointer directly to the end of the path (Figure\ \ref{fig:path-compress}). This technique is analogous to \textit{path compression} in disjoint set data structures\ \cite[\S21]{Cormen:2001:IA:580470}.
 
 \begin{figure}[htbp]
   \caption{Representing types as DAGs, to take advantage of structural sharing. The substitution in Equation~\ref{eqn:unify-same-op} now occurs at only one site, where the variable is replaced by a \textit{forward pointer}.}\label{fig:type-dag}
@@ -327,7 +327,7 @@ A \text{na\"ive} algorithm traverses the entire type being closed over, searchin
 
 We can extend this pruning approach to also deal with \textit{instantiation}: The process of replacing quantified (type) variables with fresh (type) variables, done when type checking a bound (term) variable; In some senses an inverse of \textit{generalisation}.
 
-By annotating types with a flag that is true when the type contains a quantified variable, when traversing for instantiation, we need only look at types where this flag is set. In our implementation, instead of a flag we use a special level, call it $\top$, such that for all levels $l\in\mathbb{N}$, $l<\top$. As we generalise a type, every variable we touch has its level set to $\top$, and the rules for propogating levels to compound types takes care of the rest.
+By annotating types with a flag that is true when the type contains a quantified variable, when traversing for instantiation, we need only look at types where this flag is set. In our implementation, instead of a flag we use a special level, call it $\top$, such that for all levels $l\in\mathbb{N}$, $l<\top$. As we generalise a type, every variable we touch has its level set to $\top$, and the rules for propagating levels to compound types takes care of the rest.
 
 \subsubsection{Level Adjustments}
 
@@ -730,7 +730,7 @@ These additions highlight some interesting interactions between existing feature
 \end{para}
 
 \begin{definition}[Discriminative Union]\label{def:discrim}
-  A union type is considered discriminative when none of its summands are type variables and each of its inhabitting terms may be projected into one of the union's summands by looking only at its outermost data constructor's type. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary data constructors and $[\,]$ can be considered a nullary data constructor.
+  A union type is considered discriminative when none of its summands are type variables and each of its inhabiting terms may be projected into one of the union's summands by looking only at its outermost data constructor's type. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary data constructors and $[\,]$ can be considered a nullary data constructor.
 \end{definition}
 
 $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$ is not discriminative because both summands have a $(:)$ constructor outermost, but $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ is. In general, because we can no longer have two summands in a union with a $(:)$ constructor outermost, factoring is no longer a problem. Moreover, many useful terms have discriminative types, such as \texttt{area}:
@@ -1084,7 +1084,7 @@ We extend Algorithm $\mathcal{W_R}$ (Section\ \ref{sec:adapt-hm}) with case cont
 In order to leverage the case contexts we have threaded through the algorithm, we must change the flag parameter representation (Definition\ \ref{def:flag-tree}) to allow us to represent the results of unification w.r.t. a context.
 
 \begin{definition}[Flag Tree]\label{def:flag-tree}
-  A represention of constraints in multiple contexts as a tree. Leaves are labelled as in Figure\ \ref{fig:flag-leaf} --- an extension of $\mathcal{F}$, whilst intermediate nodes are labelled by type variables and possess an edge for every constructor $c\in\mathcal{C}$. We use $\llbracket n\rrbracket$ to refer to a node's label and $\mathbb{E}(n, c)$ to refer to the target of the outgoing edge from intermediate node $n$ labelled by constructor $c$.
+  A representation of constraints in multiple contexts as a tree. Leaves are labelled as in Figure\ \ref{fig:flag-leaf} --- an extension of $\mathcal{F}$, whilst intermediate nodes are labelled by type variables and possess an edge for every constructor $c\in\mathcal{C}$. We use $\llbracket n\rrbracket$ to refer to a node's label and $\mathbb{E}(n, c)$ to refer to the target of the outgoing edge from intermediate node $n$ labelled by constructor $c$.
 \end{definition}
 
 \begin{figure}[htbp]
@@ -1479,7 +1479,7 @@ Our solution for producing useful error messages from Algorithm $\mathcal{W}$ ne
 
 Firstly, errors are detected after all the constraints for a particular definition have been captured. We can only detect \textit{possible} type errors locally. When we verify that they are true errors, we will no longer know the precise source locations they originated from. Previously, as soon as a unification error was found, we could throw an error, and as the stack unwound, add source locations to it for context. Work on the \textit{Helium} compiler for \textit{Haskell}\ \cite{heeren2003helium} addresses similar issues.
 
-Secondly, errors occur w.r.t. a specific context. It is not immediately obvious how to convey this information to the programmer. We could relate the context to parts of the source program (namely case expressions and their arms), to the types they condition upon, or a combinition of the two.
+Secondly, errors occur w.r.t. a specific context. It is not immediately obvious how to convey this information to the programmer. We could relate the context to parts of the source program (namely case expressions and their arms), to the types they condition upon, or a combination of the two.
 
 \subsection{Annotations}
 
@@ -1546,7 +1546,7 @@ define numeric(_ :: num)  = true
 
   \item[strings] Finite sequences of UTF-8 encoded characters, surrounded by double quotes.
 
-  \item[atoms] Short strings, with fast equality checks, distinguished from identiifiers by prefixing a \#.
+  \item[atoms] Short strings, with fast equality checks, distinguished from identifiers by prefixing a \#.
 
   \item[nil] A distinguished value used to represent ``nothing'', denoted by $[]$, commonly used as the terminator for singly linked lists.
 
@@ -1589,7 +1589,7 @@ define filter(p, x:xs) = x : filter(p, xs) when p(x)
 
 A function may have multiple bodies, each corresponding to its parameters matching a different \textit{pattern} and optionally a \textit{guard} expression introduced by the \texttt{when} keyword. When a function is applied to some arguments, the body that is evaluated is the first whose corresponding pattern matches \textit{and} guard evaluates to \texttt{true} (if it exists).
 
-An idiosyncracy of the language is that only named functions may be applied.
+An idiosyncrasy of the language is that only named functions may be applied.
 
 \subsection{List Comprehensions}
 ```
@@ -1606,7 +1606,7 @@ A shorthand for \texttt{function (x) x + 10}.
 
 \subsection{Types}
 
-Types returned by the typechecker will use identifiers prefixed by an apostrophe to denote type variables, all of which are implicitly universally quantified. Additionally, when there is only one parameter to a function, the parenthesese are omitted if the result is unambiguous, so $\forall\alpha\ldotp(\alpha)\to\alpha$ becomes ${\texttt{'a -> 'a}}$.
+Types returned by the typechecker will use identifiers prefixed by an apostrophe to denote type variables, all of which are implicitly universally quantified. Additionally, when there is only one parameter to a function, the parentheses are omitted if the result is unambiguous, so $\forall\alpha\ldotp(\alpha)\to\alpha$ becomes ${\texttt{'a -> 'a}}$.
 
 \subsection{Type Unions}
 ```
