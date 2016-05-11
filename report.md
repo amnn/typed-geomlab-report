@@ -1273,10 +1273,10 @@ In HM, the list was a recursive type that we had built in support for. We lost t
 But again, \texttt{l} and \texttt{r} are trees themselves. The ability to specify ad-hoc recursive types would make such expressions typable (Figure\ \ref{fig:rec-type}).
 
 \begin{figure}[htbp]
-  \caption{Types for lists and binary trees. $\mu$ introduces a recursive type such that $\mu x\ldotp\phi = \phi[(\mu x\,\ldotp\phi)/x]$.}\label{fig:rec-type}
+  \caption{Types for lists and binary trees. $\mu$ introduces a recursive type such that $\mu\rho\ldotp\phi = \phi[(\mu\rho\,\ldotp\phi)/\rho]$.}\label{fig:rec-type}
   \begin{align*}
-    \mu l & \ldotp[\,]\cup(\alpha:l) \\
-    \mu t & \ldotp[\,]\cup[t,\alpha,t]
+    \mu \lambda & \ldotp[\,]\cup(\alpha:\lambda) \\
+    \mu \tau    & \ldotp[\,]\cup[\tau,\alpha,\tau]
   \end{align*}
 \end{figure}
 
