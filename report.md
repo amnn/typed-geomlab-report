@@ -537,7 +537,7 @@ define area([width, height]) = width * height;
 
 Our existing typechecker infers the type ${\texttt{area :: [num] -> num}}$. The information that rectangles are \textit{pairs} of numbers has been lost. According to this type, \texttt{area} will accept a list of any size, but we know that it is only defined for lists of two elements.
 
-This issue stems from our special treatment of nil and cons. Implicit in the definition of the algorithm is the assumption that they are used only to construct homogeneous, singly-linked lists (A list where every value has the same type). This precludes our idea of using lists to represent arbitrary product types.
+This issue stems from our special treatment of \textit{nil} and \textit{cons}. Implicit in the definition of the algorithm is the assumption that they are used only to construct homogeneous lists (A list where every value has the same type). This precludes our idea of using lists to represent arbitrary product types.
 
 We may also want to define \texttt{area}, not just for rectangles, but for other shapes too. Here we define it for squares represented by the length of their side (\texttt{s}).
 
@@ -553,7 +553,7 @@ define area([w, h]) = w * h
   \end{center}
 \end{wrapfigure}
 
-In HM, we unify all parameter patterns together. This means to infer a type for \texttt{area}, we must unify \texttt{num} and cons patterns, which is not possible.
+In HM, we unify all parameter patterns together. This means to infer a type for \texttt{area}, we must unify \textit{num} and \textit{cons} patterns, which is not possible.
 
 In this section, we will investigate extensions to HM that allow us to specify product and union types in an ad-hoc manner, thus lifting this restriction (Figure\ \ref{fig:shape-union}).
 
@@ -689,7 +689,7 @@ Intrinsic to subsumption is the subtyping relation between types.
   \end{minipage}
 \end{definition}
 
-These additions highlight some interesting interactions between existing features of the type system and subtyping. For instance, subtyping for function types is contravariant in parameter types, and covariant in the return type, this fits our intuition: It is safe to treat ${(\mathbf{num}\cup\mathbf{bool})\to\mathbf{num}}$ as though it were ${\mathbf{num}\to(\mathbf{num}\cup\mathbf{bool})}$, because, in words, we are promising to feed only numbers to a function that accepts numbers and booleans, and we are prepared to receive numbers (which it produces) and bools (which it does not) from it.
+These additions highlight some interesting interactions between existing features of the type system and subtyping. For instance, subtyping for function types is contravariant in parameter types, and covariant in the return type. This fits our intuition: it is safe to treat ${(\mathbf{num}\cup\mathbf{bool})\to\mathbf{num}}$ as though it were ${\mathbf{num}\to(\mathbf{num}\cup\mathbf{bool})}$, because, in words, we are promising to feed only numbers to a function that accepts numbers and booleans, and we are prepared to receive numbers (which it produces) and bools (which it does not) from it.
 
 Also interesting (and encouraging) is the fact that HM's instantiation is a special case of subsumption:
 \begin{align*}
@@ -713,7 +713,7 @@ But, consider the types $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ and $(\ma
 \begin{align*}
   (\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})\prec(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}
 \end{align*}
-The converse is not. To see why, let us have a look at an attempted proof (other attempted proofs will follow a similar pattern):
+The converse cannot be derived. To see why, let us have a look at an attempted proof (other attempted proofs will follow a similar pattern):
 
 \begin{prooftree}
   \AXC{$\vdots$}
@@ -727,7 +727,7 @@ The converse is not. To see why, let us have a look at an attempted proof (other
   \UIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$}
 \end{prooftree}
 
-This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration,cartwright1991soft}.
+This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion\footnote{In both cases, the goal is entirely determined by the syntax of the program.} to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration,cartwright1991soft}.
 
 \begin{definition}[Discriminative Union]\label{def:discrim}
   A union type is considered discriminative when none of its summands are type variables and each of its inhabitting terms may be projected into one of the union's summands by looking only at its outermost data constructor's type. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary data constructors and $[\,]$ can be considered a nullary data constructor.
