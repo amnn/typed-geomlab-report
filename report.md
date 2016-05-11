@@ -781,7 +781,7 @@ It is possible to implement type assignment with discriminative union types just
 
 \subsubsection{Examples}
 
-Suppose we wish to represent the supertypes of $\mathbf{num}\cup\mathbf{bool}$ using \text{R\'emy} encoding, it would look like this ($\star$ represents a fresh variable whose symbol is not relevant):
+Suppose we wish to represent the supertypes of $\mathbf{num}\cup\mathbf{bool}$ using \text{R\'emy} encoding\footnote{$\star$ is a fresh variable whose symbol is not relevant, and changes at every instantiation.}:
 
 \makebox[\textwidth][c]{%
 \begin{math}
@@ -791,7 +791,9 @@ Suppose we wish to represent the supertypes of $\mathbf{num}\cup\mathbf{bool}$ u
   \end{array}
 \end{math}}
 
-Or, subtypes of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
+$f_{\mathbf{num}} = + = f_{\mathbf{bool}}$ indicates that satisfying types \textit{must} include $\mathbf{num}$ and $\mathbf{bool}$. Every other flag parameter is assigned a fresh variable because we \textit{do not care} whether other types are included: a supertype of $\mathbf{num}\cup\mathbf{bool}$ may or may not include $\mathbf{str}$, for example.
+
+Similarly, subtypes of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
 
 \makebox[\textwidth][c]{%
 \begin{math}
@@ -803,7 +805,9 @@ Or, subtypes of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
   \end{array}
 \end{math}}
 
-Or, the supertypes of the \texttt{area} function (Given by $\alpha$):
+Concentrating on $\alpha$, we specify that for any ${x\in\mathcal{C}\setminus\{(:)\}}$, $x$ \textit{must not} be included in the type, by setting $f_x = -$. The child types of $(:)$ ensure that when $(\tau:\sigma)$ is included in the type, $\tau$ and $\sigma$ must satisfy $\beta$ and $\gamma$ respectively, and, $f_{(:)}$ is a fresh variable --- we \textit{do not care} whether $(\tau:\sigma)$ is included in the type --- because both $\varnothing$ (the empty type) and $\mathbf{num}\cup\mathbf{bool}$ are subtypes of $\mathbf{num}\cup\mathbf{bool}$.
+
+Finally, the supertypes of the \texttt{area} function (Given by $\alpha$):
 
 \makebox[\textwidth][c]{%
 \begin{math}
