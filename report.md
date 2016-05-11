@@ -145,7 +145,7 @@ This type theory is a good starting point for many reasons: It has a reasonably 
 
 \subsection{Algorithm}\label{sec:hm-algorithm}
 
-A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, where it is described as operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$, and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typeable).
+A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, where it is described as operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$, and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typable).
 
 As in\ \cite{damas1982principal}, we rely on Robinson's unification algorithm and the ability to produce the closure of a type w.r.t. a context.
 
@@ -480,7 +480,7 @@ Patterns used in case expressions are also used by the inference algorithm in co
 %TC:endignore
 }
 
-This valid \textit{GeomLab} program is untypeable in HM. The issue is in the definition of \texttt{f}: Its parameter, \texttt{j}, is applied to both a \texttt{bool} and to a \texttt{num}, which causes a unification error. Whilst types may be polymorphic, within the body of a function its parameters may only be instantiated once.
+This valid \textit{GeomLab} program is untypable in HM. The issue is in the definition of \texttt{f}: Its parameter, \texttt{j}, is applied to both a \texttt{bool} and to a \texttt{num}, which causes a unification error. Whilst types may be polymorphic, within the body of a function its parameters may only be instantiated once.
 
 Restricting the number of instantiations is equivalent to types being in \textit{prenex} form (all the universal quantifications outermost). With this restriction lifted, it is possible to assign a type to \texttt{f}: ${\forall\pi\ldotp(\forall\alpha\ldotp\alpha\to\alpha)\to((\mathbf{bool},\mathbf{num})\to\pi)\to\pi}$.
 
@@ -493,9 +493,9 @@ The theory supporting such types is referred to as \textit{System F}, and as can
   \textit{NB.} \texttt{p} \textit{defined as above.}%
 }{\texttt{((bool, num) -> 'a) -> 'a}}
 
-This program stands in contrast to the above, as whilst it evaluates to the same value as the previous program, it \textit{is} typeable. The reason for this is that polymorphic types bound to variables introduced by let-expressions \textit{can} be instantiated multiple times.
+This program stands in contrast to the above, as whilst it evaluates to the same value as the previous program, it \textit{is} typable. The reason for this is that polymorphic types bound to variables introduced by let-expressions \textit{can} be instantiated multiple times.
 
-The fact that the latter program is typeable and the former is not is of particular interest because in dynamically typed languages, $\mathbf{let}~x = e_1~\mathbf{in}~e_2$ is commonly implemented as sugar for $(\lambda x\ldotp e_2)e_1$.
+The fact that the latter program is typable and the former is not is of particular interest because in dynamically typed languages, $\mathbf{let}~x = e_1~\mathbf{in}~e_2$ is commonly implemented as sugar for $(\lambda x\ldotp e_2)e_1$.
 
 \subsubsection{\xmark~Infinite Types}
 
@@ -1247,6 +1247,16 @@ foo([true]);
 
 Type errors can no longer be discovered locally, but \textit{potential} type errors can. During unification, we make a note of any flag parameters whose trees contain inconsistent leaves. After we are done gathering constraints and optimising, we check whether any context resulting in an inconsistent constraint is realisable. In our example, after optimisation, $\gamma$ is precisely $[\,]$, so $\gamma\triangleright(:)$ is not realisable, meaning we are safe to ignore the inconsistency in $\beta$'s constraints as unreachable.
 
+\subsection{Summary}
+
+We began this section by dissociating constructors from each other (and from specific types). This allowed us to combine constructors how we pleased, which we facilitated using existing techniques\ \cite{cartwright1991soft,Remy/records91}. Type unions built in this way were required to be \textit{discriminative} (Definition\ \ref{def:discrim}). Unfortunately, many of the types we would have liked to combine, we could not, without violating discriminativity.
+
+Every violating union is over-approximated by a discriminative type. For example, $(\mathbf{bool}:\mathbf{bool})\cup(\mathbf{num}:\mathbf{num})$ by $(\mathbf{bool}\cup\mathbf{num}):(\mathbf{bool}\cup\mathbf{num})$. But we cannot always replace one with the other --- over-approximating a function parameter's type could lead to the function being called on a value outside of its domain, so is in general, unsound.
+
+As the example in the previous paragraph shows, over-approximation makes types discriminative by destroying correlations. We re-introduce them with \textit{case types}, which allow type constraints to be predicated upon the structure of other types. This information is maintained in a \textit{case context} (Definition\ \ref{def:case-context}) by looking at case expressions, drawing inspiration from how terms of differing structures are discriminated between at runtime.
+
+It remains for us to tie a few loose ends. Firstly, by dissociating constructors from types, we lost the ability to type check recursive data structures! This is an egregious omission, which we will rectify immediately (Section\ \ref{sec:recursive}). Secondly, we required that our language have finitely many constructors to \text{R\'emy} encode its types. As it happens, this is neither true of \textit{GeomLab}, nor necessary for \text{R\'emy}'s encoding, so we can loosen this restriction (Section\ \ref{sec:tagged-variants}).
+
 \section{Recursive Types}\label{sec:recursive}
 
 In HM, the list was a recursive type that we had built in support for. We lost this support when we stopped treating $\texttt{[]}$ and $\texttt{(:)}$ as special, related constructors. Now, if we try to encode a list of type $\alpha$, we get: $[\,]\cup(\alpha:\lambda)$ where $\lambda$ refers back to the type we are defining, yielding an infinite (cyclic) type, which our typechecker balks at. Similarly, an attempt to construct a representation of binary trees using our existing machinery may look something like this:
@@ -1260,7 +1270,7 @@ In HM, the list was a recursive type that we had built in support for. We lost t
           }
 ```
 
-But again, \texttt{l} and \texttt{r} are trees themselves. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
+But again, \texttt{l} and \texttt{r} are trees themselves. The ability to specify ad-hoc recursive types would make such expressions typable (Figure\ \ref{fig:rec-type}).
 
 \begin{figure}[htbp]
   \caption{Types for lists and binary trees. $\mu$ introduces a recursive type such that $\mu x\ldotp\phi = \phi[(\mu x\,\ldotp\phi)/x]$.}\label{fig:rec-type}
