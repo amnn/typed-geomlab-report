@@ -1426,7 +1426,7 @@ As early as 1985, Mishra and Reddy explored type inference in the absence of ann
 
 Similarly, by describing tuples as composed of $(:)$ and $[\,]$, we could not describe discriminative unions of different sized tuples, whilst in MR, the issue is dispensed with by making tuples an indivisible construct, with a distinct ``tuple constructor'' for each size. Multi-arity functions are modelled by functions accepting tuples, in turn.
 
-Types in MR are represented by a system of inequalities, fed to a constraint solver. Aiken and Wimmers\ \cite{aiken1993type} extend this idea by generalising HM, replacing equality constraints --- $\tau_1 = \tau_2$ --- resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation. These extra constructs furnish it with principle types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
+Types in MR are represented by a system of inequalities, fed to a constraint solver. Aiken and Wimmers\ \cite{aiken1993type} extend this idea by generalising HM, replacing equality constraints --- $\tau_1 = \tau_2$ --- resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation. These extra constructs furnish it with principal types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
 
 ```
 define twice(f, x) = f(f(x));
