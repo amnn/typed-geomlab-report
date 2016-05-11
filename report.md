@@ -341,18 +341,19 @@ It was \textit{not} safe to universally quantify the type of $y$ because its typ
 
 Because the level $l$ of a compound type $\tau$ is the max of its variables' levels, to adjust it to $l^{\prime}$ would involve traversing $\tau$ (Setting each variable's level to the $\min$ of its current value and $l^{\prime}$). Rather than do this eagerly, we put $(\tau,l,l^{\prime})$ in the $\mathit{delayed}$ set, to make note of the change.
 
-When we wish to generalise the type $\tau$ of a definition at level $l$, we find
-\begin{align*}
-  \{\sigma:(\sigma,l_o,l_n)\in\mathit{delayed},l_n < l \leq l_o\}
-\end{align*}
-and perform the adjustments on these. We do this because $\tau$ could share a variable with such a $\sigma$, and in performing the adjustment on $\sigma$, the level of that variable will drop below $l$, stopping it from being generalised.
+\begin{para}
+  When we wish to generalise the type $\tau$ of a definition at level $l$, we find
+  \begin{align*}
+    \{\sigma:(\sigma,l_o,l_n)\in\mathit{delayed},l_n < l \leq l_o\}
+  \end{align*}
+  and perform the adjustments on these and remove them from \textit{delayed}, because $\tau$ could share a variable with such a $\sigma$, and in performing the adjustment, the level of that variable will drop below $l$, stopping it from being generalised.
+\end{para}
 
 \subsection{Examples}
 
-We now look at the action of our implementation on some small \textit{GeomLab} programs.
+We now test our implementation on some small \textit{GeomLab} programs.
 
-\vspace{10em}
-
+\clearpage
 \subsubsection{\cmark~Basic Type Inference}
 
 \HMExample{\texttt{(+10);}}{\input{aux/section_ast.tex}}{\texttt{num -> num}}
@@ -431,10 +432,10 @@ In order to assign a type to a conditional, we require that the \textit{then} an
 
 Another possibility is that the types are not unifiable, but we condition on the resulting type at runtime:
 
-```
-define a = if c then 0 else [];
+\texttt{%
+define a = if c then 0 else [];\\
 define b = if numeric(a) then a + 1 else length(a) + 1;
-```
+}
 
 HM has no way of describing ad-hoc type "unions", so there is no way to specify the type of \texttt{a}.
 
@@ -643,7 +644,7 @@ Intrinsic to subsumption is the subtyping relation between types.
 \begin{definition}[Subtyping relation ($\prec$)]\label{def:subtyping}
   $\cup$ is an associative, commutative, idempotent binary operator and $\prec$ is a reflexive, transitive relation, with the following interesting cases:\\
   \begin{minipage}[t]{.4\textwidth}
-    \vspace{1em}
+    \vspace{.5em}
     \begin{prooftree}
       \AXC{$\tau_1\prec\sigma_1$}
       \AXC{$\tau_2\prec\sigma_2$}
@@ -652,7 +653,7 @@ Intrinsic to subsumption is the subtyping relation between types.
     \end{prooftree}
   \end{minipage}
   \begin{minipage}[t]{.6\textwidth}
-    \vspace{1em}
+    \vspace{.5em}
     \begin{prooftree}
       \AXC{$\sigma_1\prec\tau_1$}
       \AXC{$\cdots$}
@@ -691,43 +692,42 @@ Intrinsic to subsumption is the subtyping relation between types.
 
 These additions highlight some interesting interactions between existing features of the type system and subtyping. For instance, subtyping for function types is contravariant in parameter types, and covariant in the return type. This fits our intuition: it is safe to treat ${(\mathbf{num}\cup\mathbf{bool})\to\mathbf{num}}$ as though it were ${\mathbf{num}\to(\mathbf{num}\cup\mathbf{bool})}$, because, in words, we are promising to feed only numbers to a function that accepts numbers and booleans, and we are prepared to receive numbers (which it produces) and bools (which it does not) from it.
 
-Also interesting (and encouraging) is the fact that HM's instantiation is a special case of subsumption:
-\begin{align*}
-  \begin{mathprooftree}
-    \AXC{$\Gamma\vdash t::\forall\alpha\ldotp\tau$}
-    \LeftLabel{\scriptsize(instantiation)}
-    \UIC{$\Gamma\vdash t::\tau[\sigma/\alpha]$}
-  \end{mathprooftree}
-  \triangleq
-  \begin{mathprooftree}
-    \AXC{$\Gamma\vdash t::\forall\alpha\ldotp\tau$}
+\begin{para}
+  Also interesting (and encouraging) is the fact that HM's instantiation is a special case of subsumption:
+  \begin{align*}
+    \begin{mathprooftree}
+      \AXC{$\Gamma\vdash t::\forall\alpha\ldotp\tau$}
+      \LeftLabel{\scriptsize(instantiation)}
+      \UIC{$\Gamma\vdash t::\tau[\sigma/\alpha]$}
+    \end{mathprooftree}
+    \triangleq
+    \begin{mathprooftree}
+      \AXC{$\Gamma\vdash t::\forall\alpha\ldotp\tau$}
+      \AXC{}
+      \RightLabel{\scriptsize(inst)}
+      \UIC{$(\forall\alpha\ldotp\tau)\prec\tau[\sigma/\alpha]$}
+      \RightLabel{\scriptsize(sub)}
+      \BIC{$\Gamma\vdash t::\tau[\sigma/\alpha]$}
+    \end{mathprooftree}
+  \end{align*}
+  But, consider the types $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ and $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$. Intuitively, they are equivalent so it should hold that they are subtypes of each other, but while it is possible to prove that:
+  \begin{align*}
+    (\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})\prec(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}
+  \end{align*}
+  The converse cannot be derived. To see why, let us have a look at an attempted proof (other attempted proofs will follow a similar pattern):
+  \begin{prooftree}
+    \AXC{$\vdots$}
+    \UIC{$(\mathbf{num}\cup\mathbf{bool})\prec\mathbf{num}$}
     \AXC{}
-    \RightLabel{\scriptsize(inst)}
-    \UIC{$(\forall\alpha\ldotp\tau)\prec\tau[\sigma/\alpha]$}
-    \RightLabel{\scriptsize(sub)}
-    \BIC{$\Gamma\vdash t::\tau[\sigma/\alpha]$}
-  \end{mathprooftree}
-\end{align*}
-
-But, consider the types $(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}$ and $(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$. Intuitively, they are equivalent so it should hold that they are subtypes of each other, but while it is possible to prove that:
-\begin{align*}
-  (\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})\prec(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}
-\end{align*}
-The converse cannot be derived. To see why, let us have a look at an attempted proof (other attempted proofs will follow a similar pattern):
-
-\begin{prooftree}
-  \AXC{$\vdots$}
-  \UIC{$(\mathbf{num}\cup\mathbf{bool})\prec\mathbf{num}$}
-  \AXC{}
-  \RightLabel{\scriptsize(refl)}
-  \UIC{$\mathbf{str}\prec\mathbf{str}$}
-  \RightLabel{\scriptsize(cons)}
-  \BIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec\mathbf{num}:\mathbf{str}$}
-  \RightLabel{\scriptsize($\cup$-right)}
-  \UIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$}
-\end{prooftree}
-
-This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion\footnote{In both cases, the goal is entirely determined by the syntax of the program.} to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration,cartwright1991soft}.
+    \RightLabel{\scriptsize(refl)}
+    \UIC{$\mathbf{str}\prec\mathbf{str}$}
+    \RightLabel{\scriptsize(cons)}
+    \BIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec\mathbf{num}:\mathbf{str}$}
+    \RightLabel{\scriptsize($\cup$-right)}
+    \UIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$}
+  \end{prooftree}
+  This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion\footnote{In both cases, the goal is entirely determined by the syntax of the program.} to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration,cartwright1991soft}.
+\end{para}
 
 \begin{definition}[Discriminative Union]\label{def:discrim}
   A union type is considered discriminative when none of its summands are type variables and each of its inhabitting terms may be projected into one of the union's summands by looking only at its outermost data constructor's type. For the purposes of this discussion $\mathbf{num}$, $\mathbf{bool}$, and $\mathbf{atom}$ can be considered unary data constructors and $[\,]$ can be considered a nullary data constructor.
@@ -746,36 +746,38 @@ with type $([\mathbf{num},\mathbf{num}]\cup\mathbf{num})\to\mathbf{num}$.
 
 It is possible to implement type assignment with discriminative union types just by changing the type representation. This idea was first expounded \text{in~\cite{cartwright1991soft}} as an adaptation of Didier \text{R\'emy's} encoding of record types\ \cite{Remy/records91}.
 
-The encoding assumes that we have a finite number of constructors and this is not true in \textit{GeomLab}, in which functions of differing arities are considered to have different constructors. In \text{Section~\ref{sec:wildcard}} we will fix this limitation, but for now, we will restrict ourselves to functions with one parameter.
-\begin{align*}
-\intertext{Suppose we have}
-\mathcal{F} & = \{+,-\}
-\tag*{Flags}\\
-\mathcal{V} & = \{\alpha,\beta,\gamma,\ldots\}
-\tag*{Variables}\\
-\mathcal{C} & = \{\mathbf{num},~\mathbf{bool},~\mathbf{atom},~\mathbf{str},~[\,],~(:),~(\to)\}
-\tag*{Constructors}\\
-a_x & =
-\begin{cases}
-  2 & \text{ if }x\in\{(:), (\to)\}\\
-  0 & \text{ if }x\in\mathcal{C}\setminus\{(:), (\to)\}
-\end{cases}
-\tag*{Arities}
-\intertext{Then a R\'emy encoded type $\rho\in\mathcal{T}$ has the form:}
-\rho & = \mathcal{R}(f_{\mathbf{num}};~f_{\mathbf{bool}};~f_{\mathbf{atom}};~f_{\mathbf{str}};~f_{[\,]};~f_{(:)}, c^1_{(:)}, c^2_{(:)};~f_{(\to)}, c^1_{(\to)}, c^2_{(\to)})
-\tag{$\dagger$}\label{eqn:remy}
-\intertext{where}
-f_x & \in\mathcal{F}\cup\mathcal{V}
-\tag*{Flag parameter for constructor $x\in\mathcal{C}$.}\\
-c^i_x & \in\mathcal{T}\cup\mathcal{V}
-\tag*{$i^{\text{\tiny th}}$ Child type for constructor $x\in\mathcal{C}$.}
-\intertext{An instance of this encoding does not represent just one type, but instead describes a set of feasible types. Suppose $\tau$ is feasible w.r.t. $\rho$'s constraints, then, for any $x\in\mathcal{C}$,}
-f_x = + & \implies x(\gamma^1_x,\ldots,\gamma^{a_x}_x)\subseteq\tau\\
-f_x = - & \implies x(\gamma^1_x,\ldots,\gamma^{a_x}_x)\cap\tau = \varnothing\\
-\gamma^i_x & \text{ is feasible w.r.t. $c^i_x$'s constraints.}
-\end{align*}
+\begin{para}
+  The encoding assumes that we have a finite number of constructors and this is not true in \textit{GeomLab}, in which functions of differing arities are considered to have different constructors. In \text{Section~\ref{sec:wildcard}} we will fix this limitation, but for now, we will restrict ourselves to functions with one parameter.
 
-When a flag parameter $f_x$ is a variable, it indicates that $\rho$ does not constrain whether or not $x(\gamma^1_x,\ldots,\gamma^{a_x}_x)$ is in the type. Variables in child types have their usual meaning as type variables.
+  Suppose we have
+  \begin{align*}
+    \mathcal{F} & = \{+,-\}
+    \tag*{Flags}\\
+    \mathcal{V} & = \{\alpha,\beta,\gamma,\ldots\}
+    \tag*{Variables}\\
+    \mathcal{C} & = \{\mathbf{num},~\mathbf{bool},~\mathbf{atom},~\mathbf{str},~[\,],~(:),~(\to)\}
+    \tag*{Constructors}\\
+    a_x & =
+    \begin{cases}
+      2 & \text{ if }x\in\{(:), (\to)\}\\
+      0 & \text{ if }x\in\mathcal{C}\setminus\{(:), (\to)\}
+    \end{cases}
+    \tag*{Arities}
+    \intertext{Then a R\'emy encoded type $\rho\in\mathcal{T}$ has the form:}
+    \rho & = \mathcal{R}(f_{\mathbf{num}};~f_{\mathbf{bool}};~f_{\mathbf{atom}};~f_{\mathbf{str}};~f_{[\,]};~f_{(:)}, c^1_{(:)}, c^2_{(:)};~f_{(\to)}, c^1_{(\to)}, c^2_{(\to)})
+    \tag{$\dagger$}\label{eqn:remy}
+    \intertext{where}
+    f_x & \in\mathcal{F}\cup\mathcal{V}
+    \tag*{Flag parameter for constructor $x\in\mathcal{C}$.}\\
+    c^i_x & \in\mathcal{T}\cup\mathcal{V}
+    \tag*{$i^{\text{\tiny th}}$ Child type for constructor $x\in\mathcal{C}$.}
+    \intertext{An instance of this encoding does not represent just one type, but instead describes a set of feasible types. Suppose $\tau$ is feasible w.r.t. $\rho$'s constraints, then, for any $x\in\mathcal{C}$,}
+    f_x = + & \implies x(\gamma^1_x,\ldots,\gamma^{a_x}_x)\subseteq\tau\\
+    f_x = - & \implies x(\gamma^1_x,\ldots,\gamma^{a_x}_x)\cap\tau = \varnothing\\
+    \gamma^i_x & \text{ is feasible w.r.t. $c^i_x$'s constraints.}
+  \end{align*}
+  When a flag parameter $f_x$ is a variable, it indicates that $\rho$ does not constrain whether or not $x(\gamma^1_x,\ldots,\gamma^{a_x}_x)$ is in the type. Variables in child types have their usual meaning as type variables.
+\end{para}
 
 \subsubsection{Examples}
 
@@ -1015,15 +1017,17 @@ define foo = function (xs)
       case w of
         []  -> x + z
 ```
-\texttt{foo} accepts either a singleton list, whose element it treats as a boolean, or a two-element list whose elements it treats as numbers, and in both cases it returns a boolean, so the type we would like to assign is:
-\begin{align*}
-  ([\mathbf{bool}]\cup[\mathbf{num}, \mathbf{num}])\to\mathbf{bool}
-\end{align*}
-Singleton lists and two-element are clearly structurally different, but all discriminativity looks at is the outermost constructor, which in both cases is $(:)$. If we attempt to force the situation and make the type discriminative, we may arrive at:
-\begin{align*}
-  (((\mathbf{bool}\cup\mathbf{num})^{\downarrow}:([\,]\cup[\mathbf{num}])^{\downarrow})^{\downarrow}\to\mathbf{bool}^{\uparrow})^{\uparrow}
-\end{align*}
-But the parameter type is over-approximated to also include $[\mathbf{num}]$ and $[\mathbf{bool},\mathbf{num}]$: We have lost the property that the singleton list contains a boolean and the two-element list contains only numbers. In this section, we introduce a generalisation of \text{R\'emy} encoding that can express types with correlations without forgoing a discriminative representation.
+\begin{para}
+  \texttt{foo} accepts either a singleton list, whose element it treats as a boolean, or a two-element list whose elements it treats as numbers, and in both cases it returns a boolean, so the type we would like to assign is:
+  \begin{align*}
+    ([\mathbf{bool}]\cup[\mathbf{num}, \mathbf{num}])\to\mathbf{bool}
+  \end{align*}
+  Singleton lists and two-element are clearly structurally different, but all discriminativity looks at is the outermost constructor, which in both cases is $(:)$. If we attempt to force the situation and make the type discriminative, we may arrive at:
+  \begin{align*}
+    (((\mathbf{bool}\cup\mathbf{num})^{\downarrow}:([\,]\cup[\mathbf{num}])^{\downarrow})^{\downarrow}\to\mathbf{bool}^{\uparrow})^{\uparrow}
+  \end{align*}
+  But the parameter type is over-approximated to also include $[\mathbf{num}]$ and $[\mathbf{bool},\mathbf{num}]$: We have lost the property that the singleton list contains a boolean and the two-element list contains only numbers. In this section, we introduce a generalisation of \text{R\'emy} encoding that can express types with correlations without forgoing a discriminative representation.
+\end{para}
 
 Given a term $t :: [\mathbf{bool}]\cup[\mathbf{num},\mathbf{num}]$, we determine which summand it belongs to at runtime by deconstructing it using a case expression. For instance, in the desugaring of \texttt{foo}, when the type checker reaches the expression \texttt{not x} it has already been through two case expressions, so it knows that \texttt{xs} is a cons and \texttt{y} a nil. Similarly, when checking \texttt{x + z} we know that \texttt{xs} is a cons, \texttt{y} is a cons, and \texttt{w} is a nil: The type of \texttt{x} depends on whether \texttt{y} is a nil or a cons. We capture this idea by performing type inference and unification w.r.t. a \textit{case context} (Definition\ \ref{def:case-context}).
 
@@ -1225,15 +1229,17 @@ Suppose we have a flag parameter $f$ --- a tree --- and a context $C$ s.t. $I(f\
 ```
 foo([true]);
 ```
-Where \texttt{foo} is defined as in Section\ \ref{sec:case-types}. Before checking the application, the types appear as follows\footnote{Redundant contexts (such as $\alpha\triangleright(:)$) have been omitted from $\beta$ and $\gamma$ for brevity, and we take $\sim$ to be a unification operator.}:
-\begin{align*}
-  \texttt{[true]} & :: [\mathbf{bool}^{\uparrow}]^{\uparrow} \\
-  \texttt{foo}    & :: (\alpha\to\mathbf{bool}^{\uparrow})^{\uparrow} \\
-  \alpha          & = (\beta:\gamma)^{\downarrow} \\
-  \beta           & = \mathbf{bool}^{\downarrow}_{\gamma\triangleright[\,]}\sim\mathbf{num}^{\downarrow}_{\gamma\triangleright(:)} \\
-  \gamma          & = ([\,]\cup[\mathbf{num}^{\downarrow}])^{\downarrow}
-\end{align*}
-Unifying the actual and formal parameters' types: $\alpha$ is constrained to be precisely $(\beta:\gamma)$ and $\gamma$ is constrained from below by $[\,]$ and above by $[\,]\cup[\mathbf{num}]$. Turning our attentions to $\beta$ --- unified with $\mathbf{bool}^{\uparrow}$ --- when $\gamma\triangleright[\,]$, $\beta$ is precisely $\mathbf{bool}$, but when $\gamma\triangleright(:)$, $\beta$ is lowerbounded by $\mathbf{bool}$ and upperbounded by $\mathbf{num}$. $f\rvert_{\gamma\triangleright(:)} = \bot$ where $f$ is the flag parameter associated with $\mathbf{bool}$ in $\beta$.
+\begin{para}
+  Where \texttt{foo} is defined as in Section\ \ref{sec:case-types}. Before checking the application, the types appear as follows\footnote{Redundant contexts (such as $\alpha\triangleright(:)$) have been omitted from $\beta$ and $\gamma$ for brevity, and we take $\sim$ to be a unification operator.}:
+  \begin{align*}
+    \texttt{[true]} & :: [\mathbf{bool}^{\uparrow}]^{\uparrow} \\
+    \texttt{foo}    & :: (\alpha\to\mathbf{bool}^{\uparrow})^{\uparrow} \\
+    \alpha          & = (\beta:\gamma)^{\downarrow} \\
+    \beta           & = \mathbf{bool}^{\downarrow}_{\gamma\triangleright[\,]}\sim\mathbf{num}^{\downarrow}_{\gamma\triangleright(:)} \\
+    \gamma          & = ([\,]\cup[\mathbf{num}^{\downarrow}])^{\downarrow}
+  \end{align*}
+  Unifying the actual and formal parameters' types: $\alpha$ is constrained to be precisely $(\beta:\gamma)$ and $\gamma$ is constrained from below by $[\,]$ and above by $[\,]\cup[\mathbf{num}]$. Turning our attentions to $\beta$ --- unified with $\mathbf{bool}^{\uparrow}$ --- when $\gamma\triangleright[\,]$, $\beta$ is precisely $\mathbf{bool}$, but when $\gamma\triangleright(:)$, $\beta$ is lowerbounded by $\mathbf{bool}$ and upperbounded by $\mathbf{num}$. $f\rvert_{\gamma\triangleright(:)} = \bot$ where $f$ is the flag parameter associated with $\mathbf{bool}$ in $\beta$.
+\end{para}
 
 Type errors can no longer be discovered locally, but \textit{potential} type errors can. During unification, we make a note of any flag parameters whose trees contain inconsistent leaves. After we are done gathering constraints and optimising, we check whether any context resulting in an inconsistent constraint is realisable. In our example, after optimisation, $\gamma$ is precisely $[\,]$, so $\gamma\triangleright(:)$ is not realisable, meaning we are safe to ignore the inconsistency in $\beta$'s constraints as unreachable.
 
@@ -1250,7 +1256,7 @@ In HM, the list was a recursive type that we had built in support for. We lost t
           }
 ```
 
-But again, \texttt{l} and \texttt{r} have the same type as the branch they are contained in. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
+But again, \texttt{l} and \texttt{r} are trees themselves. The ability to specify ad-hoc recursive types would make such expressions typeable (Figure\ \ref{fig:rec-type}).
 
 \begin{figure}[htbp]
   \caption{Types for lists and binary trees. $\mu$ introduces a recursive type such that $\mu x\ldotp\phi = \phi[(\mu x\,\ldotp\phi)/x]$.}\label{fig:rec-type}
@@ -1264,45 +1270,47 @@ But again, \texttt{l} and \texttt{r} have the same type as the branch they are c
 
 When we originally implemented unification (Section\ \ref{sec:unify-impl}) we explicitly forbade cyclic types, so, to a first degree approximation, our problem is resolved by removing the \textit{occurs check} and allowing unification to build circular types. In reality, the situation is not quite so simple. Consider the following example, adapted from\ \cite{colmerauer1982prolog}\footnote{For simplicity, we are not representing types by R\'emy encodings.}:
 
-We start with type variables $\alpha, \beta, \gamma, \delta$ and unify $\alpha\sim[\gamma]$ and $\beta\sim[\delta]$:
-\begin{center}
-  \begin{tikzcd}[sep=small]
-           & \alpha\ar[d, dashed] &        &  &  &  &        & \beta\ar[d, dashed] & \\
-           & (:)\ar[ld]\ar[rd]    &        &  &  &  &        & (:)\ar[ld]\ar[rd]   & \\
-    \gamma &                      & {[\,]} &  &  &  & \delta &                     & {[\,]}
-  \end{tikzcd}
-\end{center}
+\begin{para}
+  \abovedisplayskip=8pt
+  \belowdisplayskip=8pt
+  We start with type variables $\alpha, \beta, \gamma, \delta$ and unify $\alpha\sim[\gamma]$ and $\beta\sim[\delta]$:
+  \begin{equation*}
+    \begin{tikzcd}[sep=small]
+             & \alpha\ar[d, dashed] &        &  &  &  &        & \beta\ar[d, dashed] & \\
+             & (:)\ar[ld]\ar[rd]    &        &  &  &  &        & (:)\ar[ld]\ar[rd]   & \\
+      \gamma &                      & {[\,]} &  &  &  & \delta &                     & {[\,]}
+    \end{tikzcd}
+  \end{equation*}
+  Then we unify $\alpha\sim\delta$ and $\beta\sim\gamma$, creating a circular type.
+  \begin{equation*}
+    \begin{tikzcd}[sep=small]
+                                      &                   & \alpha\ar[ld,dashed] \\
+                                      & (:)\ar[ld]\ar[rd] &                      \\
+      \gamma\ar[rdd,dashed]           &                   & {[\,]}               \\
+                                      &                   & \beta\ar[ld,dashed]  \\
+                                      & (:)\ar[ld]\ar[rd] &                      \\
+      \delta\ar[uuuur,dashed,out=225] &                   & {[\,]}
+    \end{tikzcd}
+  \end{equation*}
+  Now suppose we try to unify $\alpha\sim\beta$. Chasing forward pointers, this is tantamount to unifying $(\gamma:[\,])\sim(\delta:[\,])$. As this unification is between compound types with the same outermost constructor, we proceed to unify the children. $[\,]\sim[\,]$ is a trivial constraint, so we focus on $\gamma\sim\delta$. Another pointer chase shows that this is equivalent to $(\delta:[\,])\sim(\gamma:[\,])$, for which we must unify $\delta\sim\gamma$: Circular types have us going round in circles!
 
-Then we unify $\alpha\sim\delta$ and $\beta\sim\gamma$, creating a circular type.
-\begin{center}
-  \begin{tikzcd}[sep=small]
-                                    &                   & \alpha\ar[ld,dashed] \\
-                                    & (:)\ar[ld]\ar[rd] &                      \\
-    \gamma\ar[rdd,dashed]           &                   & {[\,]}               \\
-                                    &                   & \beta\ar[ld,dashed]  \\
-                                    & (:)\ar[ld]\ar[rd] &                      \\
-    \delta\ar[uuuur,dashed,out=225] &                   & {[\,]}
-  \end{tikzcd}
-\end{center}
+  To unify two distinct\footnote{\textit{Distinct} refers to pointer equality: $\tau_1$ is stored at a different location in memory to $\tau_2$.} compound types $\tau_1$ and $\tau_2$ with matching outermost constructor, we unify their children. If, however, after following all forwarding pointers, both types reside at the same memory location (are identical) then we know that we need not do any work. As we have seen, this check alone is not enough to stop unification diverging, but \text{G\'erard Huet} proposes an elegant solution\ \cite[\S5.7.2]{huet1976resolution}: \textit{Before} unifying the compound types' children replace one type with a forward pointer to the other. This is sound because, after unification, the two types will be identical in structure, and if the two types need to be unified again, the pointer equality check will stop us looping.
 
-Now suppose we try to unify $\alpha\sim\beta$. Chasing forward pointers, this is tantamount to unifying $(\gamma:[\,])\sim(\delta:[\,])$. As this unification is between compound types with the same outermost constructor, we proceed to unify the children. $[\,]\sim[\,]$ is a trivial constraint, so we focus on $\gamma\sim\delta$. Another pointer chase shows that this is equivalent to $(\delta:[\,])\sim(\gamma:[\,])$, for which we must unify $\delta\sim\gamma$: Circular types have us going round in circles!
-
-To unify two distinct\footnote{\textit{Distinct} refers to pointer equality: $\tau_1$ is stored at a different location in memory to $\tau_2$.} compound types $\tau_1$ and $\tau_2$ with matching outermost constructor, we unify their children. If, however, after following all forwarding pointers, both types reside at the same memory location (are identical) then we know that we need not do any work. As we have seen, this check alone is not enough to stop unification diverging, but \text{G\'erard Huet} proposes an elegant solution\ \cite[\S5.7.2]{huet1976resolution}: \textit{Before} unifying the compound types' children replace one type with a forward pointer to the other. This is sound because, after unification, the two types will be identical in structure, and if the two types need to be unified again, the pointer equality check will stop us looping.
-
-When we attempt to unify $\alpha\sim\beta$ with the new algorithm, first we point $\beta$ to $\alpha$ (Left). Then we unify $\gamma\sim\delta$ as children of $\alpha$ and $\beta$ respectively, but noticing that they point to the same type, do nothing --- except compress $\gamma$'s path (Right):
-\begin{equation*}
-  \begin{tikzcd}[sep=small]
-    \beta\ar[d, dashed]             & \delta\ar[d, dashed] & \alpha\ar[ld, dashed] \\
-    \cdot\ar[r, dashed, bend left]  & (:)\ar[ld]\ar[rd]    &                       \\
-    \gamma\ar[u,dashed]             &                      & {[\,]}
-  \end{tikzcd}
-  \hspace{4em}
-  \begin{tikzcd}[sep=small]
-    \beta\ar[d, dashed]             & \delta\ar[d, dashed] & \alpha\ar[ld, dashed] \\
-    \cdot\ar[r, dashed, bend left]  & (:)\ar[ld]\ar[rd]    &                       \\
-    \gamma\ar[ur,dashed, bend left] &                      & {[\,]}
-  \end{tikzcd}
-\end{equation*}
+  When we attempt to unify $\alpha\sim\beta$ with the new algorithm, first we point $\beta$ to $\alpha$ (Left). Then we unify $\gamma\sim\delta$ as children of $\alpha$ and $\beta$ respectively, but noticing that they point to the same type, do nothing --- except compress $\gamma$'s path (Right):
+  \begin{equation*}
+    \begin{tikzcd}[sep=small]
+      \beta\ar[d, dashed]             & \delta\ar[d, dashed] & \alpha\ar[ld, dashed] \\
+      \cdot\ar[r, dashed, bend left]  & (:)\ar[ld]\ar[rd]    &                       \\
+      \gamma\ar[u,dashed]             &                      & {[\,]}
+    \end{tikzcd}
+    \hspace{4em}
+    \begin{tikzcd}[sep=small]
+      \beta\ar[d, dashed]             & \delta\ar[d, dashed] & \alpha\ar[ld, dashed] \\
+      \cdot\ar[r, dashed, bend left]  & (:)\ar[ld]\ar[rd]    &                       \\
+      \gamma\ar[ur,dashed, bend left] &                      & {[\,]}
+    \end{tikzcd}
+  \end{equation*}
+\end{para}
 
 \section{Tagged Variants}\label{sec:tagged-variants}
 
@@ -1407,12 +1415,14 @@ Wouter Swierstra makes impressive use of \textit{Haskell's} type class machinery
 
 As early as 1985, Mishra and Reddy explored type inference in the absence of annotations in their Declaration--Free type system\ \cite{mishra1985declaration} (henceforth MR). Their language --- a typed $\lambda$ calculus with \textit{let} bindings, \textit{case} expressions, and data built from tagged arbitrary length tuples --- bears a resemblance to our desugaring of \textit{GeomLab}, and we may draw several comparisons between their techniques and our's.
 
-Most notably, both systems rely on \textit{discriminative types} (Definition\ \ref{def:discrim}), although, MR is less encumbered by the restriction:
-\begin{align*}
- & \text{Where we write: } & [\#\mathit{square}, \mathbf{num}] &  & \text{and} &  & [\#\mathit{rect}, \mathbf{num}, \mathbf{num}] \\
- & \text{MR uses: }        & \#\mathit{square}[\mathbf{num}]   &  & \text{and} &  & \#\mathit{rect}[\mathbf{num}, \mathbf{num}]
-\end{align*}
-The union of our representations is not discriminative, but in MR they are because the outermost constructors are $\#\mathit{square}$ and $\#\mathit{rect}$.
+\begin{para}
+  Most notably, both systems rely on \textit{discriminative types} (Definition\ \ref{def:discrim}), although, MR is less encumbered by the restriction:
+  \begin{align*}
+   & \text{Where we write: } & [\#\mathit{square}, \mathbf{num}] &  & \text{and} &  & [\#\mathit{rect}, \mathbf{num}, \mathbf{num}] \\
+   & \text{MR uses: }        & \#\mathit{square}[\mathbf{num}]   &  & \text{and} &  & \#\mathit{rect}[\mathbf{num}, \mathbf{num}]
+  \end{align*}
+  The union of our representations is not discriminative, but in MR they are because the outermost constructors are $\#\mathit{square}$ and $\#\mathit{rect}$.
+\end{para}
 
 Similarly, by describing tuples as composed of $(:)$ and $[\,]$, we could not describe discriminative unions of different sized tuples, whilst in MR, the issue is dispensed with by making tuples an indivisible construct, with a distinct ``tuple constructor'' for each size. Multi-arity functions are modelled by functions accepting tuples, in turn.
 
@@ -1455,16 +1465,18 @@ define rect(w, h) = [#rect, w, h];
 Will be assigned $\texttt{rect}::\forall\alpha,\beta\ldotp\,((\alpha,\beta)\to[\#\mathit{rect},\alpha,\beta]^{\uparrow})^{\uparrow}$, because, looking at this definition in isolation, we cannot restrict its parameters. However, the programmer knows this constructor should only accept numbers, so could annotate it: $\texttt{rect}::(\mathbf{num},\mathbf{num})\to[\#\mathit{rect},\mathbf{num},\mathbf{num}]$.
 
 \subsection{Aliases}
-\textit{Type aliases} could also be introduced, to name commonly used structures, in annotations:
-\begin{align*}
-  \mathbf{shape} \Coloneqq &~[\#\mathit{rect},\mathbf{num}, \mathbf{num}]
-  \\ \cup &~[\#\mathit{square}, \mathbf{num}]
-  \\ \cup &~[\#\mathit{circle}, \mathbf{num}] \\
-  \mathbf{tree}(\alpha) \Coloneqq &~[\#\mathit{leaf}, \alpha]
-  \\ \cup &~[\#\mathit{branch},\mathbf{tree}(\alpha),\alpha,\mathbf{tree}(\alpha)]
-\end{align*}
+\begin{para}
+  \textit{Type aliases} could also be introduced, to name commonly used structures, in annotations:
+  \begin{align*}
+    \mathbf{shape} \Coloneqq &~[\#\mathit{rect},\mathbf{num}, \mathbf{num}]
+    \\ \cup &~[\#\mathit{square}, \mathbf{num}]
+    \\ \cup &~[\#\mathit{circle}, \mathbf{num}] \\
+    \mathbf{tree}(\alpha) \Coloneqq &~[\#\mathit{leaf}, \alpha]
+    \\ \cup &~[\#\mathit{branch},\mathbf{tree}(\alpha),\alpha,\mathbf{tree}(\alpha)]
+  \end{align*}
 
-When the checker prints a type, we may also wish to replace a structure with its alias. But, because our types are represented as directed graphs, this problem is NP--Hard, by a reduction from \textsc{Sub-graph Isomorphism}. By associating tags with the type aliases they are mentioned in (and only allowing a tag to be used in at most one alias), we may simplify this task, in effect, building \textit{Haskell}'s algebraic data type system on top of our own. This comes with its own set of limitations (many of which we were trying to avoid to begin with).
+  When the checker prints a type, we may also wish to replace a structure with its alias. But, because our types are represented as directed graphs, this problem is NP--Hard, by a reduction from \textsc{Sub-graph Isomorphism}. By associating tags with the type aliases they are mentioned in (and only allowing a tag to be used in at most one alias), we may simplify this task, in effect, building \textit{Haskell}'s algebraic data type system on top of our own. This comes with its own set of limitations (many of which we were trying to avoid to begin with).
+\end{para}
 
 \textit{Generative types} --- aliases that generate new types --- offer a way to encapsulate representations. For instance, if we had a function with a \textbf{shape} parameter, it would be a type error to apply it to a $[\#\mathit{square},\mathbf{num}]$ term if the \textbf{shape} alias were generative. To support these, we would need to differentiate terms of the generative type from terms with just the same shape. Tagging would be insufficient because it does not hide representations.
 
@@ -1657,15 +1669,17 @@ The \textit{Applicative Functor}\ \cite{mcbride2008functional} is an abstraction
     \end{array}
   \end{equation*}
 \end{figure}
-In addition to \textit{pure} and $\varoast$, instances of the \textbf{Applicative} class, also have operators:
-\begin{equation*}
-  \arraycolsep=2pt
-  \begin{array}{lll}
-    \triangleright & :: & \mathbf{Applicative}~\phi\Rightarrow \phi~\alpha\to\phi~\beta\to\phi~\beta\\
-    \triangleleft  & :: & \mathbf{Applicative}~\phi\Rightarrow \phi~\alpha\to\phi~\beta\to\phi~\alpha
-  \end{array}
-\end{equation*}
-$x\triangleright y$ combines the labels (in general, the effects) of both $x$ and $y$, but returns only $y$'s value, $x\triangleleft y$ acts complementarily. These are spelt \texttt{*>} and \texttt{<*} in \textit{Haskell's} Applicative Functor library. A good example of their use in the context of labelled ASTs is:
+\begin{para}
+  In addition to \textit{pure} and $\varoast$, instances of the \textbf{Applicative} class, also have operators:
+  \begin{equation*}
+    \arraycolsep=2pt
+    \begin{array}{lll}
+      \triangleright & :: & \mathbf{Applicative}~\phi\Rightarrow \phi~\alpha\to\phi~\beta\to\phi~\beta\\
+      \triangleleft  & :: & \mathbf{Applicative}~\phi\Rightarrow \phi~\alpha\to\phi~\beta\to\phi~\alpha
+    \end{array}
+  \end{equation*}
+  $x\triangleright y$ combines the labels (in general, the effects) of both $x$ and $y$, but returns only $y$'s value, $x\triangleleft y$ acts complementarily. These are spelt \texttt{*>} and \texttt{<*} in \textit{Haskell's} Applicative Functor library. A good example of their use in the context of labelled ASTs is:
+\end{para}
 
 ```{.haskell}
 PattPrim ::             { Located Patt }
@@ -1673,12 +1687,13 @@ PattPrim : {- ... -}
          | '(' Patt ')' { $1 *> $2 <* $3 }
 ```
 
-This rule parses a pattern surrounded by parentheses. In the production, \texttt{\$1} refers to the \texttt{'('} token, \texttt{\$2} refers to the pattern, and \texttt{\$3} refers to the \texttt{')'} token. We wish to indicate that the \textbf{Span} of this pattern covers the parentheses, which is achievable with $\varoast$:
-\begin{align*}
-  \mathit{pure}~(\lambda\;\_\;p\;\_ \to p)\varoast\$1\varoast\$2\varoast\$3
-\end{align*}
-
-But, as the function being applied just selects the pattern value, and ignores the token values, $\triangleright$ and $\triangleleft$ convey the intention more clearly.
+\begin{para}
+  This rule parses a pattern surrounded by parentheses. In the production, \texttt{\$1} refers to the \texttt{'('} token, \texttt{\$2} refers to the pattern, and \texttt{\$3} refers to the \texttt{')'} token. We wish to indicate that the \textbf{Span} of this pattern covers the parentheses, which is achievable with $\varoast$:
+  \begin{align*}
+    \mathit{pure}~(\lambda\;\_\;p\;\_ \to p)\varoast\$1\varoast\$2\varoast\$3
+  \end{align*}
+  But, as the function being applied just selects the pattern value, and ignores the token values, $\triangleright$ and $\triangleleft$ convey the intention more clearly.
+\end{para}
 
 \subsection{Unobtrusive Annotations}
 

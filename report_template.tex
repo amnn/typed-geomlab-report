@@ -72,6 +72,9 @@
   {\leavevmode\hbox\bgroup}
   {\DisplayProof\egroup}
 
+% Just to tell pandoc not to touch its content.
+\newenvironment{para}{}{}
+
 \makeatletter
 \DeclareRobustCommand{\bigboxplus}{%
   \mathop{\vphantom{\sum}\mathpalette\bigboxplus@\relax}\slimits@
@@ -126,7 +129,6 @@ $if(linestretch)$
 \usepackage{setspace}
 \setstretch{$linestretch$}
 $endif$
-\usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
 \usepackage{fixltx2e} % provides \textsubscript
 \ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
@@ -192,9 +194,6 @@ $if(verbatim-in-note)$
 
 \definecolor{gray}{gray}{0.5}
 \renewcommand{\theFancyVerbLine}{\ttfamily\textcolor{gray}{\arabic{FancyVerbLine}}}
-$endif$
-$if(tables)$
-\usepackage{longtable,booktabs}
 $endif$
 $if(graphics)$
 \makeatletter
@@ -295,6 +294,12 @@ $if(lof)$
 \listoffigures
 $endif$
 \newcommand{\sectionbreak}{\clearpage}
+
+% Display Math Spacing
+\abovedisplayskip=12pt
+\belowdisplayskip=12pt
+\abovedisplayshortskip=10pt
+\belowdisplayshortskip=10pt
 
 $body$
 
