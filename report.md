@@ -1452,15 +1452,25 @@ Aiken, Wimmers and Lakshman go on to extend this work\ \cite{aiken1994soft} to i
 
 We chose not to build upon this type system because compared to HM, there is less literature on its efficient implementation. Furthermore, in the spirit of \textit{GeomLab} being a teaching language, we wish to avoid introducing concepts like type intersection and negation whose benefits are perhaps not as great as product and union types for the programmer.
 
-An attempt to build a type system for \textit{Erlang}\ \cite{marlow1997practical} builds on and simplifies the idea of inferring types by solving systems of constraints \cite{mishra1985declaration,aiken1993type,aiken1994soft}. In \textit{Erlang}, product types have a tagged tuple representation that resembles \textit{GeomLab's}, with the tag in the tuple's first slot. The proposed type system avoids the discriminativity problem pragmatically by treating those tagged tuples specially.
+Finally, Marlow and Wadler \cite{marlow1997practical} build on and simplify the idea of inferring types by solving systems of constraints \cite{mishra1985declaration,aiken1993type,aiken1994soft} in a type system for \textit{Erlang}. Product types in \textit{Erlang} have a tagged tuple representation that resembles \textit{GeomLab's}, with the tag in the tuple's first slot. The proposed type system avoids the discriminativity problem pragmatically by treating those tagged tuples specially.
 
-Finally, Cartwright and Fagan extend HM\ \cite{cartwright1991soft} to model constraints over types in a manner solvable by unification. Their goal was to create a \textit{soft} type system that introduces runtime checks when unification fails instead of rejecting programs. However, their techniques proved to be intuitive and easily extensible when applied to a traditional ``hard'' type system and were invaluable for our work.
+\section{Conclusion}
+
+In this dissertation we extended Hindley and Milner's type system to statically capture the specifications programmers are used to maintaining in dynamic programming languages. We focused on the types of data structures: Noticing that they are usually built up from a small suite of base constructors, we sought to express their types as similarly compositional.
+
+Perhaps the most trying aspect of this project was finding a notion of \textit{type union}. On the one hand, constraints involving unrestricted type unions require \textit{semi-unification} to solve, which is known to be undecidable, in general\ \cite{kfoury1993undecidability}. On the other hand, if we impose too many restrictions on which types can appear together in unions, we lose expressivity. \textit{Discriminative types} offered a reasonable middle ground (Definition\ \ref{def:discrim}, page\ \pageref{def:discrim}).
+
+We based our work on that of Cartwright and Fagan\ \cite{cartwright1991soft} who extended HM to model constraints over types in a manner solvable by unification. Their goal was to create a \textit{soft} type system that introduces runtime checks when unification fails instead of rejecting programs. However, their techniques proved to be intuitive and easily extensible when applied to a traditional ``hard'' type system and were invaluable for our work.
+
+We also owe a debt of thanks to Didier \text{R\'emy}\ \cite{Remy/records91}, for his encoding of record types. It is his ``simple'' encoding that forms the basis of Cartwright and Fagan's soft type system, and his full encoding that we altered in this dissertation to permit infinite families of types (Section\ \ref{sec:tagged-variants}) in a similar fashion to Cartwright and Fagan's adaptation.
+
+\textit{Case types} (Section\ \ref{sec:case-types}) are our contribution to the field. We build up a context by paying attention to the arms of case expressions we recursed into before type checking an expression, and the type it is assigned applies only within this context. Being able to describe types whose behaviour differs by context grants us a greater degree of flexibility over \textit{discriminative types}. We use this flexibility to infer the types of many common data structures from the patterns that destructure them, and the way their constituent parts are used.
+
+As well as an algorithm for type assignment with \textit{case types}, a prototype implementation for \textit{GeomLab} is provided (Appendix\ \ref{app:listings}), based on an optimised implementation of Hindley--Milner\ \cite{oleg13ocamltc}.
 
 \section{Future Work}
 
-In this dissertation we extended Hindley and Milner's type system to statically capture the specifications programmers are used to maintaining in dynamic programming languages. We focused on the types of data structures. Noticing that they are usually built up from a small suite of base constructors, we sought to express their types as similarly compositional.
-
-To this end, we presented a type assignment algorithm capable of inferring many common data structures, by inspecting how they are pattern matched on, using ``case types'' (Section\ \ref{sec:case-types}), a solution we have not been able to find replicated in the literature. However, the work presented thus far only develops core ideas. There are many avenues that must be explored in order to build a fully-fledged type system, a few of which we detail below.
+This dissertation only develops the core ideas behind \textit{case types}. There are many avenues that must be explored in order to build a fully-fledged type system from these ideas; we detail a few below.
 
 \subsection{Errors}
 
@@ -1755,7 +1765,6 @@ But the type checker's output refers to features from the original expression:
 
 \vbox{\ttfamily\footnotesize%
 
-%TC:ignore
 \vspace{1em}
 \textcolor{purple}{\underline{test/list\_comp.geom:20:1: Error in the expression}}
 
@@ -1774,10 +1783,9 @@ But the type checker's output refers to features from the original expression:
 \textcolor{purple}{test/list\_comp.geom:20:18: In the generator of the list comprehension}
 
 \qquad[ x | x <- \textbf{\emph{\color{blue}[1..2 + "3"]}} when x mod 2 = 0]
-%TC:endignore
 }
 
-\section{Listings}
+\section{Listings}\label{app:listings}
 
 Code for the parser, lexer, and type inference algorithm.
 
