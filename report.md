@@ -349,7 +349,7 @@ and perform the adjustments on these. We do this because $\tau$ could share a va
 
 \subsection{Examples}
 
-We now look at the action of our desugarer and typechecker on some small \textit{GeomLab} programs.
+We now look at the action of our implementation on some small \textit{GeomLab} programs.
 
 \vspace{10em}
 
