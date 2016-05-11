@@ -1620,7 +1620,7 @@ In Section\ \ref{sec:bg} we chose to \textit{desugar} the source language. This 
 
 \subsection{Calculating Source Locations}
 
-In order to provide type errors with accurate source locations, we label values with where they originated from in the source. The process starts at the lexer which labels each token it outputs (Figures\ \ref{fig:span},\ \ref{fig:located}).
+In order to provide type errors with accurate source locations, we label expressions with where they originated from in the source. The process starts at the lexer which labels each token it outputs (Figures\ \ref{fig:span},\ \ref{fig:located}).
 
 \begin{figure}
   \caption{The \textbf{Span} type stores the source location as a line and column index (A \textbf{Point}), as well as a byte offset and width. In the event of an error the \textbf{Point} is presented to the user so they know where to look in the file, and the byte offset and width are used to slice the relevant part of the source out so that they know what to look for.}\label{fig:span}
@@ -1711,7 +1711,7 @@ For example, desugaring this list comprehension:
 ```
 [ x | x <- [1..2 + "3"] when x mod 2 = 0];
 ```
-Yields an expression in which some parts have been moved, and other parts have been introduced\footnote{\texttt{\_mapa} and \texttt{\_range} defined in Figure~\ref{fig:standard-defs}.}:
+Yields an expression in which some parts have been moved, and other parts have been introduced\footnote{\texttt{\_mapa} and \texttt{\_range} defined in Figure~\ref{fig:standard-defs}, page~\pageref{fig:standard-defs}.}:
 ```
 _mapa( function (x, res)
          if x mod 2 = 0 then
