@@ -1207,10 +1207,11 @@ To remove any relationships between types $\alpha$ and $\beta$, we \textit{decor
   We stop the interpretation of $t$ from depending on $\alpha$ by replacing any node in the tree that conditions on $\alpha$'s constructors by the merge of all its children. The coherence condition met by this operation is that for any context $A$, $I(D(t,\alpha)\rvert_A) = \bigsqcap_{c\in\mathcal{C}}I(t\rvert_{A,\alpha\triangleright c})$.
 \end{definition}
 
-Algorithm $\mathcal{W_{RC}}$ employs decorrelation after assigning types to:
+Algorithm $\mathcal{W_{RC}}$ employs decorrelation in the following scenarios to get rid of unwanted, or unsound relationships between types:
 \begin{enumerate}[(i)]
-\item Abstractions, to remove relationships between parameter types.
-\item Recursive definitions, to prevent the definition's type relying on any type reachable from it. In this case, we do not decorrelate symmetrically as it is okay for a reachable type to rely on the definition's type.
+\item After checking abstractions, parameter types are decorrelated with respect to each other.
+\item After checking recursive definitions, the definition's type is decorrelated with respect to any type reachable from it.
+\item After generalising a type, any non-general type that conditions upon it is decorrelated with respect to it.
 \end{enumerate}
 
 In the first definition of \texttt{eq}, the type of the second parameter was a subtype of $[\,]$ when the first parameter was $[\,]$, and a subtype of $(:)$ when the first parameter was $(:)$. After decorrelation, the second parameter type is constrained to be \textit{empty}. We do not treat empty types as errors, but an empty parameter type is suspicious: As there are no terms that inhabit this type, it is impossible to call the function!
