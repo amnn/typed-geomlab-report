@@ -726,7 +726,7 @@ These additions highlight some interesting interactions between existing feature
     \RightLabel{\scriptsize($\cup$-right)}
     \UIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$}
   \end{prooftree}
-  This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion\footnote{In both cases, the goal is entirely determined by the syntax of the program.} to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration,cartwright1991soft}.
+  This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion\footnote{In both cases, the goal is directed by the syntax of the program, in turn.} to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration,cartwright1991soft}.
 \end{para}
 
 \begin{definition}[Discriminative Union]\label{def:discrim}
@@ -825,7 +825,7 @@ The return type ($\gamma$) of \texttt{area} is not satisfied just by $\mathbf{nu
 
 Always dealing with \text{R\'emy} encodings in the form given in Equation\ \ref{eqn:remy} can be cumbersome, we adopt a more compact notation for typical cases. Again we use $\star$ to refer to fresh variables (each instance is distinct from all others).
 
-Suppose we have \textit{pairwise distinct} constructors $\{x_1,\ldots,x_k\}=\mathcal{X}\subseteq\mathcal{C}$ and \text{R\'emy} encodings $\gamma_1^1,\ldots,\gamma_1^{a_{x_1}},\ldots,\gamma_k^{a_{x_k}}\in\mathcal{T}\cup\mathcal{V}$.
+Suppose we have \textit{distinct} constructors $\{x_1,\ldots,x_k\}=\mathcal{X}\subseteq\mathcal{C}$ and \text{R\'emy} encodings $\gamma_1^1,\ldots,\gamma_1^{a_{x_1}},\ldots,\gamma_k^{a_{x_k}}\in\mathcal{T}\cup\mathcal{V}$.
 
 \begin{definition}[Supertype encoding]\label{def:super-encode}
   \begin{flalign*}
@@ -1230,7 +1230,7 @@ Suppose we have a flag parameter $f$ --- a tree --- and a context $C$ s.t. $I(f\
 foo([true]);
 ```
 \begin{para}
-  Where \texttt{foo} is defined as in Section\ \ref{sec:case-types}. Before checking the application, the types appear as follows\footnote{Redundant contexts (such as $\alpha\triangleright(:)$) have been omitted from $\beta$ and $\gamma$ for brevity, and we take $\sim$ to be a unification operator.}:
+  Where \texttt{foo} is defined as in Section\ \ref{sec:case-types} (page\ \pageref{sec:case-types}). Before checking the application, the types appear as follows\footnote{Redundant contexts (such as $\alpha\triangleright(:)$) have been omitted from $\beta$ and $\gamma$ for brevity, and we take $\sim$ to be a unification operator.}:
   \begin{align*}
     \texttt{[true]} & :: [\mathbf{bool}^{\uparrow}]^{\uparrow} \\
     \texttt{foo}    & :: (\alpha\to\mathbf{bool}^{\uparrow})^{\uparrow} \\
@@ -1344,7 +1344,7 @@ This is not ideal, as the latter function will throw an error at runtime if appl
 
 \subsection{Wildcard Constructors}\label{sec:wildcard}
 
-Lifting atoms to the type level creates an infinite family of constructors, which cannot be used in \text{R\'emy} encodings. However, we observe that any given program only mentions finitely many atoms. Consequently, we adopt an encoding whereby a type splits infinite families into "constructors it has been exposed to" each with their own flag parameter and children, and "all other constructors" captured by a single \textit{wildcard} flag parameter.
+Lifting atoms to the type level creates an infinite family of constructors, which cannot be used in \text{R\'emy} encodings. However, we observe that any given program only mentions finitely many atom literals. Consequently, we adopt an encoding whereby a type splits infinite families into "constructors it has been exposed to" each with their own flag parameter and children, and "all other constructors" captured by a single \textit{wildcard} flag parameter.
 
 When a type, $\tau$, is exposed to a new constructor from an infinite family (for example, through unification with another type), we update its flag parameter in $\tau$ by copying the appropriate wildcard and initialise its children in $\tau$ with fresh types (Figure\ \ref{fig:wildcard-unify}). Didier \text{R\'emy} employed this trick to cope with arbitrary record field names\ \cite{Remy/records91}, but it was not adopted by Cartwright and Fagan\ \cite{cartwright1991soft} like his simple (finite) encoding.
 
@@ -1413,7 +1413,7 @@ Nominally, the two types are isomorphic, but converting between them comes at a 
 
 Wouter Swierstra makes impressive use of \textit{Haskell's} type class machinery to model unions and subsumption\ \cite{swierstra2008data}. Unfortunately, the resulting framework, while compositional, was not amenable to type inference, and required the creation of ``smart constructors'' --- functions that were aware of a subsumption type class --- as well as a data declaration for every non-composite type. This paper stands as a testament to the expressiveness of \textit{Haskell's} type system, and introduces many useful techniques for writing modular \textit{Haskell} programs, but its examples take these ideas to an impractical extreme.
 
-As early as 1985, Mishra and Reddy explored type inference in the absence of annotations in their Declaration--Free type system\ \cite{mishra1985declaration} (henceforth MR). Their language --- a typed $\lambda$ calculus with \textit{let} bindings, \textit{case} expressions, and data built from tagged arbitrary length tuples --- bears a resemblance to our desugaring of \textit{GeomLab}, and we may draw several comparisons between their techniques and our's.
+As early as 1985, Mishra and Reddy explored type inference in the absence of annotations in their Declaration--Free type system\ \cite{mishra1985declaration} (henceforth MR). Their language --- a typed $\lambda$ calculus with \textit{let} bindings, \textit{case} expressions, and data built from tagged arbitrary length tuples --- bears a resemblance to our desugaring of \textit{GeomLab}, and we may draw several comparisons between their techniques and ours.
 
 \begin{para}
   Most notably, both systems rely on \textit{discriminative types} (Definition\ \ref{def:discrim}), although, MR is less encumbered by the restriction:
@@ -1426,7 +1426,7 @@ As early as 1985, Mishra and Reddy explored type inference in the absence of ann
 
 Similarly, by describing tuples as composed of $(:)$ and $[\,]$, we could not describe discriminative unions of different sized tuples, whilst in MR, the issue is dispensed with by making tuples an indivisible construct, with a distinct ``tuple constructor'' for each size. Multi-arity functions are modelled by functions accepting tuples, in turn.
 
-Types in MR are represented by a system of inequalities, fed to a constraint solver. Aiken and Wimmers extend this idea by generalising HM\ \cite{aiken1993type}, replacing equality constraints --- $\tau_1 = \tau_2$ --- resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation. These extra constructs furnish it with principle types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
+Types in MR are represented by a system of inequalities, fed to a constraint solver. Aiken and Wimmers\ \cite{aiken1993type} extend this idea by generalising HM, replacing equality constraints --- $\tau_1 = \tau_2$ --- resolved by unification, with subset constraints --- $\tau_1\subseteq\tau_2$. Their system introduces unions, intersections and a notion similar to negation. These extra constructs furnish it with principle types for every typable term that are at least as (if not more) general than the types produced by Hindley--Milner. For example, the function:
 
 ```
 define twice(f, x) = f(f(x));
@@ -1452,7 +1452,7 @@ To this end, we presented a type assignment algorithm capable of inferring many 
 
 Our solution for producing useful error messages from Algorithm $\mathcal{W}$ needs to be developed further for $\mathcal{W_{RC}}$, for two reasons.
 
-Firstly, errors are detected after all the constraints for a particular definition have been captured. We can only detect \textit{possible} type errors locally. When we verify that they are true errors, we will no lnoger know the precise source locations they originated from. Previously, as soon as a unification error was found, we could throw an error, and as the stack unwound, add source locations to it for context. Work on the \textit{Helium}, \textit{Haskell} compiler\ \cite{heeren2003helium} addresses similar issues.
+Firstly, errors are detected after all the constraints for a particular definition have been captured. We can only detect \textit{possible} type errors locally. When we verify that they are true errors, we will no longer know the precise source locations they originated from. Previously, as soon as a unification error was found, we could throw an error, and as the stack unwound, add source locations to it for context. Work on the \textit{Helium} compiler for \textit{Haskell}\ \cite{heeren2003helium} addresses similar issues.
 
 Secondly, errors occur w.r.t. a specific context. It is not immediately obvious how to convey this information to the programmer. We could relate the context to parts of the source program (namely case expressions and their arms), to the types they condition upon, or a combinition of the two.
 
@@ -1462,7 +1462,7 @@ We chose to avoid \textit{type annotations} so that we could focus on inferring 
 ```
 define rect(w, h) = [#rect, w, h];
 ```
-Will be assigned $\texttt{rect}::\forall\alpha,\beta\ldotp\,((\alpha,\beta)\to[\#\mathit{rect},\alpha,\beta]^{\uparrow})^{\uparrow}$, because, looking at this definition in isolation, we cannot restrict its parameters. However, the programmer knows this constructor should only accept numbers, so could annotate it: $\texttt{rect}::(\mathbf{num},\mathbf{num})\to[\#\mathit{rect},\mathbf{num},\mathbf{num}]$.
+will be assigned $\texttt{rect}::\forall\alpha,\beta\ldotp\,((\alpha,\beta)\to[\#\mathit{rect},\alpha,\beta]^{\uparrow})^{\uparrow}$, because, looking at this definition in isolation, we cannot restrict its parameters. However, the programmer knows this constructor should only accept numbers, so could annotate it: $\texttt{rect}::(\mathbf{num},\mathbf{num})\to[\#\mathit{rect},\mathbf{num},\mathbf{num}]$.
 
 \subsection{Aliases}
 \begin{para}
