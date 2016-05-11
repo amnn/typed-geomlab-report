@@ -101,11 +101,7 @@ By convention, the lowercase Roman alphabet denotes terms, $r,s,t,\ldots$ (and v
 \end{definition}
 
 \begin{definition}[Substitution]
-  $\mathbb{S}\equiv[\tau_1/\alpha_1,\ldots,\tau_n/\alpha_n]\equiv[\tau_i/\alpha_i]$ is a type substitution that, when applied to a type $\sigma$ simultaneously replaces all free occurrences of $\alpha_i$ with $\tau_i$ in $\sigma$. Application of a substitution can be written as $\mathbb{S}(\sigma)$ or equivalently $\sigma[\tau_i/\alpha_i]$.
-
-  Substitutions can also be applied to type contexts in which case they are applied to each type in the context in turn.
-
-  We take $\varnothing$ to denote the identity substitution.
+  $\mathbb{S}\equiv[\tau_1/\alpha_1,\ldots,\tau_n/\alpha_n]\equiv[\tau_i/\alpha_i]$ is a type substitution that, when applied to a type $\sigma$ simultaneously replaces all free occurrences of $\alpha_i$ with $\tau_i$ in $\sigma$. Application of a substitution can be written as $\mathbb{S}(\sigma)$ or equivalently $\sigma[\tau_i/\alpha_i]$. Substitutions can also be applied to type contexts in which case they are applied to each type in the context in turn. We take $\varnothing$ to denote the identity substitution.
 \end{definition}
 
 \begin{definition}[Composition]
