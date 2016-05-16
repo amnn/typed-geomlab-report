@@ -101,7 +101,7 @@ By convention, the lowercase Roman alphabet denotes terms, $r,s,t,\ldots$ (and v
 \end{definition}
 
 \begin{definition}[Substitution]
-  $\mathbb{S}\equiv[\tau_1/\alpha_1,\ldots,\tau_n/\alpha_n]\equiv[\tau_i/\alpha_i]$ is a type substitution that, when applied to a type $\sigma$ simultaneously replaces all free occurrences of $\alpha_i$ with $\tau_i$ in $\sigma$. Application of a substitution can be written as $\mathbb{S}(\sigma)$ or equivalently $\sigma[\tau_i/\alpha_i]$. Substitutions can also be applied to type contexts in which case they are applied to each type in the context in turn. We take $\varnothing$ to denote the identity substitution.
+  $\mathbb{S}\equiv[\tau_1/\alpha_1,\ldots,\tau_n/\alpha_n]\equiv[\tau_i/\alpha_i]$ is a type substitution that, when applied to a type $\sigma$, simultaneously replaces all free occurrences of $\alpha_i$ with $\tau_i$ in $\sigma$. Application of a substitution can be written as $\mathbb{S}(\sigma)$ or equivalently $\sigma[\tau_i/\alpha_i]$. Substitutions can also be applied to type contexts in which case they are applied to each type in the context in turn. We take $\varnothing$ to denote the identity substitution.
 \end{definition}
 
 \begin{definition}[Composition]
@@ -254,7 +254,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
 
 \subsection{Implementation}
 
-Inference for HM is known to be \textsc{DExpTime}--Complete\ \cite{kfoury90mlexptime}, but type assignment for typical programs written by human programmers does not tend to meet this bound. However, \text{na\"ive} implementations --- in which types are represented as strings and all operations are performed eagerly --- can still be greatly improved upon. Oleg Kiselyov's tutorial on the implementation of \textit{OCaml}'s type inference algorithm\ \cite{oleg13ocamltc} suggests changes that, in concert can bring the performance of type assignment, in the typical case, much closer to linear time. We explain the techniques we have employed in our own implementation in the following sections.
+Inference for HM is known to be \textsc{DExpTime}--Complete\ \cite{kfoury90mlexptime}, but type assignment for typical programs written by human programmers does not tend to meet this bound. However, \text{na\"ive} implementations --- in which types are represented as strings and all operations are performed eagerly --- can still be greatly improved upon. Oleg Kiselyov's tutorial on the implementation of \textit{OCaml}'s type inference algorithm\ \cite{oleg13ocamltc} suggests changes that, in concert can bring the performance of type assignment, much closer to linear time in the typical case. We explain the techniques we have employed in our own implementation in the following sections.
 
 \subsubsection{Unification}\label{sec:unify-impl}
 
@@ -268,7 +268,7 @@ Algorithms $\mathcal{W}$ and $\mathcal{U}$ in Section\ \ref{sec:hm-algorithm} ar
 \item Substitution copies the type, even though often we do not need to keep the original.
 \item The programmer must work hard to ensure the substitutions are applied consistently, and in the correct order. This is a cognitive --- not runtime --- overhead, but is also important.
 \end{enumerate}
-These issues are addressed by representing types by directed acyclic graphs (DAGs), and modifying types in place instead of returning a unifier. To unify two non-variable types, we checking their outermost constructors match, then pairwise unify their children, and to unify a variable with another type, we replace the variable (in-place) with a forward pointer to the type. Using forward pointers is much cheaper than string substitution, and structural sharing also ensures that we will substitute each variable only once (Figure\ \ref{fig:type-dag}).
+These issues are addressed by representing types by directed acyclic graphs (DAGs), and modifying types in place instead of returning a unifier. To unify two non-variable types, we check their outermost constructors match, then pairwise unify their children, and to unify a variable with another type, we replace the variable (in-place) with a forward pointer to the type. Using forward pointers is much cheaper than string substitution, and structural sharing also ensures that we will substitute each variable only once (Figure\ \ref{fig:type-dag}).
 
 Long chains of forward pointers may form when unifying variables together. When a chain is traversed, we replace all the intermediary pointers with a pointer directly to the end of the path (Figure\ \ref{fig:path-compress}). This technique is analogous to \textit{path compression} in disjoint set data structures\ \cite[\S21]{Cormen:2001:IA:580470}.
 
@@ -321,7 +321,7 @@ For the most part, type inference is run on correct programs\footnote{Even in un
 
 When type checking a \texttt{let} expression or top-level definition, $e$, after inferring a type for the expression being defined, we take its \textit{closure} by universally quantifying any remaining free type variables (see the algorithm above). This process is referred to as \textit{generalisation} and the variables quantified by it are said to be \textit{owned} by $e$.
 
-A \text{na\"ive} algorithm traverses the entire type being closed over, searching for unbound variables. We can prune the traversal, by annotating each type with the \textit{level} of a \texttt{let} expression or definition, where a \texttt{let} expression's level increases with nesting (cf. de Bruijn indices). Variables are annotated with the level of the expression that owns them, and compound types are annotated with the max level of any variable they mention. Then when closing over a type for a definition at level $l$, we only traverse compound types with level $l^\prime$ if $l^\prime\geq l$.
+A \text{na\"ive} algorithm traverses the entire type being closed over, searching for unbound variables. We can prune the traversal by annotating each type with the \textit{level} of a \texttt{let} expression or definition, where a \texttt{let} expression's level increases with nesting (cf. de Bruijn indices). Variables are annotated with the level of the expression that owns them, and compound types are annotated with the max level of any variable they mention. Then when closing over a type for a definition at level $l$, we only traverse compound types with level $l^\prime$ if $l^\prime\geq l$.
 
 \subsubsection{Instantiation}
 
@@ -390,7 +390,7 @@ We provide these as part of the context in which every expression is typed, as t
 
 \textit{GeomLab} has separate operators for the numeric addition (\texttt{+}) and the string concatenation (\texttt{\^}). The assumption made by the programmer was that \texttt{+} is overloaded to deal with both, which the typechecker catches as a unification error (between \texttt{num} and \texttt{str}, which are not unifiable because they are distinct base types).
 
-Without further context finding the source of the error is quite difficult. To help, we also provide the outermost types that were being unified at the time of the error, as these are usually what correspond to expressions in the source language. In this case, these are ${\texttt{(num, num) -> num}}$ --- the type of \texttt{+} --- and ${\texttt{(str, str) -> 'a}}$ --- a constraint on the type the programmer expected of \texttt{+}.
+Without further context, finding the source of the error is quite difficult. To help, we also provide the outermost types that were being unified at the time of the error, as these are usually what correspond to expressions in the source language. In this case, these are ${\texttt{(num, num) -> num}}$ --- the type of \texttt{+} --- and ${\texttt{(str, str) -> 'a}}$ --- a constraint on the type the programmer expected of \texttt{+}.
 
 \subsubsection{\xmark~Arity Mismatch}
 
@@ -1047,7 +1047,7 @@ For example, in \texttt{foo} (desugared), supposing we refer to the types of var
   Given case contexts $C$ and $D$, we say that $D$ is a sub-context of $C$ when $D = C,\alpha_1\triangleright d_1,\ldots,\alpha_k\triangleright d_k$, for constructors $d_1,\ldots,d_k$, and type variables $\alpha_1,\ldots,\alpha_k$ \textit{free in }$C$, $k\geq 0$. This means that the context described by $D$ is nested within that described by $C$.
 \end{definition}
 
-We extend Algorithm $\mathcal{W_R}$ (Section\ \ref{sec:adapt-hm}) with case contexts to make $\mathcal{W_{RC}}$. The first modification introducing case contexts as a parameter to type assignment $\mathcal{W_{RC}}(\Gamma;C\vdash t)$. In most cases, this parameter is passed on to recursive calls unchanged. The exception to this rule is in the definition of $\mathcal{A}(pat_i,e_i)$ (concerned with the type checking the arms of a case expression):
+We extend Algorithm $\mathcal{W_R}$ (Section\ \ref{sec:adapt-hm}) with case contexts to make $\mathcal{W_{RC}}$. The first modification introduces case contexts as a parameter to type assignment $\mathcal{W_{RC}}(\Gamma;C\vdash t)$. In most cases, this parameter is passed on to recursive calls unchanged. The exception to this rule is in the definition of $\mathcal{A}(pat_i,e_i)$ (concerned with the type checking the arms of a case expression):
 
 \begin{enumerate}[(a)]
   \item $pat_i$ a numeric, string, bool, atom or nil pattern\hfill{\scriptsize(literal pattern)}
@@ -1309,7 +1309,7 @@ When we originally implemented unification (Section\ \ref{sec:unify-impl}) we ex
   \end{equation*}
   Now suppose we try to unify $\alpha\sim\beta$. Chasing forward pointers, this is tantamount to unifying $(\gamma:[\,])\sim(\delta:[\,])$. As this unification is between compound types with the same outermost constructor, we proceed to unify the children. $[\,]\sim[\,]$ is a trivial constraint, so we focus on $\gamma\sim\delta$. Another pointer chase shows that this is equivalent to $(\delta:[\,])\sim(\gamma:[\,])$, for which we must unify $\delta\sim\gamma$: Circular types have us going round in circles!
 
-  To unify two distinct\footnote{\textit{Distinct} refers to pointer equality: $\tau_1$ is stored at a different location in memory to $\tau_2$.} compound types $\tau_1$ and $\tau_2$ with matching outermost constructor, we unify their children. If, however, after following all forwarding pointers, both types reside at the same memory location (are identical) then we know that we need not do any work. As we have seen, this check alone is not enough to stop unification diverging, but \text{G\'erard Huet} proposes an elegant solution\ \cite[\S5.7.2]{huet1976resolution}: \textit{Before} unifying the compound types' children replace one type with a forward pointer to the other. This is sound because, after unification, the two types will be identical in structure, and if the two types need to be unified again, the pointer equality check will stop us looping.
+  To unify two distinct\footnote{\textit{Distinct} refers to pointer equality: $\tau_1$ is stored at a different location in memory to $\tau_2$.} compound types $\tau_1$ and $\tau_2$ with matching outermost constructors, we unify their children. If, however, after following all forwarding pointers, both types reside at the same memory location (are identical) then we know that we need not do any work. As we have seen, this check alone is not enough to stop unification diverging, but \text{G\'erard Huet} proposes an elegant solution\ \cite[\S5.7.2]{huet1976resolution}: \textit{Before} unifying the compound types' children replace one type with a forward pointer to the other. This is sound because, after unification, the two types will be identical in structure, and if the two types need to be unified again, the pointer equality check will stop us looping.
 
   When we attempt to unify $\alpha\sim\beta$ with the new algorithm, first we point $\beta$ to $\alpha$ (Left). Then we unify $\gamma\sim\delta$ as children of $\alpha$ and $\beta$ respectively, but noticing that they point to the same type, do nothing --- except compress $\gamma$'s path (Right):
   \begin{equation*}
@@ -1576,7 +1576,7 @@ let f(x) = x + n in
 let n    = 3     in
   f(1);
 ```
-The \texttt{let} construct can be used to introduce bindings local to an expression. In the above example the definition of \texttt{n} exists only in the body of the \texttt{let}.
+The \texttt{let} construct can be used to introduce bindings local to an expression. In the above example, the definition of \texttt{n} exists only in the body of the \texttt{let}.
 
 Furthermore, functions close over (and are evaluated in) the environment they were defined in, not the environment they are called in, so the value of \texttt{n} in \texttt{f} forever remains \texttt{2} despite being rebound. That is to say, \textit{GeomLab} implements lexical, not dynamic scoping.
 
