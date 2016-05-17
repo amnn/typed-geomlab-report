@@ -36,7 +36,7 @@ The resulting framework allows us to capture and infer the specifications progra
 
 \section{Background}\label{sec:bg}
 
-In this project we use a subset of \textit{GeomLab} as our source language. A strict, dynamically-typed, functional language offering a rich set of features such as higher-order functions, pattern matching with guards, operator sectioning, list comprehensions and ranges. We chose it as a compelling middle-ground between the $\lambda$ calculus and most popular functional languages in use today, the implication being that if our techniques are applicable in this setting, with minimal effort we may move in either direction to serve both theory and practise. A full exposition of the syntax is available in Appendix\ \ref{app:lang}.
+In this project we use a subset of \textit{GeomLab} as our source language. A strict, dynamically-typed, functional language offering a rich set of features, such as higher-order functions, pattern matching with guards, operator sectioning, list comprehensions, and ranges. We chose it as a compelling middle-ground between the $\lambda$ calculus and most popular functional languages in use today, the implication being that, if our techniques are applicable in this setting, with minimal effort, we may move in either direction to serve both theory and practise. A full exposition of the syntax is available in Appendix\ \ref{app:lang}.
 
 \subsection{Parsing}
 
@@ -58,9 +58,9 @@ Desugaring involves replacing sugar with extensionally equivalent expressions fr
   \input{aux/expr.tex}
 \end{figure}
 
-List comprehensions, ranges and operator sections are removed, if expressions and pattern matching function definitions both become case expressions. We also lift the restriction that only identifiers may be applied as functions. Finally, whilst in the source language, patterns could be nested arbitrarily deep, in $\mathbf{Expr}$, each case expression only matches one layer (to reclaim the previous functionality, case expressions themselves are nested).
+List comprehensions, ranges and operator sections are removed, and if expressions and pattern matching function definitions both become case expressions. We also lift the restriction that only identifiers may be applied as functions. Finally, whilst in the source language, patterns could be nested arbitrarily deep, in $\mathbf{Expr}$, each case expression only matches one layer (to reclaim the previous functionality, case expressions themselves are nested).
 
-The procedure $\textit{desugar} : \mathbf{Sugar} \to \mathbf{Expr}$ treats operator sections, ranges and list comprehensions as in \textit{GeomLab}'s compiler\ \cite{Geomlab}, by converting to applications of helper functions provided by the runtime (Figure\ \ref{fig:standard-defs}), whilst the algorithm for desugaring case expressions draws inspiration from Lennart Augustsson's paper\ \cite{Augustsson:1985:CPM:5280.5303} on the techniques used to compile pattern matching in \textit{LML}, a lazy variant of \textit{ML}.
+The procedure $\textit{desugar} : \mathbf{Sugar} \to \mathbf{Expr}$ treats operator sections, ranges and list comprehensions as in \textit{GeomLab}'s compiler\ \cite{Geomlab}, by conversion to applications of helper functions provided by the runtime (Figure\ \ref{fig:standard-defs}), whilst the algorithm for desugaring case expressions draws inspiration from Lennart Augustsson's paper\ \cite{Augustsson:1985:CPM:5280.5303} on the techniques used to compile pattern matching in \textit{LML}, a lazy variant of \textit{ML}.
 
 \begin{figure}
   \caption{Helper functions, as found in \textit{GeomLab}'s compiler.}\label{fig:standard-defs}
@@ -141,7 +141,7 @@ HM builds on the types in the simply-typed $\lambda$ calculus by introducing \te
 
 \end{definition}
 
-This type theory is a good starting point for many reasons: It has a reasonably efficient inference algorithm which has been proven sound and complete w.r.t. the type system, the ability to specify polymorphic types affords a greater degree of flexibility and, given only a term, it is possible to infer its most general (principal) type. The last point is of particular importance to us because our underlying language was originally dynamically-typed, so there is no facility in the syntax to provide type annotations.
+This type theory is a good starting point for many reasons: It has a reasonably efficient inference algorithm which has been proven sound and complete w.r.t. the type system, the ability to specify polymorphic types affords a greater degree of flexibility, and given only a term, it is possible to infer its most general (principal) type. The last point is of particular importance to us because our underlying language was originally dynamically-typed, so there is no facility in the syntax to provide type annotations.
 
 \subsection{Algorithm}\label{sec:hm-algorithm}
 
@@ -254,7 +254,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
 
 \subsection{Implementation}
 
-Inference for HM is known to be \textsc{DExpTime}--Complete\ \cite{kfoury90mlexptime}, but type assignment for typical programs written by human programmers does not tend to meet this bound. However, \text{na\"ive} implementations --- in which types are represented as strings and all operations are performed eagerly --- can still be greatly improved upon. Oleg Kiselyov's tutorial on the implementation of \textit{OCaml}'s type inference algorithm\ \cite{oleg13ocamltc} suggests changes that, in concert can bring the performance of type assignment, much closer to linear time in the typical case. We explain the techniques we have employed in our own implementation in the following sections.
+Inference for HM is known to be \textsc{DExpTime}--Complete\ \cite{kfoury90mlexptime}, but type assignment for typical programs written by human programmers does not tend to meet this bound. However, \text{na\"ive} implementations --- in which types are represented as strings and all operations are performed eagerly --- can still be greatly improved upon. Oleg Kiselyov's tutorial on the implementation of \textit{OCaml}'s type inference algorithm\ \cite{oleg13ocamltc} suggests changes that, in concert, can bring the performance of type assignment much closer to linear time in the typical case. We explain the techniques we have employed in our own implementation in the following sections.
 
 \subsubsection{Unification}\label{sec:unify-impl}
 
@@ -388,7 +388,7 @@ We provide these as part of the context in which every expression is typed, as t
 %TC:endignore
 }
 
-\textit{GeomLab} has separate operators for the numeric addition (\texttt{+}) and the string concatenation (\texttt{\^}). The assumption made by the programmer was that \texttt{+} is overloaded to deal with both, which the typechecker catches as a unification error (between \texttt{num} and \texttt{str}, which are not unifiable because they are distinct base types).
+\textit{GeomLab} has separate operators for numeric addition (\texttt{+}) and string concatenation (\texttt{\^}). The assumption made by the programmer was that \texttt{+} is overloaded to deal with both, which the typechecker catches as a unification error (between \texttt{num} and \texttt{str}, which are not unifiable because they are distinct base types).
 
 Without further context, finding the source of the error is quite difficult. To help, we also provide the outermost types that were being unified at the time of the error, as these are usually what correspond to expressions in the source language. In this case, these are ${\texttt{(num, num) -> num}}$ --- the type of \texttt{+} --- and ${\texttt{(str, str) -> 'a}}$ --- a constraint on the type the programmer expected of \texttt{+}.
 
@@ -805,7 +805,7 @@ Similarly, subtypes of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
   \end{array}
 \end{math}}
 
-Concentrating on $\alpha$, we specify that for any ${x\in\mathcal{C}\setminus\{(:)\}}$, $x$ \textit{must not} be included in the type, by setting $f_x = -$. The child types of $(:)$ ensure that when $(\tau:\sigma)$ is included in the type, $\tau$ and $\sigma$ must satisfy $\beta$ and $\gamma$ respectively, and $f_{(:)}$ is a fresh variable --- we \textit{do not care} whether $(\tau:\sigma)$ is included in the type --- because both $\varnothing$ (the empty type) and $\mathbf{num}\cup\mathbf{bool}$ are subtypes of $\mathbf{num}\cup\mathbf{bool}$.
+Concentrating on $\alpha$, we specify that for any ${x\in\mathcal{C}\setminus\{(:)\}}$, $x$ \textit{must not} be included in the type, by setting $f_x = -$. The child types of $(:)$ ensure that when $(\tau:\sigma)$ is included in the type, $\tau$ and $\sigma$ must satisfy $\beta$ and $\gamma$ respectively, and $f_{(:)}$ is a fresh variable --- we \textit{do not care} whether $(\tau:\sigma)$ is included in the type --- because both $\varnothing$ (the empty type) and $\mathbf{num}:\mathbf{bool}$ are subtypes of $\mathbf{num}:\mathbf{bool}$.
 
 Finally, the supertypes of the \texttt{area} function (Given by $\alpha$):
 
@@ -876,7 +876,7 @@ The examples in the previous section now have much more compact, recognisable re
 
 \subsection{Adapting HM}\label{sec:adapt-hm}
 
-The beauty of this encoding is that, if we treat $\mathcal{R}$ as a constructor and flag parameters as types, \text{R\'emy} encoded types may be combined using Robinson's unification algorithm: Two \text{R\'emy} types are unified by unifying their flag parameters and child types, whilst a variable $v$ is unified with another term $t$ (so long as $v$ appears free in $t$) by substituting $t$ for $v$.
+The beauty of this encoding is that, if we treat $\mathcal{R}$ as a constructor and flag parameters as types, \text{R\'emy} encoded types may be combined using Robinson's unification algorithm: Two \text{R\'emy} types are unified by unifying their flag parameters and child types, whilst a variable $\alpha$ is unified with another type $\tau$ (so long as $\alpha$ appears free in $\tau$) by substituting $\tau$ for $\alpha$.
 
 All the necessary changes are in Algorithm $\mathcal{W}$: Previously, we assigned each expression its most general type. Now, we assign each expression a set of constraints over its type, so, we should ensure that these are, in some sense, the most general constraints. What follows is an adaption of Algorithm $\mathcal{W}$ that we will dub $\mathcal{W_R}$, we touch on only the cases which differ.
 
@@ -1649,7 +1649,7 @@ $n+k$ patterns match numbers $m\geq k$ and bind $n\triangleq m-k$. These have al
 Whilst there are tried and tested methods by which HM may be extended to maintain soundness in languages with mutable state, we have removed all sources of it from our subset in an effort to maintain focus.
 
 \subsubsection{Sequencing}
-Without any side-effectful operations, we have no need for sequential composition
+Without any side-effectful operations, we have no need for sequential composition.
 
 \section{Type Errors}\label{app:errors}
 
@@ -1660,7 +1660,7 @@ In Section\ \ref{sec:bg} we chose to \textit{desugar} the source language. This 
 In order to provide type errors with accurate source locations, we label expressions with where they originated from in the source. The process starts at the lexer which labels each token it outputs (Figures\ \ref{fig:span},\ \ref{fig:located}).
 
 \begin{figure}
-  \caption{The \textbf{Span} type stores the source location as a line and column index (A \textbf{Point}), as well as a byte offset and width. In the event of an error the \textbf{Point} is presented to the user so they know where to look in the file, and the byte offset and width are used to slice the relevant part of the source out so that they know what to look for.}\label{fig:span}
+  \caption{The \textbf{Span} type stores the source location as a line and column index (A \textbf{Point}), as well as a byte offset and width. In the event of an error, the \textbf{Point} is presented to the user so they know where to look in the file, and the byte offset and width are used to slice the relevant part of the source out so that they know what to look for.}\label{fig:span}
   \input{aux/span.tex}
 \end{figure}
 
@@ -1671,7 +1671,7 @@ In order to provide type errors with accurate source locations, we label express
 
 From \textbf{Located Token} streams, the parser builds \textbf{Located Sugar} ASTs. Previously, the parser built abstract syntax trees (ASTs), $t::\mathbf{Sugar}$, by combining sub-trees, $s_1,\ldots,s_k::\mathbf{Sugar}$, using a function $f::\mathbf{Sugar}\to\cdots\to\mathbf{Sugar}$, whereas now, we build labelled trees, $\overline{t}::\mathbf{Located~Sugar}$, from labelled sub-trees, $\overline{s}_1,\ldots,\overline{s}_k::\mathbf{Located~Sugar}$.
 
-One solution would be to modify all constructing function to accept and return \textbf{Located Sugar} terms, but this leads to repeated logic. A better solution is to alter the notion of \textit{function application} to one where ``applying'' $f$ to labelled sub-trees, applies the function to the values --- in the canonical sense --- and uses a sensible operation (Figure\ \ref{fig:span-monoid}) to combine labels also.
+One solution would be to modify all constructing function to accept and return \textbf{Located Sugar} terms, but this leads to repeated logic. A better solution is to alter the notion of \textit{function application} to one where ``applying'' $f$ to labelled sub-trees applies the function to the values --- in the canonical sense --- and uses a sensible operation (Figure\ \ref{fig:span-monoid}) to combine labels also.
 
 \begin{figure}
   \caption{The combination of spans $s$ and $t$ starts at the lowest line/column/offset in the file of either $s$ or $t$, and ends at the highest offset. We make this operation \textit{monoidal}, by introducing a unit span, \textbf{Floating}, representing a location outside the source file. Combining \textbf{Floating} with any other span $t$, yields $t$.}\label{fig:span-monoid}
@@ -1774,8 +1774,8 @@ But the type checker's output refers to features from the original expression:
 \-\qquad\qquad Actual:\-\qquad str
 
 \qquad Whilst trying to unify:\\
-\-\qquad\qquad Expected: (num, num) -> num\\
-\-\qquad\qquad Actual:\-\qquad(num, str) -> 'i
+\-\qquad\qquad\qquad\qquad\quad~(num, num) -> num\\
+\-\qquad\qquad\qquad with: (num, str) -> 'i
 
 \textcolor{purple}{test/list\_comp.geom:20:22: In the upperbound of the range}
 
