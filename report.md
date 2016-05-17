@@ -1214,7 +1214,7 @@ Algorithm $\mathcal{W_{RC}}$ employs decorrelation in the following scenarios to
 \item After generalising a type, any non-general type that conditions upon it is decorrelated with respect to it.
 \end{enumerate}
 
-In the first definition of \texttt{eq}, the type of the second parameter was a subtype of $[\,]$ when the first parameter was $[\,]$ and a subtype of $(:)$ when the first parameter was $(:)$. After decorrelation, the second parameter type is constrained to be \textit{empty}. We do not treat empty types as errors, but an empty parameter type is suspicious: As there are no terms that inhabit this type, it is impossible to call the function!
+In the first definition of \texttt{eq}, the type of the second parameter was a subtype of $[\,]$ when the first parameter was $[\,]$ and a subtype of $(:)$ when the first parameter was $(:)$. After decorrelation, the second parameter type is constrained to be \textit{empty}. We do not treat empty types as errors, but an empty parameter type is suspicious, and should produce a warning: As there are no terms that inhabit this type, it is impossible to call the function!
 
 \subsection{Optimisation}
 
@@ -1365,9 +1365,9 @@ When a type, $\tau$, is exposed to a new constructor from an infinite family (fo
 
 We have been implicitly dealing with a wildcard for \textbf{num}, \textbf{str}, \textbf{bool}, \textbf{atom}, $[\,]$, and $(:)$ until now. A number of details become neater in explicitly naming it: \textbf{any}.
 
-Firstly, we have been overloading type variables, as both "any" types and pointers to types (to break up long or circular definitions, or in case contexts). The \textbf{any} constructor assumes the first role, leaving only the second for variables: A fresh type, is a new variable pointing to a \text{R\'emy} type containing only a leaf flag parameter labelled with $\sim$ for \textbf{any}.
+Heretofore, we have been overloading free type variables, as both unconstrained types and pointers to types (to break up long or circular definitions, or in case contexts). The \textbf{any} constructor assumes the first role, leaving only the second for variables: An unconstrainted type is a variable pointing to a \text{R\'emy} type containing only a leaf flag parameter labelled with $\sim$ for \textbf{any}.
 
-Secondly, we can add constructors for each function arity with \textbf{any} as their wildcard, to restore support for multi-arity functions. On a similar vein, we can have a constructor for every atom, sharing the \textbf{atom} constructor's flag parameter as their wildcard, to support tagged variants.
+\textbf{any} can also act as the wildcard for function type constructors with differing arities, to restore type support for multi-arity functions. On a similar vein, to support tagged variants, we can have a type constructor for every atom literal, sharing the \textbf{atom} constructor's flag parameter as their wild card.
 
 \begin{figure}
   \caption{Exposing R\'emy types to new constructors in order to unify them.}\label{fig:wildcard-unify}
