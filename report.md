@@ -2,7 +2,7 @@
 title: Structural Type Inference in a Functional Programming Language
 author: Ashok Menon
 abstract: |
-  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically typed functional programming languages. In particular, rather than simply inferring the types of parameters to composite data structures (The type of the elements in a list structure, for example), we aim to infer the shape of the structure itself as composed of atomic values, cons cells and nils --- In the case of a list, that it is either empty, or is an element, followed by a list containing more of the same type of element.
+  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically-typed functional programming languages. In particular, rather than simply inferring the types of parameters to composite data structures (The type of the elements in a list structure, for example), we aim to infer the shape of the structure itself as composed of atomic values, cons cells and nils --- In the case of a list, that it is either empty, or is an element, followed by a list containing more of the same type of element.
 ...
 
 ```{.haskell}
@@ -10,7 +10,7 @@ abstract: |
 
 \section{Introduction}
 
-In the majority of statically typed languages, data types are explicitly defined, whilst in dynamically typed languages, arbitrary data structures may be constructed from a relatively small set of constructors. Traditional type inference relies on such data definitions to aid in type assignment. For instance, in \textit{Haskell}:
+In the majority of statically-typed languages, data types are explicitly defined, whilst in dynamically-typed languages, arbitrary data structures may be constructed from a relatively small set of constructors. Traditional type inference relies on such data definitions to aid in type assignment. For instance, in \textit{Haskell}:
 
 ```{.haskell}
 data List a = Nil | Cons a (List a)
@@ -27,8 +27,8 @@ Inference uses the fact that \texttt{Cons} is a constructor for $\mathbf{List}~\
     \mathit{fst}  & : \forall \alpha,\beta \ldotp & (\alpha,\beta)       & \to\alpha
   \end{array}
 \end{math}
-Dynamic languages --- especially of the \textsc{Lisp} tradition --- can treat these operations as the same: A non-empty list is just a pair of its first element and the rest of the list. This is not the case in \textit{Haskell} (as shown by the types) nor is it in many statically typed languages. Seemingly, the difference is that \texttt{head} can be applied to any list (even the empty list, \texttt{Nil}), but this is an artefact of the type system's limitations: \texttt{head Nil} evaluates to a runtime error!
-Associating constructors with each other is injurious to the precision of our type system. By extending battle-hardened type systems, it is possible to work in a setting where, like terms in a dynamically typed language, types are built up from a small set of constructors. In such an environment, the functionality of both \texttt{head} and \texttt{fst} could be captured in a single function, applicable to both lists and pairs, in such a way that it would be a type error to apply it to an empty list.
+Dynamic languages --- especially of the \textsc{Lisp} tradition --- can treat these operations as the same: A non-empty list is just a pair of its first element and the rest of the list. This is not the case in \textit{Haskell} (as shown by the types) nor is it in many statically-typed languages. Seemingly, the difference is that \texttt{head} can be applied to any list (even the empty list, \texttt{Nil}), but this is an artefact of the type system's limitations: \texttt{head Nil} evaluates to a runtime error!
+Associating constructors with each other is injurious to the precision of our type system. By extending battle-hardened type systems, it is possible to work in a setting where, like terms in a dynamically-typed language, types are built up from a small set of constructors. In such an environment, the functionality of both \texttt{head} and \texttt{fst} could be captured in a single function, applicable to both lists and pairs, in such a way that it would be a type error to apply it to an empty list.
 
 Section\ \ref{sec:bg} introduces the source language, \textit{GeomLab}, and the type checker's internal representation of it. Section\ \ref{sec:hm} then describes an optimised implementation of the Hindley--Milner type system for \textit{GeomLab}. Finally, Sections\ \ref{sec:adhoc-adts},\ \ref{sec:recursive} and\ \ref{sec:tagged-variants} extend the type system to make the structure of types more compositional while losing neither expressivity nor type inference.
 
@@ -36,12 +36,12 @@ The resulting framework allows us to capture and infer the specifications progra
 
 \section{Background}\label{sec:bg}
 
-In this project we use a subset of \textit{GeomLab} as our source language. A strict, dynamically typed, functional language offering a rich set of features such as higher-order functions, pattern matching with guards, operator sectioning, list comprehensions and ranges. We chose it as a compelling middle-ground between the $\lambda$ calculus, and most popular functional languages in use today, the implication being that if our techniques are applicable in this setting, with minimal effort we may move in either direction to serve both theory and practise. A full exposition of the syntax is available in Appendix\ \ref{app:lang}.
+In this project we use a subset of \textit{GeomLab} as our source language. A strict, dynamically-typed, functional language offering a rich set of features such as higher-order functions, pattern matching with guards, operator sectioning, list comprehensions and ranges. We chose it as a compelling middle-ground between the $\lambda$ calculus and most popular functional languages in use today, the implication being that if our techniques are applicable in this setting, with minimal effort we may move in either direction to serve both theory and practise. A full exposition of the syntax is available in Appendix\ \ref{app:lang}.
 
 \subsection{Parsing}
 
 \begin{figure}[htbp]
-  \caption{\textit{GeomLab} Abstract Syntax Tree. The structure of literals are shared between that of patterns and of expressions, and so has been factored out.}\label{fig:sugar_adt}
+  \caption{\textit{GeomLab} Abstract Syntax Tree. The structure of literals are shared between that of patterns and of expressions and so has been factored out.}\label{fig:sugar_adt}
   \input{aux/sugar.tex}
 \end{figure}
 
@@ -113,7 +113,7 @@ By convention, the lowercase Roman alphabet denotes terms, $r,s,t,\ldots$ (and v
 \end{definition}
 
 \begin{definition}[Principal Type]
-  Given a term $t$ in our language, we say that it has principal type $\tau$ when $\Gamma\vdash t : \tau$ for some context $\Gamma$, and if $\Delta\vdash t : \tau^{\prime}$ for some context $\Delta$, then $\tau^{\prime}$ is an instance of $\tau$.
+  Given a term $t$ in our language, we say that it has principal type $\tau$ when $\Gamma\vdash t : \tau$ for some context $\Gamma$ and if $\Delta\vdash t : \tau^{\prime}$ for some context $\Delta$, then $\tau^{\prime}$ is an instance of $\tau$.
 \end{definition}
 
 Exactly what constitutes a type and what constitutes a deduction of a type judgement differs between type theories, but the above definitions always apply.
@@ -141,11 +141,11 @@ HM builds on the types in the simply-typed $\lambda$ calculus by introducing \te
 
 \end{definition}
 
-This type theory is a good starting point for many reasons: It has a reasonably efficient inference algorithm which has been proven sound and complete w.r.t. the type system, the ability to specify polymorphic types affords a greater degree of flexibility, and given only a term, it is possible to infer its most general (principal) type. The last point is of particular importance to us because our underlying language was originally dynamically typed, so there is no facility in the syntax to provide type annotations.
+This type theory is a good starting point for many reasons: It has a reasonably efficient inference algorithm which has been proven sound and complete w.r.t. the type system, the ability to specify polymorphic types affords a greater degree of flexibility and, given only a term, it is possible to infer its most general (principal) type. The last point is of particular importance to us because our underlying language was originally dynamically-typed, so there is no facility in the syntax to provide type annotations.
 
 \subsection{Algorithm}\label{sec:hm-algorithm}
 
-A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, where it is described as operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$, and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typable).
+A clear exposition of a type inference algorithm for HM, Algorithm $\mathcal{W}$, is given in\ \cite{damas1982principal}, where it is described as operating on $\lambda$ terms augmented with \texttt{let} bindings. Given a context $\Gamma$ and a term $t$, the algorithm returns a substitution $\mathbb{S}$ and type $\tau$ such that $\mathbb{S}(\Gamma)\vdash t:\tau$ is a principal deduction of $t$, if such a deduction exists (i.e. If $t$ is typable).
 
 As in\ \cite{damas1982principal}, we rely on Robinson's unification algorithm and the ability to produce the closure of a type w.r.t. a context.
 
@@ -187,7 +187,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
     \end{math}
     \\[.5em] $\mathbb{S}\equiv\mathbb{S}_2\mathbb{US}_1$ and $\tau\equiv\tau_2$
     \\[1em] Bindings in \textit{let} expressions may be recursive, that is to say $e_1$ may refer to $x$. Accordingly, when inferring a type for $e_1$, we add $x : \beta$ to the type context, for a fresh type variable $\beta$. Following this, we ``tie the knot'' by unifying $\beta$ with $e_1$'s type.
-    \\[1em] Also note that by type checking $e_2$ with $x : \overline{\Gamma^\prime}(\tau^\prime_1)$ in the context, free variables in the type we inferred for $x$ that do not appear in the context $\Gamma^{\prime}$ have been universally quantified, and each instance of $x$ in $e_2$ may substitute them with different variables.
+    \\[1em] Also note that by type checking $e_2$ with $x : \overline{\Gamma^\prime}(\tau^\prime_1)$ in the context, free variables in the type we inferred for $x$ that do not appear in the context $\Gamma^{\prime}$ have been universally quantified and each instance of $x$ in $e_2$ may substitute them with different variables.
     \\[1em] This means that $x$ may be treated \textit{polymorphically} in the body of the let expression, but monomorphically in its own definition. This is specifically to forbid \textit{polymorphic recursion} as type inference in its presence is known to be undecidable~\cite{henglein1993type}.
 
   \item $t\equiv \texttt{case $c$ of } pat_1\to e_1;\cdots ;pat_k\to e_k$\hfill{\scriptsize(case expressions)}
@@ -203,7 +203,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
     \end{math}
 
     $\mathbb{S}\equiv\mathbb{S}_k\ldots\mathbb{S}_0$ and $\tau\equiv\tau_k$.
-    \\[1em] As our desugaring procedure removes nested patterns in favour of nested case expressions, our rule here only needs to deal with patterns that are one constructor deep. For each such pattern, we create the smallest type that contains any expression that could match it ($\mathcal{P}$ defined below), and we unify all of these with the type of the case argument. To get the type of the expression, we unify the types of all the $e_i$'s.
+    \\[1em] As our desugaring procedure removes nested patterns in favour of nested case expressions, our rule here only needs to deal with patterns that are one constructor deep. For each such pattern, we create the smallest type that contains any expression that could match it ($\mathcal{P}$ defined below) and we unify all of these with the type of the case argument. To get the type of the expression, we unify the types of all the $e_i$'s.
     \\[1em] $\mathcal{P}(pat_i, e_i)$ is defined as:
     \begin{enumerate}[(a)]
     \item $pat_i$ a numeric, string, bool or atom pattern\hfill{\scriptsize(literal pattern)}
@@ -266,9 +266,9 @@ Algorithms $\mathcal{W}$ and $\mathcal{U}$ in Section\ \ref{sec:hm-algorithm} ar
   \end{align}
   $\alpha$ is replaced by \textbf{num} in 4 separate instances when using a string representation.
 \item Substitution copies the type, even though often we do not need to keep the original.
-\item The programmer must work hard to ensure the substitutions are applied consistently, and in the correct order. This is a cognitive --- not runtime --- overhead, but is also important.
+\item The programmer must work hard to ensure the substitutions are applied consistently and in the correct order. This is a cognitive --- not runtime --- overhead, but is also important.
 \end{enumerate}
-These issues are addressed by representing types by directed acyclic graphs (DAGs), and modifying types in place instead of returning a unifier. To unify two non-variable types, we check their outermost constructors match, then pairwise unify their children, and to unify a variable with another type, we replace the variable (in-place) with a forward pointer to the type. Using forward pointers is much cheaper than string substitution, and structural sharing also ensures that we will substitute each variable only once (Figure\ \ref{fig:type-dag}).
+These issues are addressed by representing types by directed acyclic graphs (DAGs) and modifying types in place instead of returning a unifier. To unify two non-variable types, we check their outermost constructors match then pairwise unify their children and to unify a variable with another type, we replace the variable (in-place) with a forward pointer to the type. Using forward pointers is much cheaper than string substitution and structural sharing also ensures that we will substitute each variable only once (Figure\ \ref{fig:type-dag}).
 
 Long chains of forward pointers may form when unifying variables together. When a chain is traversed, we replace all the intermediary pointers with a pointer directly to the end of the path (Figure\ \ref{fig:path-compress}). This technique is analogous to \textit{path compression} in disjoint set data structures\ \cite[\S21]{Cormen:2001:IA:580470}.
 
@@ -315,19 +315,19 @@ Long chains of forward pointers may form when unifying variables together. When 
 
 A sub-routine of Robinson's unification algorithm is the \textit{occurs check}: Before substituting a type for a variable, we check that the variable does not occur anywhere in the type that is replacing it. This step prevents us from creating cyclic types, but by throwing caution to the wind and not doing it, we can improve performance, as it is such a common operation.
 
-For the most part, type inference is run on correct programs\footnote{Even in undergraduate functional programming courses.}, and furthermore, most type errors are not due to cyclic types, so we expect the number of occurs check failures we will miss to be low. Nevertheless, we should make up for not performing the occurs check by detecting cyclic types in other parts of the program. We detect these lazily in functions that recurse over the structure of types by leaving breadcrumbs at every node we enter, and removing them before we leave. If we find a crumb at a node we have just entered, we know we have doubled back on ourselves (finding a cycle), so we throw an error.
+For the most part, type inference is run on correct programs\footnote{Even in undergraduate functional programming courses.} and furthermore, most type errors are not due to cyclic types, so we expect the number of occurs check failures we will miss to be low. Nevertheless, we should make up for not performing the occurs check by detecting cyclic types in other parts of the program. We detect these lazily in functions that recurse over the structure of types by leaving breadcrumbs at every node we enter and removing them before we leave. If we find a crumb at a node we have just entered, we know we have doubled back on ourselves (finding a cycle), so we throw an error.
 
 \subsubsection{Generalisation}\label{sec:gen}
 
 When type checking a \texttt{let} expression or top-level definition, $e$, after inferring a type for the expression being defined, we take its \textit{closure} by universally quantifying any remaining free type variables (see the algorithm above). This process is referred to as \textit{generalisation} and the variables quantified by it are said to be \textit{owned} by $e$.
 
-A \text{na\"ive} algorithm traverses the entire type being closed over, searching for unbound variables. We can prune the traversal by annotating each type with the \textit{level} of a \texttt{let} expression or definition, where a \texttt{let} expression's level increases with nesting (cf. de Bruijn indices). Variables are annotated with the level of the expression that owns them, and compound types are annotated with the max level of any variable they mention. Then when closing over a type for a definition at level $l$, we only traverse compound types with level $l^\prime$ if $l^\prime\geq l$.
+A \text{na\"ive} algorithm traverses the entire type being closed over, searching for unbound variables. We can prune the traversal by annotating each type with the \textit{level} of a \texttt{let} expression or definition, where a \texttt{let} expression's level increases with nesting (cf. de Bruijn indices). Variables are annotated with the level of the expression that owns them and compound types are annotated with the max level of any variable they mention. Then when closing over a type for a definition at level $l$, we only traverse compound types with level $l^\prime$ if $l^\prime\geq l$.
 
 \subsubsection{Instantiation}
 
 We can extend this pruning approach to also deal with \textit{instantiation}: The process of replacing quantified (type) variables with fresh (type) variables, done when type checking a bound (term) variable; In some senses an inverse of \textit{generalisation}.
 
-By annotating types with a flag that is true when the type contains a quantified variable, when traversing for instantiation, we need only look at types where this flag is set. In our implementation, instead of a flag we use a special level, call it $\top$, such that for all levels $l\in\mathbb{N}$, $l<\top$. As we generalise a type, every variable we touch has its level set to $\top$, and the rules for propagating levels to compound types takes care of the rest.
+By annotating types with a flag that is true when the type contains a quantified variable, when traversing for instantiation, we need only look at types where this flag is set. In our implementation, instead of a flag we use a special level, call it $\top$, such that for all levels $l\in\mathbb{N}$, $l<\top$. As we generalise a type, every variable we touch has its level set to $\top$ and the rules for propagating levels to compound types takes care of the rest.
 
 \subsubsection{Level Adjustments}
 
@@ -335,7 +335,7 @@ In Section\ \ref{sec:gen} we introduced levels, but we did not cover how to comb
 
 \texttt{define$^0$ id(x) = let$^1$ y = x$^0$ in y$^1$;}
 
-Initially, $x$ is introduced under the \texttt{define} with level $0$, whereas $y$ is introduced by the \texttt{let}, with level $1$. When we check the definition of $y$ we unify its type with $x$'s (say $x, y:\alpha$). Then, in generalising the type of $y$, we see that it is a variable with level $1$, and we are at level $1$, \textit{making it safe to universally quantify!}. In the body of the \texttt{let}, $y$ is used, and its universal type is instantiated with a fresh variable (call it $\beta$). This gives $id:\forall\alpha,\beta\ldotp\alpha\to\beta$, which is clearly unsound.
+Initially, $x$ is introduced under the \texttt{define} with level $0$, whereas $y$ is introduced by the \texttt{let}, with level $1$. When we check the definition of $y$ we unify its type with $x$'s (say $x, y:\alpha$). Then, in generalising the type of $y$, we see that it is a variable with level $1$ and, we are at level $1$, \textit{making it safe to universally quantify!}. In the body of the \texttt{let}, $y$ is used and its universal type is instantiated with a fresh variable (call it $\beta$). This gives $id:\forall\alpha,\beta\ldotp\alpha\to\beta$, which is clearly unsound.
 
 It was \textit{not} safe to universally quantify the type of $y$ because its type was shared with a variable from a lower level. To make sure this does not happen, given two types $\tau_1,\tau_2$ with levels $l_1,l_2$ respectively, we set their levels to $\min(l_1,l_2)$ after unification.
 
@@ -346,7 +346,7 @@ Because the level $l$ of a compound type $\tau$ is the max of its variables' lev
   \begin{align*}
     \{\sigma:(\sigma,l_o,l_n)\in\mathit{delayed},l_n < l \leq l_o\}
   \end{align*}
-  and perform the adjustments on these and remove them from \textit{delayed}, because $\tau$ could share a variable with such a $\sigma$, and in performing the adjustment, the level of that variable will drop below $l$, stopping it from being generalised.
+  and perform the adjustments on these and remove them from \textit{delayed}, because $\tau$ could share a variable with such a $\sigma$ and, in performing the adjustment, the level of that variable will drop below $l$, stopping it from being generalised.
 \end{para}
 
 \subsection{Examples}
@@ -409,7 +409,7 @@ Without further context, finding the source of the error is quite difficult. To 
 %TC:endignore
 }
 
-Unlike \textit{Haskell}, Multi-arity functions in \textit{GeomLab} are not curried by default, and as a result, they cannot be partially applied. The type system captures this constraint as a unification error.
+Unlike \textit{Haskell}, Multi-arity functions in \textit{GeomLab} are not curried by default and as a result, they cannot be partially applied. The type system captures this constraint as a unification error.
 
 \subsubsection{\xmark~Branch Unification}
 
@@ -451,7 +451,7 @@ Function composition is both polymorphic and higher-order: It will accept any tw
 
 Patterns used in case expressions are also used by the inference algorithm in constraining the types of formal parameters. Here, they are the only indication that \texttt{length} takes list parameters.
 
-\subsubsection{\xmark~Lambda-Bound Polymorphism}
+\subsubsection{\xmark~Lambda-bound Polymorphism}
 
 \ShortHMExample{%
   \texttt{define p(a, b) = function (c) c(a, b)}\newline
@@ -486,7 +486,7 @@ Restricting the number of instantiations is equivalent to types being in \textit
 
 The theory supporting such types is referred to as \textit{System F}, and as can be seen, it is more expressive than HM. The downside to this expressivity is that inferring a most general type in \textit{System F} is undecidable\ \cite{wells1999typability}.
 
-\subsubsection{\cmark~Let-Bound Polymorphism}
+\subsubsection{\cmark~Let-bound Polymorphism}
 
 \ShortHMExample{%
   \texttt{let j(x) = x in p(j(true), j(1));}\newline
@@ -495,7 +495,7 @@ The theory supporting such types is referred to as \textit{System F}, and as can
 
 This program stands in contrast to the above, as whilst it evaluates to the same value as the previous program, it \textit{is} typable. The reason for this is that polymorphic types bound to variables introduced by let-expressions \textit{can} be instantiated multiple times.
 
-The fact that the latter program is typable and the former is not is of particular interest because in dynamically typed languages, $\mathbf{let}~x = e_1~\mathbf{in}~e_2$ is commonly implemented as sugar for $(\lambda x\ldotp e_2)e_1$.
+The fact that the latter program is typable and the former is not is of particular interest because in dynamically-typed languages, $\mathbf{let}~x = e_1~\mathbf{in}~e_2$ is commonly implemented as sugar for $(\lambda x\ldotp e_2)e_1$.
 
 \subsubsection{\xmark~Infinite Types}
 
@@ -526,11 +526,11 @@ The fact that the latter program is typable and the former is not is of particul
 }
 
 All these programs yield infinite types, which in our implementation are represented by cyclic data structures.
-The implementation detects these cycles, and terminates, printing the types. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is printed as the special variable \texttt{'*}.
+The implementation detects these cycles and terminates, printing the types. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is printed as the special variable \texttt{'*}.
 
 \section{Ad-hoc Algebraic Data-types}\label{sec:adhoc-adts}
 
-Often it is useful to "couple" data together. In many existing statically typed functional programming languages this is achieved by defining a new named data type, but a common technique in \textit{GeomLab} is to use \textit{lists}. For instance, to fully describe a rectangle requires two numbers:
+Often it is useful to "couple" data together. In many existing statically-typed functional programming languages this is achieved by defining a new named data type, but a common technique in \textit{GeomLab} is to use \textit{lists}. For instance, to fully describe a rectangle requires two numbers:
 
 ```
 define area([width, height]) = width * height;
@@ -560,9 +560,9 @@ In this section, we will investigate extensions to HM that allow us to specify p
 
 \subsection{Products}
 
-As mentioned earlier, in the dynamically typed setting we have always had a way to couple data together through the use of the cons cell; it was only by introducing HM that we lost this ability!
+As mentioned earlier, in the dynamically-typed setting we have always had a way to couple data together through the use of the cons cell; it was only by introducing HM that we lost this ability!
 
-We may make a bid to recover it now by freeing the nil (\texttt{[]}) and cons (\texttt{(:)}) constructors from the list type, so that each may inhabit its own type. This corresponds to a change in our type grammar, and the addition of some proof rules to our version of HM (\text{Figures~\ref{fig:prod-ty-grammar}\,\&\,\ref{fig:prod-ty-rules}}).
+We may make a bid to recover it now by freeing the nil (\texttt{[]}) and cons (\texttt{(:)}) constructors from the list type, so that each may inhabit its own type. This corresponds to a change in our type grammar and the addition of some proof rules to our version of HM (\text{Figures~\ref{fig:prod-ty-grammar}\,\&\,\ref{fig:prod-ty-rules}}).
 
 \begin{figure}[htbp]
   \caption{Modifications to the HM grammar for types (Definition~\ref{def:hm-types}) to separate the list type into its constituent constructors.}\label{fig:prod-ty-grammar}
@@ -575,7 +575,7 @@ We may make a bid to recover it now by freeing the nil (\texttt{[]}) and cons (\
 \end{figure}
 
 \begin{figure}[htbp]
-  \caption{New proof rules in HM for cons and nil types. Note that, as $:$ has now become overloaded to mean both the cons type constructor, and the separator in a type judgement, from now on, we will use $::$ to denote the latter.}\label{fig:prod-ty-rules}
+  \caption{New proof rules in HM for cons and nil types. Note that, as $:$ has now become overloaded to mean both the \textit{cons} type constructor and the separator in a type judgement, from now on, we will use $::$ to denote the latter.}\label{fig:prod-ty-rules}
   \begin{prooftree}
     \AXC{}
     \RightLabel{\scriptsize($[\,]$-intro)}
@@ -623,7 +623,7 @@ define area([width, height]) = width * height;
 
 It will happily assign it the type $(\mathbf{num}:(\mathbf{num}:[\,]))\to\mathbf{num}$, or, by lifting list literals to the type-level $[\mathbf{num}, \mathbf{num}]\to\mathbf{num}$.
 
-Unfortunately, we have lost the ability to typecheck lists, for two reasons. Firstly, now that nil and cons inhabit distinct types, any case expression with both nil and cons patterns causes a unification error, because we enforce the rule that patterns of case expressions be unifiable. Secondly, if we define a recursive function over lists (e.g. \texttt{length}), it will cause the tail of the list to be unified with the list itself, creating a cyclic type; something else HM prohibits. The first of these issues is addressed immediately --- in \text{Section~\ref{sec:unions}} --- below, and the second will be dealt with in \text{Section~\ref{sec:recursive}}.
+Unfortunately, we have lost the ability to typecheck lists, for two reasons. Firstly, now that nil and cons inhabit distinct types, any case expression with both nil and cons patterns causes a unification error, because we enforce the rule that patterns of case expressions be unifiable. Secondly, if we define a recursive function over lists (e.g. \texttt{length}), it will cause the tail of the list to be unified with the list itself, creating a cyclic type; something else HM prohibits. The first of these issues is addressed immediately --- in \text{Section~\ref{sec:unions}} --- below and the second will be dealt with in \text{Section~\ref{sec:recursive}}.
 
 \subsection{Unions}\label{sec:unions}
 
@@ -690,7 +690,7 @@ Intrinsic to subsumption is the subtyping relation between types.
   \end{minipage}
 \end{definition}
 
-These additions highlight some interesting interactions between existing features of the type system and subtyping. For instance, subtyping for function types is contravariant in parameter types, and covariant in the return type. This fits our intuition: it is safe to treat ${(\mathbf{num}\cup\mathbf{bool})\to\mathbf{num}}$ as though it were ${\mathbf{num}\to(\mathbf{num}\cup\mathbf{bool})}$, because, in words, we are promising to feed only numbers to a function that accepts numbers and booleans, and we are prepared to receive numbers (which it produces) and bools (which it does not) from it.
+These additions highlight some interesting interactions between existing features of the type system and subtyping. For instance, subtyping for function types is contravariant in parameter types and covariant in the return type. This fits our intuition: it is safe to treat ${(\mathbf{num}\cup\mathbf{bool})\to\mathbf{num}}$ as though it were ${\mathbf{num}\to(\mathbf{num}\cup\mathbf{bool})}$, because, in words, we are promising to feed only numbers to a function that accepts numbers and booleans, and we are prepared to receive numbers (which it produces) and bools (which it does not) from it.
 
 \begin{para}
   Also interesting (and encouraging) is the fact that HM's instantiation is a special case of subsumption:
@@ -781,7 +781,7 @@ It is possible to implement type assignment with discriminative union types just
 
 \subsubsection{Examples}
 
-Suppose we wish to represent the supertypes of $\mathbf{num}\cup\mathbf{bool}$ using \text{R\'emy} encoding\footnote{$\star$ is a fresh variable whose symbol is not relevant, and changes at every instantiation.}:
+Suppose we wish to represent the supertypes of $\mathbf{num}\cup\mathbf{bool}$ using \text{R\'emy} encoding\footnote{$\star$ is a fresh variable whose symbol is not relevant and changes at every instantiation.}:
 
 \makebox[\textwidth][c]{%
 \begin{math}
@@ -805,7 +805,7 @@ Similarly, subtypes of $(\mathbf{num}:\mathbf{bool})$ (Given by $\alpha$):
   \end{array}
 \end{math}}
 
-Concentrating on $\alpha$, we specify that for any ${x\in\mathcal{C}\setminus\{(:)\}}$, $x$ \textit{must not} be included in the type, by setting $f_x = -$. The child types of $(:)$ ensure that when $(\tau:\sigma)$ is included in the type, $\tau$ and $\sigma$ must satisfy $\beta$ and $\gamma$ respectively, and, $f_{(:)}$ is a fresh variable --- we \textit{do not care} whether $(\tau:\sigma)$ is included in the type --- because both $\varnothing$ (the empty type) and $\mathbf{num}\cup\mathbf{bool}$ are subtypes of $\mathbf{num}\cup\mathbf{bool}$.
+Concentrating on $\alpha$, we specify that for any ${x\in\mathcal{C}\setminus\{(:)\}}$, $x$ \textit{must not} be included in the type, by setting $f_x = -$. The child types of $(:)$ ensure that when $(\tau:\sigma)$ is included in the type, $\tau$ and $\sigma$ must satisfy $\beta$ and $\gamma$ respectively, and $f_{(:)}$ is a fresh variable --- we \textit{do not care} whether $(\tau:\sigma)$ is included in the type --- because both $\varnothing$ (the empty type) and $\mathbf{num}\cup\mathbf{bool}$ are subtypes of $\mathbf{num}\cup\mathbf{bool}$.
 
 Finally, the supertypes of the \texttt{area} function (Given by $\alpha$):
 
@@ -865,7 +865,7 @@ Suppose we have \textit{distinct} constructors $\{x_1,\ldots,x_k\}=\mathcal{X}\s
   \end{flalign*}
 \end{definition}
 
-This notation also interacts sensibly with the list literal syntax, so that $[\tau_1,\ldots,\tau_k]^{\uparrow}\equiv(\tau_1:\cdots:(\tau_k:[\,]^{\uparrow})^{\uparrow}\cdots)^{\uparrow}$, and similarly for the subset encoding.
+This notation also interacts sensibly with the list literal syntax, so that $[\tau_1,\ldots,\tau_k]^{\uparrow}\equiv(\tau_1:\cdots:(\tau_k:[\,]^{\uparrow})^{\uparrow}\cdots)^{\uparrow}$ and similarly for the subset encoding.
 
 The examples in the previous section now have much more compact, recognisable representations:
 \begin{tabular}{l|l}
@@ -876,7 +876,7 @@ The examples in the previous section now have much more compact, recognisable re
 
 \subsection{Adapting HM}\label{sec:adapt-hm}
 
-The beauty of this encoding is that, if we treat $\mathcal{R}$ as a constructor, and flag parameters as types, then \text{R\'emy} encoded types may be combined using Robinson's unification algorithm: Two \text{R\'emy} types are unified by unifying their flag parameters and child types, whilst a variable $v$ is unified with another term $t$ (so long as $v$ appears free in $t$) by substituting $t$ for $v$.
+The beauty of this encoding is that, if we treat $\mathcal{R}$ as a constructor and flag parameters as types, \text{R\'emy} encoded types may be combined using Robinson's unification algorithm: Two \text{R\'emy} types are unified by unifying their flag parameters and child types, whilst a variable $v$ is unified with another term $t$ (so long as $v$ appears free in $t$) by substituting $t$ for $v$.
 
 All the necessary changes are in Algorithm $\mathcal{W}$: Previously, we assigned each expression its most general type. Now, we assign each expression a set of constraints over its type, so, we should ensure that these are, in some sense, the most general constraints. What follows is an adaption of Algorithm $\mathcal{W}$ that we will dub $\mathcal{W_R}$, we touch on only the cases which differ.
 
@@ -1039,7 +1039,7 @@ Given a term $t :: [\mathbf{bool}]\cup[\mathbf{num},\mathbf{num}]$, we determine
   A case context $C$ is a partial mapping from type variables to constructors. Given a case context $C$, type variable $\alpha$ and constructor $c$, we write $C,\alpha\triangleright c$ to denote the map $C$ with its constructor for $\alpha$ overwritten with $c$. We use the uppercase Roman alphabet to refer to them, by convention.
 \end{definition}
 
-If types $\tau_1$ and $\tau_2$ are unified w.r.t. a context $C$, the implication is only that they are consistent with each other in $C$, and its sub-contexts (Definition\ \ref{def:sub-context}). This affords us the flexibility to treat a term as having different types in different contexts.
+If types $\tau_1$ and $\tau_2$ are unified w.r.t. a context $C$, the implication is only that they are consistent with each other in $C$ and its sub-contexts (Definition\ \ref{def:sub-context}). This affords us the flexibility to treat a term as having different types in different contexts.
 
 For example, in \texttt{foo} (desugared), supposing we refer to the types of variables as $\texttt{xs}::\alpha,\texttt{x}::\beta,\texttt{y}::\gamma,\texttt{w}::\varepsilon$, then it is no longer a type error to unify $\beta$ with $\mathbf{bool}$ in context $C\equiv\alpha\triangleright(:),\gamma\triangleright[\,]$ and also unify $\beta$ with $\mathbf{num}$ in context $D\equiv\alpha\triangleright(:),\gamma\triangleright(:),\varepsilon\triangleright[\,]$ because $C$ and $D$ disagree on $\gamma$ so are not sub-contexts of each other.
 
@@ -1171,13 +1171,13 @@ define eq([],    [])    = true
      | eq([]:xs, []:ys) = eq(xs, ys);
 ```
 Given two lists of nils, \texttt{eq} is supposed to return \texttt{true} if they are the same length and \texttt{false} otherwise. The definition we gave may appear to match this specification, but it is incomplete: It does not deal with the case where the two lists are of unequal length. A better definition might be\footnote{%
-In a typical statically typed functional programming language, we may have written:
+In a typical statically-typed functional programming language, we may have written:
 \begin{Verbatim}
 define eq([], [])       = true
      | eq([]:xs, []:ys) = eq(xs, ys)
      | eq(_,     _)     = false;
 \end{Verbatim}
-But our type system says that this function accepts values of \textit{any} two types, and returns a boolean. This is technically true: The wildcard patterns will match terms of any type, but this generality hides the intent of the function. We restrict it by being more specific in our patterns.
+But our type system says that this function accepts values of \textit{any} two types and returns a boolean. This is technically true: The wildcard patterns will match terms of any type, but this generality hides the intent of the function. We restrict it by being more specific in our patterns.
 }:
 ```
 define eq([],    [])    = true
@@ -1185,9 +1185,9 @@ define eq([],    [])    = true
      | eq([],    []:_)  = false
      | eq([]:xs, []:ys) = eq(xs, ys);
 ```
-In the first definition, the types that the second parameter (by convention) can inhabit rely upon those of the first parameter: The second parameter can only be $[\,]$ if the first parameter is, and likewise for the cons case. In the correct definition, this relationship is no longer present. Often, when parameter types are correlated, it is by accident.
+In the first definition, the types that the second parameter (by convention) can inhabit rely upon those of the first parameter: The second parameter can only be $[\,]$ if the first parameter is and likewise for the cons case. In the correct definition, this relationship is no longer present. Often, when parameter types are correlated, it is by accident.
 
-It is also undesirable for a function's type to rely upon its parameters' types in recursive definitions. It is possible to write a function that is called recursively with different arities or return types in different contexts, but they are usually written in error, and we would rather catch these errors than say that the differences are permissible because they occur in different contexts.
+It is also undesirable for a function's type to rely upon its parameters' types in recursive definitions. It is possible to write a function that is called recursively with different arities or return types in different contexts, but they are usually written in error and we would rather catch these errors than say that the differences are permissible because they occur in different contexts.
 
 To remove any relationships between types $\alpha$ and $\beta$, we \textit{decorrelate} (Definition\ \ref{def:decorrelation}) every flag parameter in $\alpha$'s encoding w.r.t. $\beta$ \textit{and any type reachable from $\beta$} and vice versa.
 
@@ -1214,7 +1214,7 @@ Algorithm $\mathcal{W_{RC}}$ employs decorrelation in the following scenarios to
 \item After generalising a type, any non-general type that conditions upon it is decorrelated with respect to it.
 \end{enumerate}
 
-In the first definition of \texttt{eq}, the type of the second parameter was a subtype of $[\,]$ when the first parameter was $[\,]$, and a subtype of $(:)$ when the first parameter was $(:)$. After decorrelation, the second parameter type is constrained to be \textit{empty}. We do not treat empty types as errors, but an empty parameter type is suspicious: As there are no terms that inhabit this type, it is impossible to call the function!
+In the first definition of \texttt{eq}, the type of the second parameter was a subtype of $[\,]$ when the first parameter was $[\,]$ and a subtype of $(:)$ when the first parameter was $(:)$. After decorrelation, the second parameter type is constrained to be \textit{empty}. We do not treat empty types as errors, but an empty parameter type is suspicious: As there are no terms that inhabit this type, it is impossible to call the function!
 
 \subsection{Optimisation}
 
@@ -1235,7 +1235,7 @@ Suppose we have a flag parameter $f$ --- a tree --- and a context $C$ s.t. $I(f\
 foo([true]);
 ```
 \begin{para}
-  Where \texttt{foo} is defined as in Section\ \ref{sec:case-types} (page\ \pageref{sec:case-types}). Before checking the application, the types appear as follows\footnote{Redundant contexts (such as $\alpha\triangleright(:)$) have been omitted from $\beta$ and $\gamma$ for brevity, and we take $\sim$ to be a unification operator.}:
+  Where \texttt{foo} is defined as in Section\ \ref{sec:case-types} (page\ \pageref{sec:case-types}). Before checking the application, the types appear as follows\footnote{Redundant contexts (such as $\alpha\triangleright(:)$) have been omitted from $\beta$ and $\gamma$ for brevity and we take $\sim$ to be a unification operator.}:
   \begin{align*}
     \texttt{[true]} & :: [\mathbf{bool}^{\uparrow}]^{\uparrow} \\
     \texttt{foo}    & :: (\alpha\to\mathbf{bool}^{\uparrow})^{\uparrow} \\
@@ -1309,7 +1309,7 @@ When we originally implemented unification (Section\ \ref{sec:unify-impl}) we ex
   \end{equation*}
   Now suppose we try to unify $\alpha\sim\beta$. Chasing forward pointers, this is tantamount to unifying $(\gamma:[\,])\sim(\delta:[\,])$. As this unification is between compound types with the same outermost constructor, we proceed to unify the children. $[\,]\sim[\,]$ is a trivial constraint, so we focus on $\gamma\sim\delta$. Another pointer chase shows that this is equivalent to $(\delta:[\,])\sim(\gamma:[\,])$, for which we must unify $\delta\sim\gamma$: Circular types have us going round in circles!
 
-  To unify two distinct\footnote{\textit{Distinct} refers to pointer equality: $\tau_1$ is stored at a different location in memory to $\tau_2$.} compound types $\tau_1$ and $\tau_2$ with matching outermost constructors, we unify their children. If, however, after following all forwarding pointers, both types reside at the same memory location (are identical) then we know that we need not do any work. As we have seen, this check alone is not enough to stop unification diverging, but \text{G\'erard Huet} proposes an elegant solution\ \cite[\S5.7.2]{huet1976resolution}: \textit{Before} unifying the compound types' children replace one type with a forward pointer to the other. This is sound because, after unification, the two types will be identical in structure, and if the two types need to be unified again, the pointer equality check will stop us looping.
+  To unify two distinct\footnote{\textit{Distinct} refers to pointer equality: $\tau_1$ is stored at a different location in memory to $\tau_2$.} compound types $\tau_1$ and $\tau_2$ with matching outermost constructors, we unify their children. If, however, after following all forwarding pointers, both types reside at the same memory location (are identical) then we know that we need not do any work. As we have seen, this check alone is not enough to stop unification diverging, but \text{G\'erard Huet} proposes an elegant solution\ \cite[\S5.7.2]{huet1976resolution}: \textit{Before} unifying the compound types' children replace one type with a forward pointer to the other. This is sound because, after unification, the two types will be identical in structure and if the two types need to be unified again, the pointer equality check will stop us looping.
 
   When we attempt to unify $\alpha\sim\beta$ with the new algorithm, first we point $\beta$ to $\alpha$ (Left). Then we unify $\gamma\sim\delta$ as children of $\alpha$ and $\beta$ respectively, but noticing that they point to the same type, do nothing --- except compress $\gamma$'s path (Right):
   \begin{equation*}
@@ -1331,7 +1331,7 @@ When we originally implemented unification (Section\ \ref{sec:unify-impl}) we ex
 
 In our \texttt{area} example, when we introduced squares, we were lucky that they had a different structure to our representation of rectangles (one number instead of a pair of numbers), but suppose now we wish to introduce circles, represented by their radius; How would we distinguish between circles and squares?
 
-A common technique is to tag each kind of shape with a unique identifier, and check for these when matching patterns. For this we use \textit{GeomLab}'s atoms as their representation is legible to programmers, and their implementation yields fast equality checks:
+A common technique is to tag each kind of shape with a unique identifier and check for these when matching patterns. For this we use \textit{GeomLab}'s atoms as their representation is legible to programmers and their implementation yields fast equality checks:
 
 ```
 define area([#rect, w, h]) = w * h
@@ -1355,7 +1355,7 @@ define area([#rect, w, h]) = w * h
   \end{align*}
 \end{wrapfigure}
 
-This is not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type $[\#\mathit{square}, \mathbf{num}]$, and circles $[\#\mathit{circle}, \mathbf{num}]$ (Figure\ \ref{fig:shape-tagged}).
+This is not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type $[\#\mathit{square}, \mathbf{num}]$ and circles $[\#\mathit{circle}, \mathbf{num}]$ (Figure\ \ref{fig:shape-tagged}).
 
 \subsection{Wildcard Constructors}\label{sec:wildcard}
 
@@ -1426,9 +1426,9 @@ yToX (Right (b, s)) = (Right b, s)
 
 Nominally, the two types are isomorphic, but converting between them comes at a runtime cost, must be done explicitly, and is purely boilerplate: only the tags move! But, this problem is rare in \textit{Haskell} programs. Having named types ensures that one of the isomorphic representations is chosen when a type is defined. What we cannot do is define (total) functions on part of a named type, which we have seen is useful at times.
 
-Wouter Swierstra makes impressive use of \textit{Haskell's} type class machinery to model unions and subsumption\ \cite{swierstra2008data}. Unfortunately, the resulting framework, while compositional, was not amenable to type inference, and required the creation of ``smart constructors'' --- functions that were aware of a subsumption type class --- as well as a data declaration for every non-composite type. This paper stands as a testament to the expressiveness of \textit{Haskell's} type system, and introduces many useful techniques for writing modular \textit{Haskell} programs, but its examples take these ideas to an impractical extreme.
+Wouter Swierstra makes impressive use of \textit{Haskell's} type class machinery to model unions and subsumption\ \cite{swierstra2008data}. Unfortunately, the resulting framework, while compositional, was not amenable to type inference and required the creation of ``smart constructors'' --- functions that were aware of a subsumption type class --- as well as a data declaration for every non-composite type. This paper stands as a testament to the expressiveness of \textit{Haskell's} type system, and introduces many useful techniques for writing modular \textit{Haskell} programs, but its examples take these ideas to an impractical extreme.
 
-As early as 1985, Mishra and Reddy explored type inference in the absence of annotations in their Declaration--Free type system\ \cite{mishra1985declaration} (henceforth MR). Their language --- a typed $\lambda$ calculus with \textit{let} bindings, \textit{case} expressions, and data built from tagged arbitrary length tuples --- bears a resemblance to our desugaring of \textit{GeomLab}, and we may draw several comparisons between their techniques and ours.
+As early as 1985, Mishra and Reddy explored type inference in the absence of annotations in their Declaration--Free type system\ \cite{mishra1985declaration} (henceforth MR). Their language --- a typed $\lambda$ calculus with \textit{let} bindings, \textit{case} expressions, and data built from tagged arbitrary length tuples --- bears a resemblance to our desugaring of \textit{GeomLab} and we may draw several comparisons between their techniques and ours.
 
 \begin{para}
   Most notably, both systems rely on \textit{discriminative types} (Definition\ \ref{def:discrim}), although, MR is less encumbered by the restriction:
@@ -1449,7 +1449,7 @@ define twice(f, x) = f(f(x));
 
 which we are used to seeing with the type $\forall\alpha\ldotp(\alpha\to\alpha)\to\alpha\to\alpha$, is given the more general type $\forall\alpha,\beta,\gamma\ldotp((\alpha\to\beta)\cap(\beta\to\gamma))\to\alpha\to\gamma$.
 
-Aiken, Wimmers and Lakshman go on to extend this work\ \cite{aiken1994soft} to include \textit{conditional types}, aiming to fill the same need as \textit{case types} (Section\ \ref{sec:case-types}). A conditional type $\tau?\sigma$ is semantically equivalent to the empty type when $\sigma$ is the empty type, and is equivalent to $\tau$ otherwise.
+Aiken, Wimmers and Lakshman go on to extend this work\ \cite{aiken1994soft} to include \textit{conditional types}, aiming to fill the same need as \textit{case types} (Section\ \ref{sec:case-types}). A conditional type $\tau?\sigma$ is semantically equivalent to the empty type when $\sigma$ is the empty type and is equivalent to $\tau$ otherwise.
 
 We chose not to build upon this type system because compared to HM, there is less literature on its efficient implementation. Furthermore, in the spirit of \textit{GeomLab} being a teaching language, we wish to avoid introducing concepts like type intersection and negation whose benefits are perhaps not as great as product and union types for the programmer.
 
@@ -1463,9 +1463,9 @@ Perhaps the most trying aspect of this project was finding a notion of \textit{t
 
 We based our work on that of Cartwright and Fagan\ \cite{cartwright1991soft} who extended HM to model constraints over types in a manner solvable by unification. Their goal was to create a \textit{soft} type system that introduces runtime checks when unification fails instead of rejecting programs. However, their techniques proved to be intuitive and easily extensible when applied to a traditional ``hard'' type system and were invaluable for our work.
 
-We also owe a debt of thanks to Didier \text{R\'emy}\ \cite{Remy/records91}, for his encoding of record types. It is his ``simple'' encoding that forms the basis of Cartwright and Fagan's soft type system, and his full encoding that we altered in this dissertation to permit infinite families of types (Section\ \ref{sec:tagged-variants}) in a similar fashion to Cartwright and Fagan's adaptation.
+We also owe a debt of thanks to Didier \text{R\'emy}\ \cite{Remy/records91}, for his encoding of record types. It is his ``simple'' encoding that forms the basis of Cartwright and Fagan's soft type system and his full encoding that we altered in this dissertation to permit infinite families of types (Section\ \ref{sec:tagged-variants}) in a similar fashion to Cartwright and Fagan's adaptation.
 
-\textit{Case types} (Section\ \ref{sec:case-types}) are our contribution to the field. We build up a context by paying attention to the arms of case expressions we recursed into before type checking an expression, and the type it is assigned applies only within this context. Being able to describe types whose behaviour differs by context grants us a greater degree of flexibility over \textit{discriminative types}. We use this flexibility to infer the types of many common data structures from the patterns that destructure them, and the way their constituent parts are used.
+\textit{Case types} (Section\ \ref{sec:case-types}) are our contribution to the field. We build up a context by paying attention to the arms of case expressions we recursed into before type checking an expression and the type it is assigned applies only within this context. Being able to describe types whose behaviour differs by context grants us a greater degree of flexibility over \textit{discriminative types}. We use this flexibility to infer the types of many common data structures from the patterns that destructure them and the way their constituent parts are used.
 
 As well as an algorithm for type assignment with \textit{case types}, a prototype implementation for \textit{GeomLab} is provided (Appendix\ \ref{app:listings}), based on an optimised implementation of Hindley--Milner\ \cite{oleg13ocamltc}.
 
@@ -1483,7 +1483,7 @@ Secondly, errors occur w.r.t. a specific context. It is not immediately obvious 
 
 \subsection{Annotations}
 
-We chose to avoid \textit{type annotations} so that we could focus on inferring the types of programs as typically written in \textit{GeomLab}. But, they are a useful form of statically verified documentation, and in some cases, they are necessary. For instance:
+We chose to avoid \textit{type annotations} so that we could focus on inferring the types of programs as typically written in \textit{GeomLab}. But, they are a useful form of statically-verified documentation, and in some cases, they are necessary. For instance:
 ```
 define rect(w, h) = [#rect, w, h];
 ```
@@ -1550,7 +1550,7 @@ define numeric(_ :: num)  = true
 
   \item[nil] A distinguished value used to represent ``nothing'', denoted by $[]$, commonly used as the terminator for singly linked lists.
 
-  \item[cons cells] Pairs of values $a$ and $b$, denoted by $a:b$. These form the building blocks for compound data structures. In statically typed functional programming languages, they tend to only be used to construct singly linked-lists, but in dynamically typed languages (including \textit{GeomLab}) they are used in the construction of all product types.
+  \item[cons cells] Pairs of values $a$ and $b$, denoted by $a:b$. These form the building blocks for compound data structures. In statically-typed functional programming languages, they tend to only be used to construct singly linked-lists, but in dynamically-typed languages (including \textit{GeomLab}) they are used in the construction of all product types.
 
   \item[booleans] True/false values.
 
@@ -1620,7 +1620,7 @@ area :: ([num, num] + num) -> num
 ```
 
 \subsection{Recursive Types}
-Recursive types are introduced by \texttt{(...)*} (Surrounded by parentheses, and suffixed by $\ast$). Within a recursive type, the recursive part of the type is accessed using de Bruijn indices, which take the form of a type variable with a numeric identifier: \texttt{'0} refers to the recursive type the variable is immediately nested, \texttt{'1} is the recursive type 1 scope higher, and so on\dots The type of binary trees takes the form:
+Recursive types are introduced by \texttt{(...)*} (Surrounded by parentheses and suffixed by $\ast$). Within a recursive type, the recursive part of the type is accessed using de Bruijn indices, which take the form of a type variable with a numeric identifier: \texttt{'0} refers to the recursive type the variable is immediately nested, \texttt{'1} is the recursive type 1 scope higher, and so on\dots The type of binary trees takes the form:
 ```
 ([] + ['0,'a,'0])*
 ```
@@ -1636,14 +1636,14 @@ Lists and list-like structures receive special treatment:
 define eq(x, x) = true
      | eq(_, _) = false;
 ```
-As the example suggests, such unification patterns only match when values bound to the identifier at both sites are equal. We omit this because it is not a common feature of most pattern matching systems, and it can be desugared to the following:
+As the example suggests, such unification patterns only match when values bound to the identifier at both sites are equal. We omit this because it is not a common feature of most pattern matching systems and it can be desugared to the following:
 ```
 define eq(x1, x2) = true when x1 = x2
      | eq(_,  _)  = false;
 ```
 
 \subsubsection{$n+k$ patterns}
-$n+k$ patterns match numbers $m\geq k$, and bind $n\triangleq m-k$. These have also been omitted for similar reasons to the above.
+$n+k$ patterns match numbers $m\geq k$ and bind $n\triangleq m-k$. These have also been omitted for similar reasons to the above.
 
 \subsubsection{Reference cells and Hash Tables}
 Whilst there are tried and tested methods by which HM may be extended to maintain soundness in languages with mutable state, we have removed all sources of it from our subset in an effort to maintain focus.
@@ -1653,7 +1653,7 @@ Without any side-effectful operations, we have no need for sequential compositio
 
 \section{Type Errors}\label{app:errors}
 
-In Section\ \ref{sec:bg} we chose to \textit{desugar} the source language. This simplifies type assignment, but now we deal with the consequences as they pertain to type errors. By annotating the abstract syntax tree with source locations, and preserving them during desugaring, we can point to the part of the \textit{source} program from which a type error originates, even though the error was detected in the \textit{desugared} representation.
+In Section\ \ref{sec:bg} we chose to \textit{desugar} the source language. This simplifies type assignment, but now we deal with the consequences as they pertain to type errors. By annotating the abstract syntax tree with source locations and preserving them during desugaring, we can point to the part of the \textit{source} program from which a type error originates, even though the error was detected in the \textit{desugared} representation.
 
 \subsection{Calculating Source Locations}
 
@@ -1717,12 +1717,12 @@ PattPrim : {- ... -}
   \begin{align*}
     \mathit{pure}~(\lambda\;\_\;p\;\_ \to p)\varoast\$1\varoast\$2\varoast\$3
   \end{align*}
-  But, as the function being applied just selects the pattern value, and ignores the token values, $\triangleright$ and $\triangleleft$ convey the intention more clearly.
+  But, as the function being applied just selects the pattern value and ignores the token values, $\triangleright$ and $\triangleleft$ convey the intention more clearly.
 \end{para}
 
 \subsection{Unobtrusive Annotations}
 
-\textbf{Located} labels allow the parser to calculate the source span of an AST as it is built, but as soon as it becomes part of some larger tree, we lose this information, and only have the source span of the larger tree.
+\textbf{Located} labels allow the parser to calculate the source span of an AST as it is built, but as soon as it becomes part of some larger tree, we lose this information and only have the source span of the larger tree.
 
 We may be tempted to systematically update \textbf{Sugar}, replacing sub-trees (\textbf{Sugar}) with labelled sub-trees (\textbf{Located Sugar}). This is undesirable, not just because it spreads responsibility for annotations everywhere, but also, when desugaring an expression whose structure changes, it is unclear which annotations should be preserved.
 
@@ -1737,7 +1737,7 @@ We also add a corresponding node to the desugared AST type. During desugaring, w
 ```{.haskell}
 data Expr = {- ... -} | LocE String (Located Expr)
 ```
-Finally, to ``type check'' such a label, we type check its sub-tree (\texttt{check (dislocate le)}), and, in the event of a type error, add the string label and the expression's location to the error's context.
+Finally, to ``type check'' such a label, we type check its sub-tree (\texttt{check (dislocate le)}) and, in the event of a type error, add the string label and the expression's location to the error's context.
 ```{.haskell}
 typeOf :: MonadInfer m => GloDef (World m) -> Expr -> m (TyRef (World m))
 typeOf gloDefs = check
@@ -1751,7 +1751,7 @@ For example, desugaring this list comprehension:
 ```
 [ x | x <- [1..2 + "3"] when x mod 2 = 0];
 ```
-Yields an expression in which some parts have been moved, and other parts have been introduced\footnote{\texttt{\_mapa} and \texttt{\_range} defined in Figure~\ref{fig:standard-defs}, page~\pageref{fig:standard-defs}.}:
+Yields an expression in which some parts have been moved and other parts have been introduced\footnote{\texttt{\_mapa} and \texttt{\_range} defined in Figure~\ref{fig:standard-defs}, page~\pageref{fig:standard-defs}.}:
 ```
 _mapa( function (x, res)
          if x mod 2 = 0 then
