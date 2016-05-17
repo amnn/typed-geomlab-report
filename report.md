@@ -58,7 +58,7 @@ Desugaring involves replacing sugar with extensionally equivalent expressions fr
   \input{aux/expr.tex}
 \end{figure}
 
-List comprehensions, ranges and operator sections are removed, if expressions and pattern matching function definitions both become case expressions. We also lift the restriction that only identifiers may be applied as functions. Finally, whilst in the source language patterns could be nested arbitrarily deep, in $\mathbf{Expr}$, each case expression only matches one layer (to reclaim the previous functionality, case expressions themselves are nested).
+List comprehensions, ranges and operator sections are removed, if expressions and pattern matching function definitions both become case expressions. We also lift the restriction that only identifiers may be applied as functions. Finally, whilst in the source language, patterns could be nested arbitrarily deep, in $\mathbf{Expr}$, each case expression only matches one layer (to reclaim the previous functionality, case expressions themselves are nested).
 
 The procedure $\textit{desugar} : \mathbf{Sugar} \to \mathbf{Expr}$ treats operator sections, ranges and list comprehensions as in \textit{GeomLab}'s compiler\ \cite{Geomlab}, by converting to applications of helper functions provided by the runtime (Figure\ \ref{fig:standard-defs}), whilst the algorithm for desugaring case expressions draws inspiration from Lennart Augustsson's paper\ \cite{Augustsson:1985:CPM:5280.5303} on the techniques used to compile pattern matching in \textit{LML}, a lazy variant of \textit{ML}.
 
@@ -79,11 +79,11 @@ $\mathbf{Expr}$ also denotes local variables with \textit{de Bruijn} indices. AS
 This notation has several advantages:
 
 \begin{itemize}
-  \item It avoid name shadowing (from variables inserted by the desugar er) without generating unique symbols, which requires side effects. This makes \textit{desugar} a pure, deterministic function, which is better for testing.
+  \item It avoids name shadowing (from variables inserted by the desugarer) without generating unique symbols, which requires side effects. This makes \textit{desugar} a pure, deterministic function, which is better for testing.
 
   \item As the typechecker traverses the AST, it must create fresh \textit{type} variables for each local variable it encounters. These type variables can be stored in a stack, from which they can be efficiently retrieved using the local variable's de Bruijn index.
 
-  \item When debugging output from the desugar er, free variables and bound variables are easily distinguishable in the AST.
+  \item When debugging output from the desugarer, free variables and bound variables are easily distinguishable in the AST.
 \end{itemize}
 
 \subsection{Definitions}
