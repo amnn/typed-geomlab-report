@@ -2,7 +2,7 @@
 title: Structural Type Inference in a Functional Programming Language
 author: Ashok Menon
 abstract: |
-  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically-typed functional programming languages. In particular, rather than simply inferring the types of parameters to composite data structures (The type of the elements in a list structure, for example), we aim to infer the shape of the structure itself as composed of atomic values, cons cells and nils --- In the case of a list, that it is either empty, or is an element, followed by a list containing more of the same type of element.
+  In this project we consider a range of extensions to Hindley and Milner's type system that allow us to specify the types found in previously dynamically-typed functional programming languages. In particular, rather than simply inferring the types of parameters to composite data structures (The type of the elements in a list structure, for example), we aim to infer the shape of the structure itself as composed of atomic values, \textit{cons} cells and \textit{nils} --- In the case of a list, that it is either empty, or is an element, followed by a list containing more of the same type of element.
 ...
 
 ```{.haskell}
@@ -248,7 +248,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W}(\Gamma\vdash t)$ where
       \end{math}
       \\[.2em] $\mathbb{S}_i\equiv\mathbb{U}^\prime\mathbb{S}^\prime\mathbb{U}$ and $\tau_i\equiv\mathbb{U}^\prime(\tau^\prime)$
     \end{enumerate}
-    Although this is a common type semantics for case expressions, it poses some problems. For instance, a pattern that expects only \texttt{[]} will also purport to accept cons cells, when doing so would cause an exception at runtime (The very thing a type system aims to avoid).
+    Although this is a common type semantics for case expressions, it poses some problems. For instance, a pattern that expects only \texttt{[]} will also purport to accept \textit{cons} cells, when doing so would cause an exception at runtime (The very thing a type system aims to avoid).
     \\[1em] In other languages, catching such errors is the job of \textit{exhaustiveness checking}, which verifies that if one of a type's constructors appears in a case expression as a pattern, then they must all be covered. This also relies on knowing which constructors belong to which types\footnote{Verifying exhaustiveness is also known to be an NP-Complete problem, so we are keen to avoid relying upon it.}. In Section~\ref{sec:adapt-hm}, we will suggest an alternative treatment that exposes exhaustiveness as a property of types, by changing their representation.
 \end{enumerate}
 
@@ -560,9 +560,9 @@ In this section, we will investigate extensions to HM that allow us to specify p
 
 \subsection{Products}
 
-As mentioned earlier, in the dynamically-typed setting we have always had a way to couple data together through the use of the cons cell; it was only by introducing HM that we lost this ability!
+As mentioned earlier, in the dynamically-typed setting we have always had a way to couple data together through the use of the \textit{cons} cell; it was only by introducing HM that we lost this ability!
 
-We may make a bid to recover it now by freeing the nil (\texttt{[]}) and cons (\texttt{(:)}) constructors from the list type, so that each may inhabit its own type. This corresponds to a change in our type grammar and the addition of some proof rules to our version of HM (\text{Figures~\ref{fig:prod-ty-grammar}\,\&\,\ref{fig:prod-ty-rules}}).
+We may make a bid to recover it now by freeing the \textit{nil} (\texttt{[]}) and \textit{cons} (\texttt{(:)}) constructors from the list type, so that each may inhabit its own type. This corresponds to a change in our type grammar and the addition of some proof rules to our version of HM (\text{Figures~\ref{fig:prod-ty-grammar}\,\&\,\ref{fig:prod-ty-rules}}).
 
 \begin{figure}[htbp]
   \caption{Modifications to the HM grammar for types (Definition~\ref{def:hm-types}) to separate the list type into its constituent constructors.}\label{fig:prod-ty-grammar}
@@ -575,7 +575,7 @@ We may make a bid to recover it now by freeing the nil (\texttt{[]}) and cons (\
 \end{figure}
 
 \begin{figure}[htbp]
-  \caption{New proof rules in HM for cons and nil types. Note that, as $:$ has now become overloaded to mean both the \textit{cons} type constructor and the separator in a type judgement, from now on, we will use $::$ to denote the latter.}\label{fig:prod-ty-rules}
+  \caption{New proof rules in HM for \textit{cons} and \textit{nil} types. Note that, as $:$ has now become overloaded to mean both the \textit{cons} type constructor and the separator in a type judgement, from now on, we will use $::$ to denote the latter.}\label{fig:prod-ty-rules}
   \begin{prooftree}
     \AXC{}
     \RightLabel{\scriptsize($[\,]$-intro)}
@@ -623,7 +623,7 @@ define area([width, height]) = width * height;
 
 It will happily assign it the type $(\mathbf{num}:(\mathbf{num}:[\,]))\to\mathbf{num}$, or, by lifting list literals to the type-level $[\mathbf{num}, \mathbf{num}]\to\mathbf{num}$.
 
-Unfortunately, we have lost the ability to typecheck lists, for two reasons. Firstly, now that nil and cons inhabit distinct types, any case expression with both nil and cons patterns causes a unification error, because we enforce the rule that patterns of case expressions be unifiable. Secondly, if we define a recursive function over lists (e.g. \texttt{length}), it will cause the tail of the list to be unified with the list itself, creating a cyclic type; something else HM prohibits. The first of these issues is addressed immediately --- in \text{Section~\ref{sec:unions}} --- below and the second will be dealt with in \text{Section~\ref{sec:recursive}}.
+Unfortunately, we have lost the ability to typecheck lists, for two reasons. Firstly, now that \textit{nil} and \textit{cons} inhabit distinct types, any case expression with both \textit{nil} and \textit{cons} patterns causes a unification error, because we enforce the rule that patterns of case expressions be unifiable. Secondly, if we define a recursive function over lists (e.g. \texttt{length}), it will cause the tail of the list to be unified with the list itself, creating a cyclic type; something else HM prohibits. The first of these issues is addressed immediately --- in \text{Section~\ref{sec:unions}} --- below and the second will be dealt with in \text{Section~\ref{sec:recursive}}.
 
 \subsection{Unions}\label{sec:unions}
 
@@ -978,7 +978,7 @@ $(\mathbb{S},\tau)\gets\mathcal{W_R}(\Gamma\vdash t)$ where
       \end{cases}&&\\
       \mathcal{P} & = \{\mathbf{num}, \mathbf{str}, \mathbf{bool}, \mathbf{atom}, [\,], (\star:\star),\star\to\star \} &&\\
       X\oplus Y & = \{ x(\gamma^1,\ldots,\gamma^{a_x}) : x\in\mathcal{C},\text{ if }x(\gamma^1,\ldots,\gamma^{a_x})\in X \text{ else if }x(\gamma^1,\ldots,\gamma^{a_x})\in Y\}
-      \intertext{Note that $\overline{pat_i}$'s cons pattern branch uses type variables $\gamma^1_i$ and $\gamma^2_i$ which are introduced in $\mathcal{A}$'s cons pattern branch (above).}
+      \intertext{Note that $\overline{pat_i}$'s \textit{cons} pattern branch uses type variables $\gamma^1_i$ and $\gamma^2_i$ which are introduced in $\mathcal{A}$'s \textit{cons} pattern branch (above).}
       \overline{pat_i} & =
       \begin{cases}
         \mathbf{num} & \text{ if $pat_i$ is a numeric pattern}\\
@@ -998,7 +998,7 @@ define head(x:_) = x;
 define head = function (xs)
   case xs of (x:y) -> x;
 ```
-It is assigned the \text{R\'emy} encoding $\forall\alpha,\beta\ldotp((\alpha:\beta)^{\downarrow}\to\alpha)^{\uparrow}$. Rather than \textit{exhaustiveness checking} indicating that \texttt{head} should implement support for the $[\,]$ pattern, the parameter type has been bounded above to indicate that it is a type error to pass anything other than a cons cell to it: It is now the caller's responsibility to ensure that \texttt{head} is only applied to non-empty lists.
+It is assigned the \text{R\'emy} encoding $\forall\alpha,\beta\ldotp((\alpha:\beta)^{\downarrow}\to\alpha)^{\uparrow}$. Rather than \textit{exhaustiveness checking} indicating that \texttt{head} should implement support for the $[\,]$ pattern, the parameter type has been bounded above to indicate that it is a type error to pass anything other than a \textit{cons} cell to it: It is now the caller's responsibility to ensure that \texttt{head} is only applied to non-empty lists.
 
 This does not obviate the need for exhaustiveness checking: If a case expression contains a numeric literal pattern (matching a single number), it still purports to support all numeric values because $\mathbf{num}$ is the smallest type that covers a numeric literal. But functions which are intended to work on only a part of a larger type (like \texttt{head}) are no longer considered partial.
 
@@ -1033,7 +1033,7 @@ define foo = function (xs)
   But the parameter type is over-approximated to also include $[\mathbf{num}]$ and $[\mathbf{bool},\mathbf{num}]$: We have lost the property that the singleton list contains a boolean and the two-element list contains only numbers. In this section, we introduce a generalisation of \text{R\'emy} encoding that can express types with correlations without forgoing a discriminative representation.
 \end{para}
 
-Given a term $t :: [\mathbf{bool}]\cup[\mathbf{num},\mathbf{num}]$, we determine which summand it belongs to at runtime by deconstructing it using a case expression. For instance, in the desugaring of \texttt{foo}, when the type checker reaches the expression \texttt{not x} it has already been through two case expressions, so it knows that \texttt{xs} is a cons and \texttt{y} a nil. Similarly, when checking \texttt{x + z} we know that \texttt{xs} is a cons, \texttt{y} is a cons, and \texttt{w} is a nil: The type of \texttt{x} depends on whether \texttt{y} is a nil or a cons. We capture this idea by performing type inference and unification w.r.t. a \textit{case context} (Definition\ \ref{def:case-context}).
+Given a term $t :: [\mathbf{bool}]\cup[\mathbf{num},\mathbf{num}]$, we determine which summand it belongs to at runtime by deconstructing it using a case expression. For instance, in the desugaring of \texttt{foo}, when the type checker reaches the expression \texttt{not x} it has already been through two case expressions, so it knows that \texttt{xs} is a \textit{cons} and \texttt{y} a \textit{nil}. Similarly, when checking \texttt{x + z} we know that \texttt{xs} is a \textit{cons}, \texttt{y} is a \textit{cons}, and \texttt{w} is a \textit{nil}: The type of \texttt{x} depends on whether \texttt{y} is a \textit{nil} or a \textit{cons}. We capture this idea by performing type inference and unification w.r.t. a \textit{case context} (Definition\ \ref{def:case-context}).
 
 \begin{definition}[Case Context]\label{def:case-context}
   A case context $C$ is a partial mapping from type variables to constructors. Given a case context $C$, type variable $\alpha$ and constructor $c$, we write $C,\alpha\triangleright c$ to denote the map $C$ with its constructor for $\alpha$ overwritten with $c$. We use the uppercase Roman alphabet to refer to them, by convention.
@@ -1170,7 +1170,7 @@ In some instances, correlations between types are undesirable. For example\footn
 define eq([],    [])    = true
      | eq([]:xs, []:ys) = eq(xs, ys);
 ```
-Given two lists of nils, \texttt{eq} is supposed to return \texttt{true} if they are the same length and \texttt{false} otherwise. The definition we gave may appear to match this specification, but it is incomplete: It does not deal with the case where the two lists are of unequal length. A better definition might be\footnote{%
+Given two lists of \textit{nils}, \texttt{eq} is supposed to return \texttt{true} if they are the same length and \texttt{false} otherwise. The definition we gave may appear to match this specification, but it is incomplete: It does not deal with the case where the two lists are of unequal length. A better definition might be\footnote{%
 In a typical statically-typed functional programming language, we may have written:
 \begin{Verbatim}
 define eq([], [])       = true
@@ -1185,7 +1185,7 @@ define eq([],    [])    = true
      | eq([],    []:_)  = false
      | eq([]:xs, []:ys) = eq(xs, ys);
 ```
-In the first definition, the types that the second parameter (by convention) can inhabit rely upon those of the first parameter: The second parameter can only be $[\,]$ if the first parameter is and likewise for the cons case. In the correct definition, this relationship is no longer present. Often, when parameter types are correlated, it is by accident.
+In the first definition, the types that the second parameter (by convention) can inhabit rely upon those of the first parameter: The second parameter can only be $[\,]$ if the first parameter is and likewise for the \textit{cons} case. In the correct definition, this relationship is no longer present. Often, when parameter types are correlated, it is by accident.
 
 It is also undesirable for a function's type to rely upon its parameters' types in recursive definitions. It is possible to write a function that is called recursively with different arities or return types in different contexts, but they are usually written in error and we would rather catch these errors than say that the differences are permissible because they occur in different contexts.
 
