@@ -34,7 +34,7 @@ count: out/report.tex
 	texcount -sum=1,0,0,0,0,0,0 -col out/report.tex
 
 out/%.pdf: out/%.tex references.bib
-	latex -output-directory=out out/$*
+	latex -shell-escape -output-directory=out out/$*
 	bibtex out/$*
-	latex -output-directory=out out/$*
-	pdflatex -output-directory=out out/$*
+	latex -shell-escape -output-directory=out out/$*
+	pdflatex -shell-escape -output-directory=out out/$*

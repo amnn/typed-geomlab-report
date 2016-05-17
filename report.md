@@ -353,10 +353,7 @@ Because the level $l$ of a compound type $\tau$ is the max of its variables' lev
 
 We now test our implementation on some small \textit{GeomLab} programs.
 
-\clearpage
 \subsubsection{\cmark~Basic Type Inference}
-
-\HMExample{\texttt{(+10);}}{\input{aux/section_ast.tex}}{\texttt{num -> num}}
 
 The algorithm arrives at the type for this expression by desugaring the operator section into an application of \texttt{\_rsect} applied to \texttt{+} and its second argument, when supplied with the appropriate types:
 
@@ -367,7 +364,13 @@ The algorithm arrives at the type for this expression by desugaring the operator
 
 We provide these as part of the context in which every expression is typed, as they are built-in definitions.
 
+\HMExample{\texttt{(+10);}}{\input{aux/section_ast.tex}}{\texttt{num -> num}}
+
 \subsubsection{\xmark~Basic Type Error}
+
+\textit{GeomLab} has separate operators for numeric addition (\texttt{+}) and string concatenation (\texttt{\^}). The assumption made by the programmer here is that \texttt{+} is overloaded to deal with both, which the typechecker catches as a unification error (between \texttt{num} and \texttt{str}, which are not unifiable because they are distinct base types).
+
+Without further context, finding the source of the error is quite difficult. To help, we also provide the outermost types that were being unified at the time of the error, as these are usually what correspond to expressions in the source language. In this case, these are ${\texttt{(num, num) -> num}}$ --- the type of \texttt{+} --- and ${\texttt{(str, str) -> 'a}}$ --- a constraint on the type the programmer expected of \texttt{+}.
 
 \ShortHMExample{\texttt{"foo"+"bar";}}{\ttfamily\footnotesize%
 
@@ -388,11 +391,9 @@ We provide these as part of the context in which every expression is typed, as t
 %TC:endignore
 }
 
-\textit{GeomLab} has separate operators for numeric addition (\texttt{+}) and string concatenation (\texttt{\^}). The assumption made by the programmer was that \texttt{+} is overloaded to deal with both, which the typechecker catches as a unification error (between \texttt{num} and \texttt{str}, which are not unifiable because they are distinct base types).
-
-Without further context, finding the source of the error is quite difficult. To help, we also provide the outermost types that were being unified at the time of the error, as these are usually what correspond to expressions in the source language. In this case, these are ${\texttt{(num, num) -> num}}$ --- the type of \texttt{+} --- and ${\texttt{(str, str) -> 'a}}$ --- a constraint on the type the programmer expected of \texttt{+}.
-
 \subsubsection{\xmark~Arity Mismatch}
+
+Unlike \textit{Haskell}, Multi-arity functions in \textit{GeomLab} are not curried by default and as a result, they cannot be partially applied. The type system also captures this constraint as a unification error.
 
 \ShortHMExample{\texttt{let k(x, y) = x in k(1);}}{\ttfamily\footnotesize%
 
@@ -409,9 +410,9 @@ Without further context, finding the source of the error is quite difficult. To 
 %TC:endignore
 }
 
-Unlike \textit{Haskell}, Multi-arity functions in \textit{GeomLab} are not curried by default and as a result, they cannot be partially applied. The type system captures this constraint as a unification error.
-
 \subsubsection{\xmark~Branch Unification}
+
+In order to assign a type to a conditional, we require that the \textit{then} and \textit{else} expression types are unifiable, but this is not \textit{necessary}. In this example, the condition is constantly \texttt{true}, so we know that we could safely assign the entire expression the type \texttt{num}. Unfortunately, we cannot take advantage of "degenerate" cases in general, because checking whether the condition is constant is not decidable (by a reduction from the halting problem).
 
 \ShortHMExample{\texttt{if true then 1 else "foo";}}{\ttfamily\footnotesize%
 
@@ -428,8 +429,6 @@ Unlike \textit{Haskell}, Multi-arity functions in \textit{GeomLab} are not curri
 %TC:endignore
 }
 
-In order to assign a type to a conditional, we require that the \textit{then} and \textit{else} expression types are unifiable, but this is not \textit{necessary}. In this example, the condition is constantly \texttt{true}, so we know that we could safely assign the entire expression the type \texttt{num}. Unfortunately, we cannot take advantage of "degenerate" cases in general, because checking whether the condition is constant is not decidable (by a reduction from the halting problem).
-
 Another possibility is that the types are not unifiable, but we condition on the resulting type at runtime:
 
 \texttt{%
@@ -441,17 +440,19 @@ HM has no way of describing ad-hoc type "unions", so there is no way to specify 
 
 \subsubsection{\cmark~Higher-Order Functions}
 
-\ShortHMExample{\texttt{define . (f, g) = function (x) f(g(x));}}{\texttt{. :: ('a -> 'b, 'c -> 'a) -> 'c -> 'b}}
-
 Function composition is both polymorphic and higher-order: It will accept any two 1-ary functions where the domain of the first coincides with the co-domain of the second.
+
+\ShortHMExample{\texttt{define . (f, g) = function (x) f(g(x));}}{\texttt{. :: ('a -> 'b, 'c -> 'a) -> 'c -> 'b}}
 
 \subsubsection{\cmark~Patterns}
 
-\HMExample{\input{aux/folds.tex}}{\input{aux/folds_ast.tex}}{\texttt{length :: ['a] -> num}}
-
 Patterns used in case expressions are also used by the inference algorithm in constraining the types of formal parameters. Here, they are the only indication that \texttt{length} takes list parameters.
 
+\HMExample{\input{aux/folds.tex}}{\input{aux/folds_ast.tex}}{\texttt{length :: ['a] -> num}}
+
 \subsubsection{\xmark~Lambda-bound Polymorphism}
+
+This valid \textit{GeomLab} program is untypable in HM. The issue is in the definition of \texttt{f}: Its parameter, \texttt{j}, is applied to both a \texttt{bool} and to a \texttt{num}, which causes a unification error. Whilst types may be polymorphic, within the body of a function its parameters may only be instantiated once.
 
 \ShortHMExample{%
   \texttt{define p(a, b) = function (c) c(a, b)}\newline
@@ -480,24 +481,25 @@ Patterns used in case expressions are also used by the inference algorithm in co
 %TC:endignore
 }
 
-This valid \textit{GeomLab} program is untypable in HM. The issue is in the definition of \texttt{f}: Its parameter, \texttt{j}, is applied to both a \texttt{bool} and to a \texttt{num}, which causes a unification error. Whilst types may be polymorphic, within the body of a function its parameters may only be instantiated once.
-
 Restricting the number of instantiations is equivalent to types being in \textit{prenex} form (all the universal quantifications outermost). With this restriction lifted, it is possible to assign a type to \texttt{f}: ${\forall\pi\ldotp(\forall\alpha\ldotp\alpha\to\alpha)\to((\mathbf{bool},\mathbf{num})\to\pi)\to\pi}$.
 
 The theory supporting such types is referred to as \textit{System F}, and as can be seen, it is more expressive than HM. The downside to this expressivity is that inferring a most general type in \textit{System F} is undecidable\ \cite{wells1999typability}.
 
 \subsubsection{\cmark~Let-bound Polymorphism}
 
+This program stands in contrast to the above, as whilst it evaluates to the same value as the previous program, it \textit{is} typable. The reason for this is that polymorphic types bound to variables introduced by let-expressions \textit{can} be instantiated multiple times.
+
 \ShortHMExample{%
   \texttt{let j(x) = x in p(j(true), j(1));}\newline
   \textit{NB.} \texttt{p} \textit{defined as above.}%
 }{\texttt{((bool, num) -> 'a) -> 'a}}
 
-This program stands in contrast to the above, as whilst it evaluates to the same value as the previous program, it \textit{is} typable. The reason for this is that polymorphic types bound to variables introduced by let-expressions \textit{can} be instantiated multiple times.
-
 The fact that the latter program is typable and the former is not is of particular interest because in dynamically-typed languages, $\mathbf{let}~x = e_1~\mathbf{in}~e_2$ is commonly implemented as sugar for $(\lambda x\ldotp e_2)e_1$.
 
 \subsubsection{\xmark~Infinite Types}
+
+All these programs yield infinite types, which in our implementation are represented by cyclic data structures.
+The implementation detects these cycles and terminates, printing the types. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is printed as the special variable \texttt{'*}.
 
 \ShortHMExample{%
 \texttt{define f(x) = f;}\newline
@@ -524,9 +526,6 @@ The fact that the latter program is typable and the former is not is of particul
 \-\qquad\qquad 'b -> (('*, '*) -> 'e) -> 'e
 %TC:endignore
 }
-
-All these programs yield infinite types, which in our implementation are represented by cyclic data structures.
-The implementation detects these cycles and terminates, printing the types. When printing a cyclic type, if the (nominal) root node of the type is detected again, it is printed as the special variable \texttt{'*}.
 
 \section{Ad-hoc Algebraic Data-types}\label{sec:adhoc-adts}
 
@@ -1207,7 +1206,7 @@ To remove any relationships between types $\alpha$ and $\beta$, we \textit{decor
   We stop the interpretation of $t$ from depending on $\alpha$ by replacing any node in the tree that conditions on $\alpha$'s constructors by the merge of all its children. The coherence condition met by this operation is that for any context $A$, $I(D(t,\alpha)\rvert_A) = \bigsqcap_{c\in\mathcal{C}}I(t\rvert_{A,\alpha\triangleright c})$.
 \end{definition}
 
-Algorithm $\mathcal{W_{RC}}$ employs decorrelation in the following scenarios to get rid of unwanted, or unsound relationships between types:
+Algorithm $\mathcal{W_{RC}}$ employs decorrelation in the following scenarios. The first two instances rid of unwanted correlations, and the last removes redundant ones:
 \begin{enumerate}[(i)]
 \item After checking abstractions, parameter types are decorrelated with respect to each other.
 \item After checking recursive definitions, the definition's type is decorrelated with respect to any type reachable from it.
@@ -1215,6 +1214,12 @@ Algorithm $\mathcal{W_{RC}}$ employs decorrelation in the following scenarios to
 \end{enumerate}
 
 In the first definition of \texttt{eq}, the type of the second parameter was a subtype of $[\,]$ when the first parameter was $[\,]$ and a subtype of $(:)$ when the first parameter was $(:)$. After decorrelation, the second parameter type is constrained to be \textit{empty}. We do not treat empty types as errors, but an empty parameter type is suspicious, and should produce a warning: As there are no terms that inhabit this type, it is impossible to call the function!
+
+\subsection{Interactions with Instantiation}
+
+We must pay careful attention to how case types behave around instantiation and generalisation, the hallmarks of HM. We have already seen that non-general types cannot condition upon general ones, now we focus on instantiation.
+
+Firstly, it is perfectly reasonable for general types to condition upon other general types. When an instantiated type conditions on general types, we replace them with corresponding conditions on instantiations of those general types.
 
 \subsection{Optimisation}
 
@@ -1683,8 +1688,8 @@ One solution would be to modify all constructing function to accept and return \
   \input{aux/located_ap.tex}
 \end{figure}
 
-The \textit{Applicative Functor}\ \cite{mcbride2008functional} is an abstraction that allows us to change the meaning of function application (Figure\ \ref{fig:located-ap}), by making it explicit in the $\varoast$ operator (Figure\ \ref{fig:applicative}).
-\begin{figure}[htbp]
+\begin{para}
+\begin{figure}
   \caption{Applying a pure function $f$ to values $s_1,\ldots,s_k$ before and after they have been wrapped in a label, using \textit{pure} to embed the function into the labelled type.}\label{fig:applicative}
   \begin{equation*}
     \arraycolsep=2pt
@@ -1694,7 +1699,8 @@ The \textit{Applicative Functor}\ \cite{mcbride2008functional} is an abstraction
     \end{array}
   \end{equation*}
 \end{figure}
-\begin{para}
+  The \textit{Applicative Functor}\ \cite{mcbride2008functional} is an abstraction that allows us to change the meaning of function application (Figure\ \ref{fig:located-ap}), by making it explicit in the $\varoast$ operator (Figure\ \ref{fig:applicative}).
+
   In addition to \textit{pure} and $\varoast$, instances of the \textbf{Applicative} class, also have operators:
   \begin{equation*}
     \arraycolsep=2pt
@@ -1786,9 +1792,38 @@ But the type checker's output refers to features from the original expression:
 \qquad[ x | x <- \textbf{\emph{\color{blue}[1..2 + "3"]}} when x mod 2 = 0]
 }
 
+\newgeometry{inner=1in,outer=.75in,top=1.75in,bottom=1.7in,columnsep=.4in}
+\twocolumn
 \section{Listings}\label{app:listings}
 
-Code for the parser, lexer, and type inference algorithm.
+\projectlisting{Data/Constructor.hs}
+\projectlisting{Data/Expr.hs}
+\projectlisting{Data/Flag.hs}
+\projectlisting{Data/Literal.hs}
+\projectlisting{Data/Location.hs}
+\projectlisting{Data/Monad/DynArray.hs}
+\projectlisting{Data/Monad/State.hs}
+\projectlisting{Data/Monad/Type.hs}
+\projectlisting{Data/Patt.hs}
+\projectlisting{Data/Structure.hs}
+\projectlisting{Data/Sugar.hs}
+\projectlisting{Data/Token.hs}
+\projectlisting{Data/TyError.hs}
+\projectlisting{Data/Type.hs}
+\projectlisting{Desugar.hs}
+\projectlisting{GLParser.y}
+\projectlisting{Infer/Context.hs}
+\projectlisting{Infer/Debug.hs}
+\projectlisting{Infer/FlagTree.hs}
+\projectlisting{Infer/Generalise.hs}
+\projectlisting{Infer/Levels.hs}
+\projectlisting{Infer/Monad.hs}
+\projectlisting{Infer/TypeFactory.hs}
+\projectlisting{Infer/TypeMarshal.hs}
+\projectlisting{Infer/Unify.hs}
+\projectlisting{Infer.hs}
+\projectlisting{Lexer.x}
+\projectlisting{Main.hs}
 
 \vbox{
   %TC:endignore
