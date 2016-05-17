@@ -1790,10 +1790,6 @@ But the type checker's output refers to features from the original expression:
 
 Code for the parser, lexer, and type inference algorithm.
 
-\section{Tests}
-
-Accompanying unit tests.
-
 \vbox{
   %TC:endignore
 }
