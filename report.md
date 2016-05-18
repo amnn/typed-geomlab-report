@@ -1164,7 +1164,7 @@ Finally, introduced types must pay attention to context. For example, previously
 
 \subsection{Decorrelation}
 
-In some instances, correlations between types are undesirable. For example\footnote{\texttt{eq} uses features such as multi-arity functions (Section~\ref{sec:wildcard}) and recursive types (Section~\ref{sec:recursive}) which we have not properly covered yet. They are not immediately relevant to the discussion at hand.} (adapted from\ \cite{mishra1985declaration}):
+In some instances, correlations between types are undesirable. For example\footnote{\texttt{eq} uses features such as multi-arity functions (Section~\ref{sec:wildcard}) and recursive types (Section~\ref{sec:recursive}) which we have not covered but are not immediately relevant to the discussion.} (adapted from\ \cite{mishra1985declaration}):
 ```
 define eq([],    [])    = true
      | eq([]:xs, []:ys) = eq(xs, ys);
@@ -1219,7 +1219,22 @@ In the first definition of \texttt{eq}, the type of the second parameter was a s
 
 We must pay careful attention to how case types behave around instantiation and generalisation, the hallmarks of HM. We have already seen that non-general types cannot condition upon general ones, now we focus on instantiation.
 
-Firstly, it is perfectly reasonable for general types to condition upon other general types. When an instantiated type conditions on general types, we replace them with corresponding conditions on instantiations of those general types.
+Firstly, it is perfectly reasonable for general types to condition upon each other. Just as instantiation preserves parent-child relationships between general types in their instances, so too must it preserve these conditional relationships.
+
+\begin{para}
+  Secondly, as instantiation introduces new types, it must also be made ``context-aware'', like super- and sub-type encodings (Definition\ \ref{def:ctx-super-encode}, page\ \pageref{def:ctx-super-encode}). Suppose we have a type instantiated in context $C = \alpha_0\triangleright c_1,\ldots,\alpha_{k-1}\triangleright c_{k-1}$, in order to make it aware of its context, we update its flag parameters:
+
+  Let $f$ be a flag parameter of the instantiated type. Define $t_0$, its updated form, by
+  \begin{align*}
+    t_k & = f\\
+    \llbracket t_i \rrbracket  & = \alpha_i \tag*{$0\leq i < k$}\\
+    \mathbb{E}(t_i,c) & =
+    \begin{cases}
+      t_{i+1} & \text{if }0\leq i < k\text{ and } c = c_i\\
+      l      & \text{if }0\leq i < k\text{ where }\llbracket l\rrbracket =\;\sim
+    \end{cases}
+  \end{align*}
+\end{para}
 
 \subsection{Optimisation}
 
