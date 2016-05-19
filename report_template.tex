@@ -25,6 +25,7 @@
 \usepackage{graphicx}
 \usepackage{harpoon}
 \usepackage{longtable}
+\usepackage{marginnote}
 \usepackage{mathtools}
 \usepackage[makeroom]{cancel}
 \usepackage{mdwlist}
@@ -119,9 +120,24 @@
 
 % Source Code
 \setminted{breaklines,breakautoindent,fontsize=\scriptsize,linenos}
-\newcommand{\projectlisting}[1]{%
-\subsection{\texttt{#1}}
+
+\newcommand{\projectlisting}[2]{%
+\subsection{\texttt{#1}}\label{#2}
 \inputminted{haskell}{/Users/Ashok/Workspace/typed_geomlab/src/#1}
+}
+
+%\renewcommand*{\raggedleftmarginnote}{\raggedright}
+\renewcommand*{\raggedrightmarginnote}{\raggedright}
+\newcommand{\listingnote}[1]{%
+\marginnote{\footnotesize%
+  \begin{tabular}{ll}
+    \multicolumn{2}{l}{\textbf{Relevant Listings}}\\[.25em]
+    #1
+  \end{tabular}}%
+}
+
+\newcommand{\listref}[1]{%
+\ref{#1} & \nameref{#1} \\%
 }
 
 % TeXCount directives
@@ -129,6 +145,7 @@
 % Ignore code listings
 %TC:group Shaded 0 xall
 %TC:group Verbatim 0 xall
+%TC:macro \marginnote 1
 
 $if(fontfamily)$
 \usepackage{$fontfamily$}

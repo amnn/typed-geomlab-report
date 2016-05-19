@@ -28,6 +28,7 @@ Inference uses the fact that \texttt{Cons} is a constructor for $\mathbf{List}~\
   \end{array}
 \end{math}
 Dynamic languages --- especially of the \textsc{Lisp} tradition --- can treat these operations as the same: A non-empty list is just a pair of its first element and the rest of the list. This is not the case in \textit{Haskell} (as shown by the types) nor is it in many statically-typed languages. Seemingly, the difference is that \texttt{head} can be applied to any list (even the empty list, \texttt{Nil}), but this is an artefact of the type system's limitations: \texttt{head Nil} evaluates to a runtime error!
+
 Associating constructors with each other is injurious to the precision of our type system. By extending battle-hardened type systems, it is possible to work in a setting where, like terms in a dynamically-typed language, types are built up from a small set of constructors. In such an environment, the functionality of both \texttt{head} and \texttt{fst} could be captured in a single function, applicable to both lists and pairs, in such a way that it would be a type error to apply it to an empty list.
 
 Section\ \ref{sec:bg} introduces the source language, \textit{GeomLab}, and the type checker's internal representation of it. Section\ \ref{sec:hm} then describes an optimised implementation of the Hindley--Milner type system for \textit{GeomLab}. Finally, Sections\ \ref{sec:adhoc-adts},\ \ref{sec:recursive}, and\ \ref{sec:tagged-variants} extend the type system to make the structure of types more compositional while losing neither expressivity nor type inference.
@@ -39,6 +40,7 @@ The resulting framework allows us to capture and infer the specifications progra
 In this project we use a subset of \textit{GeomLab} as our source language. A strict, dynamically-typed, functional language offering a rich set of features, such as higher-order functions, pattern matching with guards, operator sectioning, list comprehensions, and ranges. We chose it as a compelling middle-ground between the $\lambda$ calculus and most popular functional languages in use today, the implication being that, if our techniques are applicable in this setting, with minimal effort, we may move in either direction to serve both theory and practise. A full exposition of the syntax is available in Appendix\ \ref{app:lang}.
 
 \subsection{Parsing}
+\listingnote{\listref{src:sugar}\listref{src:parser}}
 
 \begin{figure}[htbp]
   \caption{\textit{GeomLab} Abstract Syntax Tree. The structure of literals are shared between that of patterns and of expressions and so has been factored out.}\label{fig:sugar_adt}
@@ -50,6 +52,7 @@ We parse programs into abstract syntax trees of the $\mathbf{Sugar}$ type (Figur
 A potential cost of this operation is that errors become hard to relate to the source program. By annotating the syntax tree with source locations and carefully carrying them over to the desugared representation, we can recover this relationship. Appendix\ \ref{app:errors} describes an implementation, using \textit{Haskell's} \textit{Applicative Functor} abstraction.
 
 \subsection{Desugaring}
+\listingnote{\listref{src:expr}\listref{src:desugar}}
 
 Desugaring involves replacing sugar with extensionally equivalent expressions from a restricted subset of the source language. We represent the AST after desugaring with a new type (Figure\ \ref{fig:expr_adt}) to ensure at compile-time that after desugaring, no sugar exists in the AST.
 
@@ -101,7 +104,11 @@ By convention, the lowercase Roman alphabet denotes terms, $r,s,t,\ldots$ (and v
 \end{definition}
 
 \begin{definition}[Substitution]
-  $\mathbb{S}\equiv[\tau_1/\alpha_1,\ldots,\tau_n/\alpha_n]\equiv[\tau_i/\alpha_i]$ is a type substitution that, when applied to a type $\sigma$, simultaneously replaces all free occurrences of $\alpha_i$ with $\tau_i$ in $\sigma$. Application of a substitution can be written as $\mathbb{S}(\sigma)$ or equivalently $\sigma[\tau_i/\alpha_i]$. Substitutions can also be applied to type contexts in which case they are applied to each type in the context in turn. We take $\varnothing$ to denote the identity substitution.
+  $\mathbb{S}\equiv[\tau_1/\alpha_1,\ldots,\tau_n/\alpha_n]\equiv[\tau_i/\alpha_i]$ is a type substitution that, when applied to a type $\sigma$, simultaneously replaces all free occurrences of $\alpha_i$ with $\tau_i$ in $\sigma$.
+
+  Application of a substitution can be written as $\mathbb{S}(\sigma)$ or equivalently $\sigma[\tau_i/\alpha_i]$. Substitutions can also be applied to type contexts in which case they are applied to each type in the context in turn.
+
+  We take $\varnothing$ to denote the identity substitution.
 \end{definition}
 
 \begin{definition}[Composition]
@@ -268,7 +275,7 @@ Algorithms $\mathcal{W}$ and $\mathcal{U}$ in Section\ \ref{sec:hm-algorithm} ar
 \item Substitution copies the type, even though often we do not need to keep the original.
 \item The programmer must work hard to ensure the substitutions are applied consistently and in the correct order. This is a cognitive --- not runtime --- overhead, but is also important.
 \end{enumerate}
-These issues are addressed by representing types by directed acyclic graphs (DAGs) and modifying types in place instead of returning a unifier. To unify two non-variable types, we check their outermost constructors match then pairwise unify their children and to unify a variable with another type, we replace the variable (in-place) with a forward pointer to the type. Using forward pointers is much cheaper than string substitution and structural sharing also ensures that we will substitute each variable only once (Figure\ \ref{fig:type-dag}).
+These issues are addressed by representing types by directed acyclic graphs (DAGs) and modifying types in place instead of returning a unifier. To unify two non-variable types, we check their outermost constructors match, then pairwise unify their children, and to unify a variable with another type, we replace the variable (in-place) with a forward pointer to the type. Using forward pointers is much cheaper than string substitution and structural sharing also ensures that we will substitute each variable only once (Figure\ \ref{fig:type-dag}).
 
 Long chains of forward pointers may form when unifying variables together. When a chain is traversed, we replace all the intermediary pointers with a pointer directly to the end of the path (Figure\ \ref{fig:path-compress}). This technique is analogous to \textit{path compression} in disjoint set data structures\ \cite[\S21]{Cormen:2001:IA:580470}.
 
@@ -330,6 +337,7 @@ We can extend this pruning approach to also deal with \textit{instantiation}: Th
 By annotating types with a flag that is true when the type contains a quantified variable, when traversing for instantiation, we need only look at types where this flag is set. In our implementation, instead of a flag we use a special level, call it $\top$, such that for all levels $l\in\mathbb{N}$, $l<\top$. As we generalise a type, every variable we touch has its level set to $\top$ and the rules for propagating levels to compound types takes care of the rest.
 
 \subsubsection{Level Adjustments}
+\listingnote{\listref{src:generalise}\listref{src:levels}}
 
 In Section\ \ref{sec:gen} we introduced levels, but we did not cover how to combine them when unifying two types. To motivate the discussion, let us see what happens if we ignore levels during unification:
 
@@ -346,7 +354,7 @@ Because the level $l$ of a compound type $\tau$ is the max of its variables' lev
   \begin{align*}
     \{\sigma:(\sigma,l_o,l_n)\in\mathit{delayed},l_n < l \leq l_o\}
   \end{align*}
-  and perform the adjustments on these and remove them from \textit{delayed}, because $\tau$ could share a variable with such a $\sigma$ and, in performing the adjustment, the level of that variable will drop below $l$, stopping it from being generalised.
+  perform the adjustments on these and remove them from \textit{delayed}. $\tau$ could share a variable with such a $\sigma$ and, in performing the adjustment, the level of that variable will drop below $l$, stopping it from being generalised.
 \end{para}
 
 \subsection{Examples}
@@ -561,7 +569,7 @@ In this section, we will investigate extensions to HM that allow us to specify p
 
 As mentioned earlier, in the dynamically-typed setting we have always had a way to couple data together through the use of the \textit{cons} cell; it was only by introducing HM that we lost this ability!
 
-We may make a bid to recover it now by freeing the \textit{nil} (\texttt{[]}) and \textit{cons} (\texttt{(:)}) constructors from the list type, so that each may inhabit its own type. This corresponds to a change in our type grammar and the addition of some proof rules to our version of HM (\text{Figures~\ref{fig:prod-ty-grammar}\,\&\,\ref{fig:prod-ty-rules}}).
+We make a bid to recover it now by freeing the \textit{nil} (\texttt{[]}) and \textit{cons} (\texttt{(:)}) constructors from the list type, so that each may inhabit its own type. This corresponds to a change in our type grammar and the addition of some proof rules to our version of HM (\text{Figures~\ref{fig:prod-ty-grammar}\,\&\,\ref{fig:prod-ty-rules}}).
 
 \begin{figure}[htbp]
   \caption{Modifications to the HM grammar for types (Definition~\ref{def:hm-types}) to separate the list type into its constituent constructors.}\label{fig:prod-ty-grammar}
@@ -725,7 +733,7 @@ These additions highlight some interesting interactions between existing feature
     \RightLabel{\scriptsize($\cup$-right)}
     \UIC{$(\mathbf{num}\cup\mathbf{bool}):\mathbf{str}\prec(\mathbf{num}:\mathbf{str})\cup(\mathbf{bool}:\mathbf{str})$}
   \end{prooftree}
-  This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion\footnote{In both cases, the goal is directed by the syntax of the program, in turn.} to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity, and inefficiency in turn. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration,cartwright1991soft}.
+  This example highlights a limitation of our $\prec$ rules. By inspecting a proof goal (an assertion that $\tau_1\prec\tau_2$), we want to determine which rule to apply --- in reverse --- to simplify it. The proof rules of simply typed $\lambda$ calculus and HM can both be used in such a goal-directed fashion\footnote{In both cases, the goal is directed by the syntax of the program, in turn.} to make efficient inference algorithms, and so can the current $\prec$ rules, but introducing new cases to describe how $(:)$ factors through $\cup$ to cover the case in our example adds ambiguity and inefficiency. Our solution will be to restrict ourselves to \textit{discriminative} unions \text{(Definition~\ref{def:discrim})} \cite{mishra1985declaration,cartwright1991soft}.
 \end{para}
 
 \begin{definition}[Discriminative Union]\label{def:discrim}
@@ -742,6 +750,7 @@ define area([w, h]) = w * h
 with type $([\mathbf{num},\mathbf{num}]\cup\mathbf{num})\to\mathbf{num}$.
 
 \subsection{R\'emy Encoding}\label{sec:remy}
+\listingnote{\listref{src:monad-type}}
 
 It is possible to implement type assignment with discriminative union types just by changing the type representation. This idea was first expounded \text{in~\cite{cartwright1991soft}} as an adaptation of Didier \text{R\'emy's} encoding of record types\ \cite{Remy/records91}.
 
@@ -751,17 +760,17 @@ It is possible to implement type assignment with discriminative union types just
   Suppose we have
   \begin{align*}
     \mathcal{F} & = \{+,-\}
-    \tag*{Flags}\\
+    \tag*{\scriptsize(Flags)}\\
     \mathcal{V} & = \{\alpha,\beta,\gamma,\ldots\}
-    \tag*{Variables}\\
+    \tag*{\scriptsize(Variables)}\\
     \mathcal{C} & = \{\mathbf{num},~\mathbf{bool},~\mathbf{atom},~\mathbf{str},~[\,],~(:),~(\to)\}
-    \tag*{Constructors}\\
+    \tag*{\scriptsize(Constructors)}\\
     a_x & =
     \begin{cases}
       2 & \text{ if }x\in\{(:), (\to)\}\\
       0 & \text{ if }x\in\mathcal{C}\setminus\{(:), (\to)\}
     \end{cases}
-    \tag*{Arities}
+    \tag*{\scriptsize(Arities)}
     \intertext{Then a R\'emy encoded type $\rho\in\mathcal{T}$ has the form:}
     \rho & = \mathcal{R}(f_{\mathbf{num}};~f_{\mathbf{bool}};~f_{\mathbf{atom}};~f_{\mathbf{str}};~f_{[\,]};~f_{(:)}, c^1_{(:)}, c^2_{(:)};~f_{(\to)}, c^1_{(\to)}, c^2_{(\to)})
     \tag{$\dagger$}\label{eqn:remy}
@@ -830,54 +839,59 @@ Always dealing with \text{R\'emy} encodings in the form given in Equation\ \ref{
 
 Suppose we have \textit{distinct} constructors $\{x_1,\ldots,x_k\}=\mathcal{X}\subseteq\mathcal{C}$ and \text{R\'emy} encodings $\gamma_1^1,\ldots,\gamma_1^{a_{x_1}},\ldots,\gamma_k^{a_{x_k}}\in\mathcal{T}\cup\mathcal{V}$.
 
-\begin{definition}[Supertype encoding]\label{def:super-encode}
-  \begin{flalign*}
-  \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\uparrow} & = \rho\in\mathcal{T}&&
-  \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
-  f_x & =
-  \begin{cases}
-    + & \text{ if } x\in\mathcal{X}\\
-    \star & \text{ otherwise}
-  \end{cases}&&\\
-  c^j_x & =
-  \begin{cases}
-    \gamma_i^j & \text{ if } x = x_i\in\mathcal{X}\\
-    \star & \text{ otherwise}
-  \end{cases}&&\\
-  \end{flalign*}
-\end{definition}
+\begin{para}
+  \begin{definition}[Supertype encoding]\label{def:super-encode}
+    \begin{flalign*}
+    \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\uparrow} & = \rho\in\mathcal{T}&&
+    \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
+    f_x & =
+    \begin{cases}
+      + & \text{ if } x\in\mathcal{X}\\
+      \star & \text{ otherwise}
+    \end{cases}&&\\
+    c^j_x & =
+    \begin{cases}
+      \gamma_i^j & \text{ if } x = x_i\in\mathcal{X}\\
+      \star & \text{ otherwise}
+    \end{cases}&&\\
+    \end{flalign*}
+  \end{definition}
+  \begin{definition}[Subtype encoding]\label{def:sub-encode}
+    \begin{flalign*}
+    \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\downarrow} & = \rho\in\mathcal{T}&&
+    \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
+    f_x & =
+    \begin{cases}
+      \star & \text{ if } x\in\mathcal{X}\\
+      - & \text{ otherwise}
+    \end{cases}&&\\
+    c^j_x & =
+    \begin{cases}
+      \gamma_i^j & \text{ if } x = x_i\in\mathcal{X}\\
+      \star & \text{ otherwise}
+    \end{cases}&&\\
+    \end{flalign*}
+  \end{definition}
+  This notation also interacts sensibly with the list literal syntax, so that,
+  \begin{align*}
+    [\tau_1,\ldots,\tau_k]^{\uparrow} & \equiv (\tau_1:\cdots:(\tau_k:[\,]^{\uparrow})^{\uparrow}\cdots)^{\uparrow}\\
+    [\tau_1,\ldots,\tau_k]^{\downarrow} & \equiv (\tau_1:\cdots:(\tau_k:[\,]^{\downarrow})^{\downarrow}\cdots)^{\downarrow}
+  \end{align*}
+  The examples in the previous section now have much more compact, recognisable representations:
 
-\begin{definition}[Subtype encoding]\label{def:sub-encode}
-  \begin{flalign*}
-  \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\downarrow} & = \rho\in\mathcal{T}&&
-  \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
-  f_x & =
-  \begin{cases}
-    \star & \text{ if } x\in\mathcal{X}\\
-    - & \text{ otherwise}
-  \end{cases}&&\\
-  c^j_x & =
-  \begin{cases}
-    \gamma_i^j & \text{ if } x = x_i\in\mathcal{X}\\
-    \star & \text{ otherwise}
-  \end{cases}&&\\
-  \end{flalign*}
-\end{definition}
-
-This notation also interacts sensibly with the list literal syntax, so that $[\tau_1,\ldots,\tau_k]^{\uparrow}\equiv(\tau_1:\cdots:(\tau_k:[\,]^{\uparrow})^{\uparrow}\cdots)^{\uparrow}$ and similarly for the subset encoding.
-
-The examples in the previous section now have much more compact, recognisable representations:
-\begin{tabular}{l|l}
-  Supertypes of $\mathbf{num}\cup\mathbf{bool}$ & $(\mathbf{num}\cup\mathbf{bool})^{\uparrow}$\\[.5em]
-  Subtypes of $(\mathbf{num}:\mathbf{bool})$ & $(\mathbf{num}:\mathbf{bool})^{\downarrow}$\\[.5em]
-  Supertypes of the \texttt{area} function & $(([\mathbf{num}, \mathbf{num}]\cup\mathbf{num})^{\downarrow}\to\mathbf{num}^{\uparrow})^{\uparrow}$ \\
-\end{tabular}
+  \begin{tabular}{l|l}
+    Supertypes of $\mathbf{num}\cup\mathbf{bool}$ & $(\mathbf{num}\cup\mathbf{bool})^{\uparrow}$\\[.5em]
+    Subtypes of $(\mathbf{num}:\mathbf{bool})$ & $(\mathbf{num}:\mathbf{bool})^{\downarrow}$\\[.5em]
+    Supertypes of the \texttt{area} function & $(([\mathbf{num}, \mathbf{num}]\cup\mathbf{num})^{\downarrow}\to\mathbf{num}^{\uparrow})^{\uparrow}$
+  \end{tabular}
+\end{para}
 
 \subsection{Adapting HM}\label{sec:adapt-hm}
+\listingnote{\listref{src:type-factory}\listref{src:infer}}
 
 The beauty of this encoding is that, if we treat $\mathcal{R}$ as a constructor and flag parameters as types, \text{R\'emy} encoded types may be combined using Robinson's unification algorithm: Two \text{R\'emy} types are unified by unifying their flag parameters and child types, whilst a variable $\alpha$ is unified with another type $\tau$ (so long as $\alpha$ appears free in $\tau$) by substituting $\tau$ for $\alpha$.
 
-All the necessary changes are in Algorithm $\mathcal{W}$: Previously, we assigned each expression its most general type. Now, we assign each expression a set of constraints over its type, so, we should ensure that these are, in some sense, the most general constraints. What follows is an adaption of Algorithm $\mathcal{W}$ that we will dub $\mathcal{W_R}$, we touch on only the cases which differ.
+Previously, we assigned each expression its most general type. Now, we assign each expression a set of constraints over its type, so, we should ensure that these are, in some sense, the most general constraints. What follows is an adaptation of Algorithm $\mathcal{W}$ that we will dub $\mathcal{W_R}$, we touch on only the cases which differ.
 
 \textbf{Algorithm $\mathcal{W_R}$\footnote{Incidentally, the classes of expression mentioned in the new rules for $\mathcal{W_R}$ can be split into two groups: Constructing terms, such as literals and abstractions, and consuming terms, such as function applications and case expressions. In these rules, the former are bounded from below (through use of the supertype encoding) whilst the latter are bounded from above (using the subtype encoding).}:}
 
@@ -1002,10 +1016,11 @@ It is assigned the \text{R\'emy} encoding $\forall\alpha,\beta\ldotp((\alpha:\be
 This does not obviate the need for exhaustiveness checking: If a case expression contains a numeric literal pattern (matching a single number), it still purports to support all numeric values because $\mathbf{num}$ is the smallest type that covers a numeric literal. But functions which are intended to work on only a part of a larger type (like \texttt{head}) are no longer considered partial.
 
 \subsection{Case Types}\label{sec:case-types}
+\listingnote{\listref{src:flag-tree}}
 
 Discriminativity can be seen as a model by which the way terms are differentiated is lifted to the type level, but it is somewhat prescriptivist: If two types are structurally different, we must rush to make the difference known at the outermost constructor. Couple this with the fact that we have only finitely many constructors and we can already see that any union can have at most $\abs{\mathcal{C}}$ summands before we lose the ability to discriminate between them.
 
-When faced with this simple (though contrived) function, Algorithm $\mathcal{W_R}$ runs into trouble:
+Even when faced with this simple (though contrived) function, Algorithm $\mathcal{W_R}$ runs into trouble:
 ```
 define foo([b])    =  not b
      | foo([m, n]) = (m + n) > 0;
@@ -1046,7 +1061,7 @@ For example, in \texttt{foo} (desugared), supposing we refer to the types of var
   Given case contexts $C$ and $D$, we say that $D$ is a sub-context of $C$ when $D = C,\alpha_1\triangleright d_1,\ldots,\alpha_k\triangleright d_k$, for constructors $d_1,\ldots,d_k$, and type variables $\alpha_1,\ldots,\alpha_k$ \textit{free in }$C$, $k\geq 0$. This means that the context described by $D$ is nested within that described by $C$.
 \end{definition}
 
-We extend Algorithm $\mathcal{W_R}$ (Section\ \ref{sec:adapt-hm}) with case contexts to make $\mathcal{W_{RC}}$. The first modification introduces case contexts as a parameter to type assignment $\mathcal{W_{RC}}(\Gamma;C\vdash t)$. In most cases, this parameter is passed on to recursive calls unchanged. The exception to this rule is in the definition of $\mathcal{A}(pat_i,e_i)$ (concerned with the type checking the arms of a case expression):
+We extend Algorithm $\mathcal{W_R}$ (Section\ \ref{sec:adapt-hm}) with case contexts to make $\mathcal{W_{RC}}$. The first modification introduces case contexts as a parameter to type assignment $\mathcal{W_{RC}}(\Gamma;C\vdash t)$. In most cases, this parameter is passed on to recursive calls unchanged. The exception to this rule is in the definition of $\mathcal{A}(pat_i,e_i)$ (concerned with type checking the arms of a case expression):
 
 \begin{enumerate}[(a)]
   \item $pat_i$ a numeric, string, bool, atom or nil pattern\hfill{\scriptsize(literal pattern)}
@@ -1136,9 +1151,10 @@ Unification can no longer treat flag parameters like types. When unifying two no
 
 Finally, introduced types must pay attention to context. For example, previously a numeric literal's type was constrained to be a supertype of \textbf{num}, now, it is a supertype of \textbf{num} w.r.t. $C$, the context it is being checked in. As all types are introduced using either the super- or sub-type encoding (Definitions\ \ref{def:super-encode},\ \ref{def:sub-encode}), we will alter them to incorporate a context. As the change is similar in both, we only show the new supertype encoding (Definition\ \ref{def:ctx-super-encode}).
 \begin{definition}[Context-aware Supertype Encoding]\label{def:ctx-super-encode}
+  \listingnote{\listref{src:type-factory}}
   \begin{flalign*}
   \left[\bigcup_{i=1}^kx_i(\gamma_i^1,\ldots,\gamma_i^{a_x})\right]^{\uparrow}_{\colorbox{lightgray}{$C$}} & = \rho\in\mathcal{T}&&
-  \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy}, then}
+  \intertext{Suppose $\rho$ has the form in Equation~\ref{eqn:remy} (page~\pageref{eqn:remy}), then}
   f_x & =
   \begin{cases}
     \colorbox{lightgray}{$t_0$} & \text{ if } x\in\mathcal{X}\\
@@ -1216,6 +1232,7 @@ Algorithm $\mathcal{W_{RC}}$ employs decorrelation in the following scenarios. T
 In the first definition of \texttt{eq}, the type of the second parameter was a subtype of $[\,]$ when the first parameter was $[\,]$ and a subtype of $(:)$ when the first parameter was $(:)$. After decorrelation, the second parameter type is constrained to be \textit{empty}. We do not treat empty types as errors, but an empty parameter type is suspicious, and should produce a warning: As there are no terms that inhabit this type, it is impossible to call the function!
 
 \subsection{Interactions with Instantiation}
+\listingnote{\listref{src:generalise}}
 
 We must pay careful attention to how case types behave around instantiation and generalisation, the hallmarks of HM. We have already seen that non-general types cannot condition upon general ones, now we focus on instantiation.
 
@@ -1270,7 +1287,7 @@ Type errors can no longer be discovered locally, but \textit{potential} type err
 
 \subsection{Summary}
 
-We began this section by dissociating constructors from each other (and from specific types). This allowed us to combine constructors how we pleased, which we facilitated using existing techniques\ \cite{cartwright1991soft,Remy/records91}. Type unions built in this way were required to be \textit{discriminative} (Definition\ \ref{def:discrim}). Unfortunately, many of the types we would have liked to combine, we could not, without violating discriminativity.
+We began this section by dissociating constructors from each other (and from specific types). This allowed us to combine constructors how we pleased, which we facilitated using existing techniques\ \cite{cartwright1991soft,Remy/records91}. Type unions built in this way were required to be \textit{discriminative} (Definition\ \ref{def:discrim}, page\ \pageref{def:discrim}). Unfortunately, many of the types we would have liked to combine, we could not, without violating discriminativity.
 
 Every violating union is over-approximated by a discriminative type. For example, $(\mathbf{bool}:\mathbf{bool})\cup(\mathbf{num}:\mathbf{num})$ by $(\mathbf{bool}\cup\mathbf{num}):(\mathbf{bool}\cup\mathbf{num})$. But we cannot always replace one with the other --- over-approximating a function parameter's type could lead to the function being called on a value outside of its domain, so is in general, unsound.
 
@@ -1302,6 +1319,7 @@ But again, \texttt{l} and \texttt{r} are trees themselves. The ability to specif
 \end{figure}
 
 \subsection{Circular Unification}
+\listingnote{\listref{src:unify}}
 
 When we originally implemented unification (Section\ \ref{sec:unify-impl}) we explicitly forbade cyclic types, so, to a first degree approximation, our problem is resolved by removing the \textit{occurs check} and allowing unification to build circular types. In reality, the situation is not quite so simple. Consider the following example, adapted from\ \cite{colmerauer1982prolog}\footnote{For simplicity, we are not representing types by R\'emy encodings.}:
 
@@ -1378,6 +1396,7 @@ define area([#rect, w, h]) = w * h
 This is not ideal, as the latter function will throw an error at runtime if applied to a circle. To get around this, we could lift atoms to the type level: Furnish every atom value with a corresponding type that only it inhabits. Then squares will have type $[\#\mathit{square}, \mathbf{num}]$ and circles $[\#\mathit{circle}, \mathbf{num}]$ (Figure\ \ref{fig:shape-tagged}).
 
 \subsection{Wildcard Constructors}\label{sec:wildcard}
+\listingnote{\listref{src:constructor}\listref{src:type-factory}}
 
 Lifting atoms to the type level creates an infinite family of constructors, which cannot be used in \text{R\'emy} encodings. However, we observe that any given program only mentions finitely many atom literals. Consequently, we adopt an encoding whereby a type splits infinite families into "constructors it has been exposed to" each with their own flag parameter and children, and "all other constructors" captured by a single \textit{wildcard} flag parameter.
 
@@ -1385,9 +1404,9 @@ When a type, $\tau$, is exposed to a new constructor from an infinite family (fo
 
 We have been implicitly dealing with a wildcard for \textbf{num}, \textbf{str}, \textbf{bool}, \textbf{atom}, $[\,]$, and $(:)$ until now. A number of details become neater in explicitly naming it: \textbf{any}.
 
-Heretofore, we have been overloading free type variables, as both unconstrained types and pointers to types (to break up long or circular definitions, or in case contexts). The \textbf{any} constructor assumes the first role, leaving only the second for variables: An unconstrainted type is a variable pointing to a \text{R\'emy} type containing only a leaf flag parameter labelled with $\sim$ for \textbf{any}.
+Heretofore, we have been overloading type variables, as both unconstrained types (when they are free) and pointers to types (to break up long or circular definitions, or in case contexts). The \textbf{any} constructor assumes the first role, leaving only the second for variables: An unconstrained type is a variable pointing to a \text{R\'emy} type containing only a leaf flag parameter labelled with $\sim$ for \textbf{any}.
 
-\textbf{any} can also act as the wildcard for function type constructors with differing arities, to restore type support for multi-arity functions. On a similar vein, to support tagged variants, we can have a type constructor for every atom literal, sharing the \textbf{atom} constructor's flag parameter as their wild card.
+\textbf{any} can also act as the wildcard for function type constructors with differing arities, to restore type support for multi-arity functions. On a similar vein, to support tagged variants, we can have a type constructor for every atom literal, sharing the \textbf{atom} constructor's flag parameter as their wildcard.
 
 \begin{figure}
   \caption{Exposing R\'emy types to new constructors in order to unify them.}\label{fig:wildcard-unify}
@@ -1469,25 +1488,13 @@ define twice(f, x) = f(f(x));
 
 which we are used to seeing with the type $\forall\alpha\ldotp(\alpha\to\alpha)\to\alpha\to\alpha$, is given the more general type $\forall\alpha,\beta,\gamma\ldotp((\alpha\to\beta)\cap(\beta\to\gamma))\to\alpha\to\gamma$.
 
-Aiken, Wimmers and Lakshman go on to extend this work\ \cite{aiken1994soft} to include \textit{conditional types}, aiming to fill the same need as \textit{case types} (Section\ \ref{sec:case-types}). A conditional type $\tau?\sigma$ is semantically equivalent to the empty type when $\sigma$ is the empty type and is equivalent to $\tau$ otherwise.
+Aiken, Wimmers, and Lakshman go on to extend this work\ \cite{aiken1994soft} to include \textit{conditional types}, aiming to fill the same need as \textit{case types} (Section\ \ref{sec:case-types}). A conditional type $\tau?\sigma$ is semantically equivalent to the empty type when $\sigma$ is the empty type and is equivalent to $\tau$ otherwise.
 
-We chose not to build upon this type system because compared to HM, there is less literature on its efficient implementation. Furthermore, in the spirit of \textit{GeomLab} being a teaching language, we wish to avoid introducing concepts like type intersection and negation whose benefits are perhaps not as great as product and union types for the programmer.
+Marlow and Wadler \cite{marlow1997practical} build on and simplify the idea of inferring types by solving systems of constraints \cite{mishra1985declaration,aiken1993type,aiken1994soft} in a type system for \textit{Erlang}. Product types in \textit{Erlang} have a tagged tuple representation that resembles \textit{GeomLab's}, with the tag in the tuple's first slot. The proposed type system avoids the discriminativity problem pragmatically by treating those tagged tuples specially.
 
-Finally, Marlow and Wadler \cite{marlow1997practical} build on and simplify the idea of inferring types by solving systems of constraints \cite{mishra1985declaration,aiken1993type,aiken1994soft} in a type system for \textit{Erlang}. Product types in \textit{Erlang} have a tagged tuple representation that resembles \textit{GeomLab's}, with the tag in the tuple's first slot. The proposed type system avoids the discriminativity problem pragmatically by treating those tagged tuples specially.
-
-\section{Conclusion}
-
-In this dissertation we extended Hindley and Milner's type system to statically capture the specifications programmers are used to maintaining in dynamic programming languages. We focused on the types of data structures: Noticing that they are usually built up from a small suite of base constructors, we sought to express their types as similarly compositional.
-
-Perhaps the most trying aspect of this project was finding a notion of \textit{type union}. On the one hand, constraints involving unrestricted type unions require \textit{semi-unification} to solve, which is known to be undecidable, in general\ \cite{kfoury1993undecidability}. On the other hand, if we impose too many restrictions on which types can appear together in unions, we lose expressivity. \textit{Discriminative types} offered a reasonable middle ground (Definition\ \ref{def:discrim}, page\ \pageref{def:discrim}).
-
-We based our work on that of Cartwright and Fagan\ \cite{cartwright1991soft} who extended HM to model constraints over types in a manner solvable by unification. Their goal was to create a \textit{soft} type system that introduces runtime checks when unification fails instead of rejecting programs. However, their techniques proved to be intuitive and easily extensible when applied to a traditional ``hard'' type system and were invaluable for our work.
+We based our work on that of Cartwright and Fagan\ \cite{cartwright1991soft} who extended HM to model constraints over types in a manner solvable by unification. Their goal was to create a \textit{soft} type system that introduces runtime checks when unification fails instead of rejecting programs. However, their techniques proved to be intuitive and easily extensible when applied to a conventional type system and were invaluable for our work.
 
 We also owe a debt of thanks to Didier \text{R\'emy}\ \cite{Remy/records91}, for his encoding of record types. It is his ``simple'' encoding that forms the basis of Cartwright and Fagan's soft type system and his full encoding that we altered in this dissertation to permit infinite families of types (Section\ \ref{sec:tagged-variants}) in a similar fashion to Cartwright and Fagan's adaptation.
-
-\textit{Case types} (Section\ \ref{sec:case-types}) are our contribution to the field. We build up a context by paying attention to the arms of case expressions we recursed into before type checking an expression and the type it is assigned applies only within this context. Being able to describe types whose behaviour differs by context grants us a greater degree of flexibility over \textit{discriminative types}. We use this flexibility to infer the types of many common data structures from the patterns that destructure them and the way their constituent parts are used.
-
-As well as an algorithm for type assignment with \textit{case types}, a prototype implementation for \textit{GeomLab} is provided (Appendix\ \ref{app:listings}), based on an optimised implementation of Hindley--Milner\ \cite{oleg13ocamltc}.
 
 \section{Future Work}
 
@@ -1519,12 +1526,10 @@ will be assigned $\texttt{rect}::\forall\alpha,\beta\ldotp\,((\alpha,\beta)\to[\
     \mathbf{tree}(\alpha) \Coloneqq &~[\#\mathit{leaf}, \alpha]
     \\ \cup &~[\#\mathit{branch},\mathbf{tree}(\alpha),\alpha,\mathbf{tree}(\alpha)]
   \end{align*}
-
   When the checker prints a type, we may also wish to replace a structure with its alias. But, because our types are represented as directed graphs, this problem is NP--Hard, by a reduction from \textsc{Sub-graph Isomorphism}. By associating tags with the type aliases they are mentioned in (and only allowing a tag to be used in at most one alias), we may simplify this task, in effect, building \textit{Haskell}'s algebraic data type system on top of our own. This comes with its own set of limitations (many of which we were trying to avoid to begin with).
 \end{para}
 
 \textit{Generative types} --- aliases that generate new types --- offer a way to encapsulate representations. For instance, if we had a function with a \textbf{shape} parameter, it would be a type error to apply it to a $[\#\mathit{square},\mathbf{num}]$ term if the \textbf{shape} alias were generative. To support these, we would need to differentiate terms of the generative type from terms with just the same shape. Tagging would be insufficient because it does not hide representations.
-
 
 \subsection{Ascription}
 
@@ -1537,6 +1542,18 @@ This feature also supersedes primitive type predicates such as $\texttt{numeric}
 define numeric(_ :: num)  = true
      | numeric(_)         = false;
 ```
+
+\section{Conclusion}
+
+In this dissertation we extended Hindley and Milner's type system to statically capture the specifications programmers are used to maintaining in dynamic programming languages. Focusing especially on the types of data structures, which we noticed are usually built up from a small suite of base constructors, we sought to express their types in a similarly compositional manner.
+
+Perhaps the most trying aspect of this project was finding a notion of \textit{type union}. On the one hand, constraints involving unrestricted type unions require \textit{semi-unification} to solve, which is known to be undecidable in general\ \cite{kfoury1993undecidability}. On the other hand, if we impose too many restrictions on which types can appear together in unions, we lose expressivity. \textit{Discriminative types} offered a reasonable middle ground (Definition\ \ref{def:discrim}, page\ \pageref{def:discrim}).
+
+We contributed \textit{case types} (Section\ \ref{sec:case-types}) to the field to grant a greater degree of flexibility over \textit{discriminative types}. A case context is a representation of information we know about certain types, gleaned from the arms of case expressions we have recursed in to. The type an expression is assigned applies only within the context it was assigned in. Being able to describe behaviours that differ by context allows us to infer the types of many common data structures from the patterns that destructure them and the way their constituent parts are used.
+
+Much of the existing literature on type systems similar to our own represent constraints as systems of inequalities. This bears little resemblence to the type systems of most popular programming languages, which have seen a great deal of time invested in their efficient implementation. What is more, they introduce concepts like type intersection and negation, which may appear confusing and difficult to reason about to programmers when compared to products and unions.
+
+Our work serves to show that a type system supporting type unions and subsumption can be attained from the familiar basis of Hindley--Milner. Our additions stand without the need for constructs like intersection and negation, and interact cleanly with HM's polymorphism and type inference. Additionally, we built a prototype implementation for \textit{GeomLab} (Appendix\ \ref{app:listings}), showing that it is easy to augment an optimised HM implementation\ \cite{oleg13ocamltc} --- similar to \textit{OCaml's} --- to support these new features, whilst leaving its overall structure unchanged.
 
 \vbox {
   %TC:ignore
@@ -1672,6 +1689,7 @@ Whilst there are tried and tested methods by which HM may be extended to maintai
 Without any side-effectful operations, we have no need for sequential composition.
 
 \section{Type Errors}\label{app:errors}
+\listingnote{\listref{src:location}\listref{src:error}\listref{src:parser}\listref{src:lexer}}
 
 In Section\ \ref{sec:bg} we chose to \textit{desugar} the source language. This simplifies type assignment, but now we deal with the consequences as they pertain to type errors. By annotating the abstract syntax tree with source locations and preserving them during desugaring, we can point to the part of the \textit{source} program from which a type error originates, even though the error was detected in the \textit{desugared} representation.
 
@@ -1811,34 +1829,34 @@ But the type checker's output refers to features from the original expression:
 \twocolumn
 \section{Listings}\label{app:listings}
 
-\projectlisting{Data/Constructor.hs}
-\projectlisting{Data/Expr.hs}
-\projectlisting{Data/Flag.hs}
-\projectlisting{Data/Literal.hs}
-\projectlisting{Data/Location.hs}
-\projectlisting{Data/Monad/DynArray.hs}
-\projectlisting{Data/Monad/State.hs}
-\projectlisting{Data/Monad/Type.hs}
-\projectlisting{Data/Patt.hs}
-\projectlisting{Data/Structure.hs}
-\projectlisting{Data/Sugar.hs}
-\projectlisting{Data/Token.hs}
-\projectlisting{Data/TyError.hs}
-\projectlisting{Data/Type.hs}
-\projectlisting{Desugar.hs}
-\projectlisting{GLParser.y}
-\projectlisting{Infer/Context.hs}
-\projectlisting{Infer/Debug.hs}
-\projectlisting{Infer/FlagTree.hs}
-\projectlisting{Infer/Generalise.hs}
-\projectlisting{Infer/Levels.hs}
-\projectlisting{Infer/Monad.hs}
-\projectlisting{Infer/TypeFactory.hs}
-\projectlisting{Infer/TypeMarshal.hs}
-\projectlisting{Infer/Unify.hs}
-\projectlisting{Infer.hs}
-\projectlisting{Lexer.x}
-\projectlisting{Main.hs}
+\projectlisting{Data/Constructor.hs}{src:constructor}
+\projectlisting{Data/Expr.hs}{src:expr}
+\projectlisting{Data/Flag.hs}{src:flag}
+\projectlisting{Data/Literal.hs}{src:literal}
+\projectlisting{Data/Location.hs}{src:location}
+\projectlisting{Data/Monad/DynArray.hs}{src:dynarray}
+\projectlisting{Data/Monad/State.hs}{src:state}
+\projectlisting{Data/Monad/Type.hs}{src:monad-type}
+\projectlisting{Data/Patt.hs}{src:patt}
+\projectlisting{Data/Structure.hs}{src:struct}
+\projectlisting{Data/Sugar.hs}{src:sugar}
+\projectlisting{Data/Token.hs}{src:token}
+\projectlisting{Data/TyError.hs}{src:error}
+\projectlisting{Data/Type.hs}{src:type}
+\projectlisting{Desugar.hs}{src:desugar}
+\projectlisting{GLParser.y}{src:parser}
+\projectlisting{Infer/Context.hs}{src:context}
+\projectlisting{Infer/Debug.hs}{src:debug}
+\projectlisting{Infer/FlagTree.hs}{src:flag-tree}
+\projectlisting{Infer/Generalise.hs}{src:generalise}
+\projectlisting{Infer/Levels.hs}{src:levels}
+\projectlisting{Infer/Monad.hs}{src:monad}
+\projectlisting{Infer/TypeFactory.hs}{src:type-factory}
+\projectlisting{Infer/TypeMarshal.hs}{src:type-marshal}
+\projectlisting{Infer/Unify.hs}{src:unify}
+\projectlisting{Infer.hs}{src:infer}
+\projectlisting{Lexer.x}{src:lexer}
+\projectlisting{Main.hs}{src:main}
 
 \vbox{
   %TC:endignore
